@@ -116,15 +116,17 @@
   <label for="tel_i">전화번호</label>
   <input id="tel_i" type="tel" inputmode="numeric" placeholder="01012345678" autocomplete="off" enterkeyhint="done">
   <div class="row">
-    <button class="go" id="bShow">크게 표시하기</button>
+    <button class="go" id="bShow">전체화면 보기</button>
     <button class="sub" id="bReset">비우기</button>
   </div>
   <label style="margin-top:8px">최근 입력</label>
   <div class="recent" id="recent"></div>
   <div class="hint">
     · 숫자만 입력하면 하이픈이 자동으로 붙습니다<br>
+    · 버튼을 누르면 바로 전체화면으로 크게 표시됩니다<br>
     · 세로로 들면 전화번호가 3줄로 나뉘어 더 크게 보입니다<br>
-    · 표시 중에는 화면이 꺼지지 않습니다
+    · 표시 중에는 화면이 꺼지지 않습니다<br>
+    · 화면을 한 번 톡 치면 코너 버튼이 다시 보입니다
   </div>
 </div>
 
@@ -271,11 +273,25 @@
     editEl.classList.add('on'); keepAwake(false);
     setTimeout(()=>nameI.focus(),60);
   }
+  /* 전체화면 진입 (사용자 클릭/엔터 제스처 안에서만 동작) */
+  function goFull(){
+    if(document.fullscreenElement) return;
+    try{
+      const p = document.documentElement.requestFullscreen?.({navigationUI:'hide'});
+      if(p && p.catch) p.catch(()=>{});
+    }catch(e){}
+  }
+
   function applyEdit(){
     data.name=nameI.value.trim();
     data.tel=fmtTel(telI.value);
     pushRecent(data.name,data.tel);
-    save(); editEl.classList.remove('on'); render(); poke(); keepAwake(true);
+    save();
+    editEl.classList.remove('on');
+    nameI.blur(); telI.blur();          // 키보드 내리기
+    goFull();                           // 입력 즉시 전체화면
+    render(); poke(); keepAwake(true);
+    setTimeout(render, 350);            // 전체화면 전환 후 글자 크기 재계산
   }
 
   $('bEdit').onclick=openEdit;
