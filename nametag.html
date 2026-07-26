@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ffffff">
+<title>명찰</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏷️%3C/text%3E%3C/svg%3E">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
+  body{
+    font-family:'Malgun Gothic','맑은 고딕','Noto Sans KR',-apple-system,sans-serif;
+    background:#fff;color:#111;
+    transition:background .2s,color .2s;
+    -webkit-user-select:none;user-select:none;
+  }
+  body.dark{background:#000;color:#fff;}
+
+  /* ── 표시 화면 ── */
+  #show{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));
+    gap:2vh;
+  }
+  #name{
+    font-weight:900;line-height:1.05;text-align:center;
+    letter-spacing:-.02em;white-space:nowrap;
+  }
+  #tel{
+    font-weight:700;line-height:1.1;text-align:center;
+    white-space:nowrap;opacity:.9;
+    font-variant-numeric:tabular-nums;
+  }
+  #empty{
+    font-size:5vw;opacity:.35;text-align:center;line-height:1.7;font-weight:600;
+  }
+
+  /* ── 코너 버튼 (사진 방해 최소화) ── */
+  .btns{
+    position:fixed;inset:0;pointer-events:none;
+    transition:opacity .5s;
+  }
+  .btns.fade{opacity:.06;}
+  .btn{
+    position:absolute;pointer-events:auto;
+    background:rgba(128,128,128,.16);
+    color:inherit;border:none;border-radius:999px;
+    font-size:15px;font-weight:700;font-family:inherit;
+    padding:11px 18px;cursor:pointer;
+    backdrop-filter:blur(4px);
+  }
+  #bEdit{top:max(12px,env(safe-area-inset-top));left:12px;}
+  #bTheme{top:max(12px,env(safe-area-inset-top));right:12px;}
+  #bFull{bottom:max(12px,env(safe-area-inset-bottom));right:12px;}
+  #bClear{bottom:max(12px,env(safe-area-inset-bottom));left:12px;}
+
+  /* ── 편집 화면 ── */
+  #edit{
+    position:fixed;inset:0;z-index:10;
+    background:#fff;color:#111;
+    display:none;flex-direction:column;
+    padding:max(24px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));
+    gap:16px;overflow-y:auto;
+  }
+  #edit.on{display:flex;}
+  #edit h1{font-size:22px;font-weight:800;margin-bottom:4px;}
+  label{font-size:15px;font-weight:700;color:#555;margin-bottom:-8px;}
+  input{
+    width:100%;font-family:inherit;font-size:30px;font-weight:800;
+    padding:16px 18px;border:2.5px solid #ddd;border-radius:14px;
+    background:#fafafa;color:#111;
+  }
+  input:focus{outline:none;border-color:#1E3A5F;background:#fff;}
+  #tel_i{font-variant-numeric:tabular-nums;}
+  .row{display:flex;gap:10px;}
+  .go{
+    flex:1;font-family:inherit;font-size:20px;font-weight:800;
+    padding:20px;border:none;border-radius:14px;cursor:pointer;
+    background:#1E3A5F;color:#fff;
+  }
+  .sub{
+    font-family:inherit;font-size:17px;font-weight:700;
+    padding:20px 22px;border:2px solid #ddd;border-radius:14px;
+    background:#fff;color:#666;cursor:pointer;
+  }
+  .recent{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px;}
+  .chip{
+    font-family:inherit;font-size:15px;font-weight:700;
+    padding:9px 15px;border-radius:999px;border:1.5px solid #ddd;
+    background:#f5f5f5;color:#333;cursor:pointer;
+  }
+  .hint{font-size:13px;color:#999;line-height:1.6;margin-top:2px;}
+</style>
+</head>
+<body>
+
+<!-- 표시 화면 -->
+<div id="show">
+  <div id="name"></div>
+  <div id="tel"></div>
+  <div id="empty">이름과 전화번호를 입력하세요<br>왼쪽 위 <b>편집</b> 버튼</div>
+</div>
+
+<div class="btns" id="btns">
+  <button class="btn" id="bEdit">✏️ 편집</button>
+  <button class="btn" id="bTheme">◐ 배경</button>
+  <button class="btn" id="bClear">✕ 지우기</button>
+  <button class="btn" id="bFull">⛶ 전체화면</button>
+</div>
+
+<!-- 편집 화면 -->
+<div id="edit">
+  <h1>🏷️ 명찰 입력</h1>
+  <label for="name_i">이름</label>
+  <input id="name_i" type="text" placeholder="김재식" autocomplete="off" enterkeyhint="next">
+  <label for="tel_i">전화번호</label>
+  <input id="tel_i" type="tel" inputmode="numeric" placeholder="01012345678" autocomplete="off" enterkeyhint="done">
+  <div class="row">
+    <button class="go" id="bShow">크게 표시하기</button>
+    <button class="sub" id="bReset">비우기</button>
+  </div>
+  <label style="margin-top:8px">최근 입력</label>
+  <div class="recent" id="recent"></div>
+  <div class="hint">
+    · 전화번호는 숫자만 입력하면 하이픈이 자동으로 붙습니다<br>
+    · 표시 화면에서는 화면이 꺼지지 않습니다<br>
+    · 코너 버튼은 잠시 후 흐려져 사진에 거의 안 나옵니다
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const showEl = $('show'), nameEl = $('name'), telEl = $('tel'), emptyEl = $('empty');
+  const editEl = $('edit'), nameI = $('name_i'), telI = $('tel_i'), recentEl = $('recent');
+  const btns = $('btns');
+  const LS = 'nametag_v1';
+
+  let data = { name:'', tel:'', dark:false, recent:[] };
+  try { Object.assign(data, JSON.parse(localStorage.getItem(LS) || '{}')); } catch(e){}
+
+  const save = () => { try { localStorage.setItem(LS, JSON.stringify(data)); } catch(e){} };
+
+  /* 전화번호 자동 하이픈 */
+  function fmtTel(v){
+    const d = (v||'').replace(/\D/g,'').slice(0,11);
+    if (d.length < 4) return d;
+    if (d.startsWith('02')) {
+      if (d.length <= 5) return d.slice(0,2)+'-'+d.slice(2);
+      if (d.length <= 9) return d.slice(0,2)+'-'+d.slice(2,5)+'-'+d.slice(5);
+      return d.slice(0,2)+'-'+d.slice(2,6)+'-'+d.slice(6,10);
+    }
+    if (d.length <= 7) return d.slice(0,3)+'-'+d.slice(3);
+    if (d.length <= 10) return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+    return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
+  }
+
+  /* 화면 폭에 맞춰 글자 크기 자동 조절 */
+  function fit(el, maxVH){
+    if (!el.textContent) { el.style.fontSize = '0px'; return; }
+    const availW = window.innerWidth  * 0.92;
+    const availH = window.innerHeight * maxVH;
+    let lo = 10, hi = 900;
+    for (let i=0;i<22;i++){
+      const mid = (lo+hi)/2;
+      el.style.fontSize = mid+'px';
+      if (el.scrollWidth <= availW && el.scrollHeight <= availH) lo = mid; else hi = mid;
+    }
+    el.style.fontSize = Math.floor(lo)+'px';
+  }
+
+  function render(){
+    document.body.classList.toggle('dark', !!data.dark);
+    document.querySelector('meta[name=theme-color]')
+      .setAttribute('content', data.dark ? '#000000' : '#ffffff');
+    nameEl.textContent = data.name || '';
+    telEl.textContent  = data.tel  || '';
+    const has = !!(data.name || data.tel);
+    emptyEl.style.display = has ? 'none' : 'block';
+    if (has){ fit(nameEl, data.tel ? 0.46 : 0.62); fit(telEl, 0.17); }
+    renderRecent();
+  }
+
+  function renderRecent(){
+    recentEl.innerHTML = '';
+    (data.recent||[]).slice(0,8).forEach(r => {
+      const b = document.createElement('button');
+      b.className = 'chip';
+      b.textContent = r.name || r.tel;
+      b.onclick = () => { nameI.value = r.name; telI.value = r.tel; };
+      recentEl.appendChild(b);
+    });
+  }
+
+  function pushRecent(name, tel){
+    if (!name && !tel) return;
+    data.recent = (data.recent||[]).filter(r => !(r.name===name && r.tel===tel));
+    data.recent.unshift({name, tel});
+    data.recent = data.recent.slice(0,8);
+  }
+
+  /* 화면 꺼짐 방지 */
+  let wl = null;
+  async function keepAwake(on){
+    try {
+      if (on && 'wakeLock' in navigator && !wl){ wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release',()=>{wl=null;}); }
+      else if (!on && wl){ await wl.release(); wl = null; }
+    } catch(e){}
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !editEl.classList.contains('on')) keepAwake(true);
+  });
+
+  /* 버튼 자동 흐려짐 */
+  let fadeT;
+  function poke(){
+    btns.classList.remove('fade');
+    clearTimeout(fadeT);
+    fadeT = setTimeout(() => btns.classList.add('fade'), 3000);
+  }
+  showEl.addEventListener('pointerdown', poke);
+  poke();
+
+  /* 편집 열고 닫기 */
+  function openEdit(){
+    nameI.value = data.name; telI.value = data.tel;
+    editEl.classList.add('on');
+    keepAwake(false);
+    setTimeout(()=>nameI.focus(), 60);
+  }
+  function applyEdit(){
+    data.name = nameI.value.trim();
+    data.tel  = fmtTel(telI.value);
+    pushRecent(data.name, data.tel);
+    save(); editEl.classList.remove('on'); render(); poke(); keepAwake(true);
+  }
+
+  $('bEdit').onclick  = openEdit;
+  $('bShow').onclick  = applyEdit;
+  $('bReset').onclick = () => { nameI.value=''; telI.value=''; nameI.focus(); };
+  $('bClear').onclick = () => { data.name=''; data.tel=''; save(); render(); poke(); };
+  $('bTheme').onclick = () => { data.dark = !data.dark; save(); render(); poke(); };
+  $('bFull').onclick  = () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+    else document.exitFullscreen?.();
+    poke();
+  };
+
+  telI.addEventListener('input', e => { e.target.value = fmtTel(e.target.value); });
+  nameI.addEventListener('keydown', e => { if (e.key==='Enter'){ e.preventDefault(); telI.focus(); } });
+  telI .addEventListener('keydown', e => { if (e.key==='Enter'){ e.preventDefault(); applyEdit(); } });
+
+  window.addEventListener('resize', () => render());
+  window.addEventListener('orientationchange', () => setTimeout(render, 250));
+
+  render();
+  keepAwake(true);
+})();
+</script>
+</body>
+</html>

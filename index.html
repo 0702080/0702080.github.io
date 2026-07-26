@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E3A5F">
+<title>웹 도구</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧰%3C/text%3E%3C/svg%3E">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    font-family:'Malgun Gothic','맑은 고딕','Noto Sans KR',-apple-system,sans-serif;
+    background:#f4f6f9;color:#1B1F2A;
+    min-height:100vh;padding:32px 20px max(32px,env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:560px;margin:0 auto;}
+  h1{font-size:26px;font-weight:900;color:#1E3A5F;margin-bottom:6px;}
+  .sub{color:#7a8494;font-size:14px;margin-bottom:26px;}
+  a.card{
+    display:block;text-decoration:none;color:inherit;
+    background:#fff;border:1px solid #e2e7ee;border-left:5px solid #C9A66B;
+    border-radius:14px;padding:20px 22px;margin-bottom:14px;
+    box-shadow:0 1px 3px rgba(20,39,68,.06);
+  }
+  a.card:active{background:#f8f9fb;}
+  .t{font-size:19px;font-weight:800;margin-bottom:5px;}
+  .d{font-size:14px;color:#6b7585;line-height:1.55;}
+  .foot{margin-top:26px;font-size:12.5px;color:#9aa3b0;line-height:1.7;}
+  @media (prefers-color-scheme:dark){
+    body{background:#12161d;color:#e8ecf2;}
+    a.card{background:#1a212b;border-color:#2a3341;box-shadow:none;}
+    a.card:active{background:#212a36;}
+    h1{color:#93b4e6;} .d{color:#95a0b0;} .sub,.foot{color:#78828f;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧰 웹 도구</h1>
+  <div class="sub">설치 없이 바로 쓰는 도구 모음</div>
+
+  <a class="card" href="nametag.html">
+    <div class="t">🏷️ 명찰</div>
+    <div class="d">이름·전화번호를 화면 가득 크게 표시합니다.
+      사진 촬영 시 명찰 대용으로 사용하세요.</div>
+  </a>
+
+  <div class="foot">
+    각 도구는 인터넷 없이도 동작합니다.<br>
+    크롬에서 열고 <b>⋮ → 홈 화면에 추가</b> 하면 앱처럼 쓸 수 있습니다.
+  </div>
+</div>
+</body>
+</html>
