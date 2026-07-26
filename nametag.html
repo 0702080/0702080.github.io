@@ -36,6 +36,11 @@
   #tel{
     text-align:center;font-weight:900;letter-spacing:-.01em;
     font-variant-numeric:tabular-nums;
+    /* 안드로이드에서 숫자는 한글보다 얇은 폰트로 대체되므로
+       외곽선을 더해 한글 굵기와 맞춤 */
+    -webkit-text-stroke:0.028em currentColor;
+    text-stroke:0.028em currentColor;
+    paint-order:stroke fill;
   }
   .telline{line-height:1.0;white-space:nowrap;}
   #empty{
@@ -124,6 +129,13 @@
   </div>
   <label style="margin-top:8px">최근 입력</label>
   <div class="recent" id="recent"></div>
+
+  <label style="margin-top:8px">📡 실시간 공유 (다른 폰에 즉시 표시)</label>
+  <div class="hint" id="mirrorBox" style="margin-top:0"></div>
+  <div class="row">
+    <button class="sub" id="bRoom" style="flex:1;padding:14px">방 코드 변경</button>
+    <button class="sub" id="bCopy" style="flex:1;padding:14px">공유 주소 복사</button>
+  </div>
   <div class="hint">
     · 숫자만 입력하면 하이픈이 자동으로 붙습니다<br>
     · 버튼을 누르면 바로 전체화면으로 크게 표시됩니다<br>
@@ -131,10 +143,12 @@
     · 표시 중에는 화면이 꺼지지 않습니다<br>
     · 표시 중 버튼은 완전히 숨겨집니다 → 화면을 한 번 터치하면 나타남<br>
     · 나가기: 화면 터치 → 우측 아래 <b>✕ 나가기</b> (또는 뒤로가기 제스처)<br>
-    <span style="color:#bbb">버전 v8 (2026-07-26)</span>
+    · 입력하면 같은 방 코드를 쓰는 다른 폰에도 즉시 표시됩니다<br>
+    <span style="color:#bbb">버전 v9 (2026-07-26)</span>
   </div>
 </div>
 
+<script src="mqtt.min.js"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
@@ -282,6 +296,7 @@
   function openEdit(){
     nameI.value=data.name; telI.value=data.tel;
     editEl.classList.add('on'); keepAwake(false);
+    MIRROR.status();
     setTimeout(()=>nameI.focus(),60);
   }
   /* 홈 화면 앱으로 실행 중이면 이미 전체화면 → 크롬 안내문구 안 뜸 */
@@ -303,6 +318,7 @@
     data.tel=fmtTel(telI.value);
     pushRecent(data.name,data.tel);
     save();
+    MIRROR.publish();                   // 다른 폰에 즉시 전송
     editEl.classList.remove('on');
     nameI.blur(); telI.blur();          // 키보드 내리기
     goFull();                           // 입력 즉시 전체화면
@@ -314,7 +330,7 @@
   $('bEdit').onclick=openEdit;
   $('bShow').onclick=applyEdit;
   $('bReset').onclick=()=>{ nameI.value=''; telI.value=''; nameI.focus(); };
-  $('bClear').onclick=()=>{ data.name=''; data.tel=''; save(); render(); poke(); };
+  $('bClear').onclick=()=>{ data.name=''; data.tel=''; save(); MIRROR.publish(); render(); poke(); };
   $('bTheme').onclick=()=>{ data.dark=!data.dark; save(); render(); poke(); };
   /* 우하단 버튼: 현재 상태에 따라 들어가기 / 나가기 */
   const bFullEl=$('bFull');
@@ -356,10 +372,115 @@
   window.addEventListener('resize',render);
   window.addEventListener('orientationchange',()=>setTimeout(render,250));
 
+  /* ────────── 실시간 공유(미러링) ──────────
+     정적 사이트라 서버가 없으므로 공개 MQTT 브로커를 중계로 사용.
+     내용은 방 코드로 만든 키로 암호화해서 보내므로 브로커에는
+     암호문만 남는다.                                        */
+  const MIRROR = (function(){
+    const BROKER='wss://broker.emqx.io:8084/mqtt';
+    const myId = Math.random().toString(36).slice(2,10);
+    let client=null, key=null, topic=null, connected=false, room='';
+
+    const te=new TextEncoder(), td=new TextDecoder();
+    async function sha(s){ return new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode(s))); }
+    async function setup(code){
+      room=code;
+      key = await crypto.subtle.importKey('raw', await sha('nametag-key:'+code),
+                                          {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+      const h = await sha('nametag-topic:'+code);
+      topic = 'nmtg/' + [...h].slice(0,10).map(x=>x.toString(16).padStart(2,'0')).join('');
+    }
+    async function encrypt(obj){
+      const iv=crypto.getRandomValues(new Uint8Array(12));
+      const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,te.encode(JSON.stringify(obj))));
+      const out=new Uint8Array(12+ct.length); out.set(iv,0); out.set(ct,12);
+      let s=''; out.forEach(b=>s+=String.fromCharCode(b)); return btoa(s);
+    }
+    async function decrypt(b64){
+      const raw=Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+      const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:raw.slice(0,12)},key,raw.slice(12));
+      return JSON.parse(td.decode(pt));
+    }
+
+    function getRoom(){
+      const m=/[#&]r=([^&]+)/.exec(location.hash);
+      if(m) return decodeURIComponent(m[1]);
+      return data.room || 'default';
+    }
+
+    async function start(){
+      if(typeof mqtt==='undefined' || !crypto.subtle) { status(); return; }
+      try{
+        await setup(getRoom());
+        client = mqtt.connect(BROKER, {
+          clientId:'nmtg_'+myId, clean:true,
+          reconnectPeriod:4000, connectTimeout:8000, keepalive:30
+        });
+        client.on('connect', ()=>{ connected=true; status(); client.subscribe(topic,{qos:0}); });
+        client.on('close',   ()=>{ connected=false; status(); });
+        client.on('error',   ()=>{ connected=false; status(); });
+        client.on('message', async (t,payload)=>{
+          try{
+            const o=await decrypt(payload.toString());
+            if(!o || o.from===myId) return;                 // 내가 보낸 건 무시
+            if(o.name===data.name && o.tel===data.tel) return;
+            data.name=o.name||''; data.tel=o.tel||'';
+            save(); render(); hideBtns();                   // 받은 쪽은 바로 표시
+          }catch(e){}
+        });
+      }catch(e){ status(); }
+    }
+
+    async function publish(){
+      if(!client || !connected || !key) return;
+      try{
+        const msg=await encrypt({name:data.name, tel:data.tel, from:myId, t:Date.now()});
+        client.publish(topic, msg, {qos:0, retain:true});    // retain: 나중에 접속해도 현재값 수신
+      }catch(e){}
+    }
+
+    function shareUrl(){
+      const base=location.origin+location.pathname;
+      return room==='default' ? base : base+'#r='+encodeURIComponent(room);
+    }
+
+    function status(){
+      const box=$('mirrorBox'); if(!box) return;
+      const st = connected ? '🟢 연결됨 — 같은 방의 다른 폰에 즉시 표시됩니다'
+                           : (typeof mqtt==='undefined' ? '⚪ 공유 기능 사용 불가(스크립트 없음)'
+                                                        : '🟡 연결 중…(인터넷 필요)');
+      box.innerHTML = st + '<br>방 코드: <b>' + (room||'-') + '</b>'
+                    + '<br><span style="word-break:break-all;color:#aaa">' + shareUrl() + '</span>';
+    }
+
+    async function changeRoom(){
+      const v=prompt('방 코드를 입력하세요.\n같은 코드를 쓰는 기기끼리만 공유됩니다.\n(비워두면 기본 방)', room==='default'?'':room);
+      if(v===null) return;
+      const code=(v.trim()||'default');
+      data.room=code; save();
+      if(code==='default') history.replaceState(null,'',location.pathname);
+      else history.replaceState(null,'','#r='+encodeURIComponent(code));
+      if(client){ try{ client.end(true); }catch(e){} client=null; connected=false; }
+      await start();
+      status();
+    }
+
+    return { start, publish, status, changeRoom, shareUrl };
+  })();
+
+  $('bRoom').onclick = ()=>MIRROR.changeRoom();
+  $('bCopy').onclick = async ()=>{
+    const url=MIRROR.shareUrl();
+    try{ await navigator.clipboard.writeText(url); $('bCopy').textContent='복사됨 ✓';
+         setTimeout(()=>$('bCopy').textContent='공유 주소 복사',1500); }
+    catch(e){ prompt('아래 주소를 복사하세요', url); }
+  };
+
   render();
   keepAwake(true);
   // 처음 열 때: 내용이 있으면 버튼 숨김, 비어 있으면 안내를 위해 표시
   if (data.name || data.tel) hideBtns(); else poke();
+  MIRROR.start();
 
   /* 서비스워커: 온라인이면 항상 최신본, 오프라인이면 캐시본 */
   if ('serviceWorker' in navigator) {
