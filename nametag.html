@@ -129,7 +129,8 @@
     · 버튼을 누르면 바로 전체화면으로 크게 표시됩니다<br>
     · 세로로 들면 전화번호가 3줄로 나뉘어 더 크게 보입니다<br>
     · 표시 중에는 화면이 꺼지지 않습니다<br>
-    · 표시 중 버튼은 완전히 숨겨집니다 → 화면을 한 번 터치하면 나타남
+    · 표시 중 버튼은 완전히 숨겨집니다 → 화면을 한 번 터치하면 나타남<br>
+    · 나가기: 화면 터치 → 우측 아래 <b>✕ 나가기</b> (또는 뒤로가기 제스처)
   </div>
 </div>
 
@@ -213,7 +214,7 @@
     const portrait = H >= W;          // 세로 모드
 
     // 이름과 전화번호 사이 여백
-    showEl.style.gap = (portrait ? H*0.07 : H*0.09)+'px';
+    showEl.style.gap = (portrait ? H*0.07 : H*0.06)+'px';
 
     if(!data.tel){                     // 이름만
       fitOne(nameEl, availW, H*0.80);
@@ -224,9 +225,9 @@
     } else if(portrait){               // 세로: 번호를 3줄로 크게
       fitOne(nameEl, availW, H*0.28);
       fitLines(telEl, telLines(data.tel), availW, H*0.54);
-    } else {                           // 가로: 번호 한 줄
-      fitOne(nameEl, availW, H*0.46);
-      fitLines(telEl, [data.tel], availW, H*0.26);
+    } else {                           // 가로: 이름 작게 / 번호 크게
+      fitOne(nameEl, availW, H*0.26);
+      fitLines(telEl, [data.tel], availW, H*0.48);
     }
     renderRecent();
   }
@@ -308,11 +309,38 @@
   $('bReset').onclick=()=>{ nameI.value=''; telI.value=''; nameI.focus(); };
   $('bClear').onclick=()=>{ data.name=''; data.tel=''; save(); render(); poke(); };
   $('bTheme').onclick=()=>{ data.dark=!data.dark; save(); render(); poke(); };
-  $('bFull').onclick=()=>{
-    if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
-    else document.exitFullscreen?.();
+  /* 우하단 버튼: 현재 상태에 따라 들어가기 / 나가기 */
+  const bFullEl=$('bFull');
+  function updateFullBtn(){
+    if(isAppMode())                     bFullEl.textContent='✕ 앱 닫기';
+    else if(document.fullscreenElement) bFullEl.textContent='✕ 나가기';
+    else                                bFullEl.textContent='⛶ 전체화면';
+  }
+  function exitFull(){
+    if(document.fullscreenElement){
+      const p=document.exitFullscreen?.();
+      if(p&&p.catch) p.catch(()=>{});
+    }
+  }
+  bFullEl.onclick=()=>{
+    if(isAppMode()){                    // 홈 화면 앱으로 실행 중 → 앱 종료 시도
+      try{ window.close(); }catch(e){}
+      setTimeout(()=>{ alert('뒤로가기 제스처(화면 가장자리에서 안쪽으로 쓸기)로 나갈 수 있습니다.'); },400);
+      return;
+    }
+    if(document.fullscreenElement) exitFull(); else goFull();
     poke();
   };
+  document.addEventListener('fullscreenchange',()=>{
+    updateFullBtn();
+    if(document.fullscreenElement) hideBtns();  // 들어갈 땐 계속 숨김
+    else poke();                                // 나왔을 때만 잠시 표시
+    setTimeout(render,300);             // 화면 크기 바뀌었으니 글자 재계산
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape' && document.fullscreenElement) exitFull();
+  });
+  updateFullBtn();
 
   telI.addEventListener('input',e=>{ e.target.value=fmtTel(e.target.value); });
   nameI.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); telI.focus(); } });
