@@ -206,8 +206,9 @@
     const W=window.innerWidth, H=window.innerHeight;
     const availW = W*0.97;
     const portrait = H >= W;          // 세로 모드
-    const gap = H*0.02;
-    showEl.style.gap = gap+'px';
+
+    // 이름과 전화번호 사이 여백
+    showEl.style.gap = (portrait ? H*0.07 : H*0.09)+'px';
 
     if(!data.tel){                     // 이름만
       fitOne(nameEl, availW, H*0.80);
@@ -216,11 +217,11 @@
       nameEl.style.fontSize='0px';
       fitLines(telEl, portrait ? telLines(data.tel) : [data.tel], availW, H*0.80);
     } else if(portrait){               // 세로: 번호를 3줄로 크게
-      fitOne(nameEl, availW, H*0.30);
-      fitLines(telEl, telLines(data.tel), availW, H*0.60);
+      fitOne(nameEl, availW, H*0.28);
+      fitLines(telEl, telLines(data.tel), availW, H*0.54);
     } else {                           // 가로: 번호 한 줄
-      fitOne(nameEl, availW, H*0.52);
-      fitLines(telEl, [data.tel], availW, H*0.30);
+      fitOne(nameEl, availW, H*0.46);
+      fitLines(telEl, [data.tel], availW, H*0.26);
     }
     renderRecent();
   }
