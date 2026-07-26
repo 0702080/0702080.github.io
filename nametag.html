@@ -131,7 +131,7 @@
     · 표시 중에는 화면이 꺼지지 않습니다<br>
     · 표시 중 버튼은 완전히 숨겨집니다 → 화면을 한 번 터치하면 나타남<br>
     · 나가기: 화면 터치 → 우측 아래 <b>✕ 나가기</b> (또는 뒤로가기 제스처)<br>
-    <span style="color:#bbb">버전 v7 (2026-07-26)</span>
+    <span style="color:#bbb">버전 v8 (2026-07-26)</span>
   </div>
 </div>
 
@@ -161,35 +161,47 @@
     return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
   }
 
-  /* 한 줄짜리 요소 크기 맞춤 */
-  function fitOne(el, availW, availH){
-    if(!el.textContent){ el.style.fontSize='0px'; return 0; }
-    let lo=10, hi=1000;
-    for(let i=0;i<22;i++){
-      const mid=(lo+hi)/2;
-      el.style.fontSize=mid+'px';
-      if(el.scrollWidth<=availW && el.scrollHeight<=availH) lo=mid; else hi=mid;
-    }
-    const s=Math.floor(lo); el.style.fontSize=s+'px'; return s;
-  }
-
-  /* 여러 줄(전화번호 분할) 크기 맞춤 */
-  function fitLines(container, lines, availW, availH){
-    container.innerHTML='';
-    if(!lines.length){ container.style.fontSize='0px'; return 0; }
-    const divs=lines.map(t=>{
+  /* 전화번호 줄 구성 */
+  function setTelLines(lines){
+    telEl.innerHTML='';
+    lines.forEach(t=>{
       const d=document.createElement('div');
       d.className='telline'; d.textContent=t;
-      container.appendChild(d); return d;
+      telEl.appendChild(d);
     });
+    telEl.style.display = lines.length ? 'block' : 'none';
+  }
+
+  /* 이름과 전화번호를 "같은 글자 크기"로, 화면에 최대한 크게 */
+  function fitBoth(availW, availH, gap){
+    const hasName = !!nameEl.textContent;
+    const hasTel  = telEl.children.length > 0;
+    nameEl.style.display = hasName ? 'block' : 'none';
+    if(!hasName && !hasTel) return 0;
+
     let lo=10, hi=1000;
-    for(let i=0;i<22;i++){
+    for(let i=0;i<24;i++){
       const mid=(lo+hi)/2;
-      container.style.fontSize=mid+'px';
-      let maxW=0; for(const d of divs) if(d.scrollWidth>maxW) maxW=d.scrollWidth;
-      if(maxW<=availW && container.scrollHeight<=availH) lo=mid; else hi=mid;
+      nameEl.style.fontSize=mid+'px';
+      telEl.style.fontSize=mid+'px';
+
+      let ok=true;
+      if(hasName && nameEl.scrollWidth>availW) ok=false;
+      if(ok && hasTel){
+        for(const d of telEl.children) if(d.scrollWidth>availW){ ok=false; break; }
+      }
+      if(ok){
+        const h=(hasName?nameEl.scrollHeight:0)
+              + (hasTel ?telEl.scrollHeight :0)
+              + ((hasName&&hasTel)?gap:0);
+        if(h>availH) ok=false;
+      }
+      if(ok) lo=mid; else hi=mid;
     }
-    const s=Math.floor(lo); container.style.fontSize=s+'px'; return s;
+    const s=Math.floor(lo);
+    nameEl.style.fontSize=s+'px';
+    telEl.style.fontSize=s+'px';
+    return s;
   }
 
   /* 전화번호를 줄로 분할: 010- / 9198- / 2020 */
@@ -208,28 +220,22 @@
     const has=!!(data.name||data.tel);
     emptyEl.style.display = has ? 'none' : 'block';
     nameEl.textContent = data.name||'';
-    if(!has){ telEl.innerHTML=''; return; }
+    if(!has){ setTelLines([]); nameEl.style.display='none'; return; }
 
     const W=window.innerWidth, H=window.innerHeight;
     const availW = W*0.97;
     const portrait = H >= W;          // 세로 모드
 
     // 이름과 전화번호 사이 여백
-    showEl.style.gap = (portrait ? H*0.07 : H*0.06)+'px';
+    const gap = portrait ? H*0.07 : H*0.06;
+    showEl.style.gap = gap+'px';
 
-    if(!data.tel){                     // 이름만
-      fitOne(nameEl, availW, H*0.80);
-      telEl.innerHTML='';
-    } else if(!data.name){             // 번호만
-      nameEl.style.fontSize='0px';
-      fitLines(telEl, portrait ? telLines(data.tel) : [data.tel], availW, H*0.80);
-    } else if(portrait){               // 세로: 번호를 3줄로 크게
-      fitOne(nameEl, availW, H*0.28);
-      fitLines(telEl, telLines(data.tel), availW, H*0.54);
-    } else {                           // 가로: 이름 작게 / 번호 크게
-      fitOne(nameEl, availW, H*0.26);
-      fitLines(telEl, [data.tel], availW, H*0.48);
-    }
+    // 세로면 번호를 3줄로, 가로면 한 줄로
+    setTelLines(data.tel ? (portrait ? telLines(data.tel) : [data.tel]) : []);
+
+    // 이름 · 전화번호를 같은 크기로 최대한 크게
+    fitBoth(availW, H*0.88, gap);
+
     renderRecent();
   }
 
