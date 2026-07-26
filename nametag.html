@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffffff">
 <title>명찰</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏷️%3C/text%3E%3C/svg%3E">
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -41,8 +43,9 @@
   }
 
   /* ── 코너 버튼 (사진 방해 최소화) ── */
-  .btns{position:fixed;inset:0;pointer-events:none;transition:opacity .5s;}
-  .btns.fade{opacity:.05;}
+  .btns{position:fixed;inset:0;pointer-events:none;transition:opacity .35s;}
+  .btns.hidden{opacity:0;}
+  .btns.hidden .btn{pointer-events:none;}   /* 안 보일 땐 눌리지도 않게 */
   .btn{
     position:absolute;pointer-events:auto;
     background:rgba(128,128,128,.16);
@@ -126,7 +129,7 @@
     · 버튼을 누르면 바로 전체화면으로 크게 표시됩니다<br>
     · 세로로 들면 전화번호가 3줄로 나뉘어 더 크게 보입니다<br>
     · 표시 중에는 화면이 꺼지지 않습니다<br>
-    · 화면을 한 번 톡 치면 코너 버튼이 다시 보입니다
+    · 표시 중 버튼은 완전히 숨겨집니다 → 화면을 한 번 터치하면 나타남
   </div>
 </div>
 
@@ -258,24 +261,29 @@
     if(document.visibilityState==='visible' && !editEl.classList.contains('on')) keepAwake(true);
   });
 
-  /* 버튼 자동 흐려짐 */
-  let fadeT;
-  function poke(){
-    btns.classList.remove('fade');
-    clearTimeout(fadeT);
-    fadeT=setTimeout(()=>btns.classList.add('fade'),3000);
+  /* 버튼: 평소엔 완전히 숨김, 화면을 터치하면 나타남 */
+  let hideT;
+  function hideBtns(){ clearTimeout(hideT); btns.classList.add('hidden'); }
+  function poke(){                       // 터치 시 4초간 표시
+    clearTimeout(hideT);
+    btns.classList.remove('hidden');
+    if (data.name || data.tel) hideT=setTimeout(()=>btns.classList.add('hidden'),4000);
   }
   showEl.addEventListener('pointerdown',poke);
-  poke();
 
   function openEdit(){
     nameI.value=data.name; telI.value=data.tel;
     editEl.classList.add('on'); keepAwake(false);
     setTimeout(()=>nameI.focus(),60);
   }
-  /* 전체화면 진입 (사용자 클릭/엔터 제스처 안에서만 동작) */
+  /* 홈 화면 앱으로 실행 중이면 이미 전체화면 → 크롬 안내문구 안 뜸 */
+  function isAppMode(){
+    return window.matchMedia('(display-mode: fullscreen)').matches
+        || window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+  }
   function goFull(){
-    if(document.fullscreenElement) return;
+    if(document.fullscreenElement || isAppMode()) return;
     try{
       const p = document.documentElement.requestFullscreen?.({navigationUI:'hide'});
       if(p && p.catch) p.catch(()=>{});
@@ -290,8 +298,9 @@
     editEl.classList.remove('on');
     nameI.blur(); telI.blur();          // 키보드 내리기
     goFull();                           // 입력 즉시 전체화면
-    render(); poke(); keepAwake(true);
-    setTimeout(render, 350);            // 전체화면 전환 후 글자 크기 재계산
+    render(); keepAwake(true);
+    hideBtns();                         // 버튼 바로 숨김 (사진에 안 나오게)
+    setTimeout(()=>{ render(); hideBtns(); }, 400);  // 전체화면 전환 후 재계산
   }
 
   $('bEdit').onclick=openEdit;
@@ -314,6 +323,8 @@
 
   render();
   keepAwake(true);
+  // 처음 열 때: 내용이 있으면 버튼 숨김, 비어 있으면 안내를 위해 표시
+  if (data.name || data.tel) hideBtns(); else poke();
 })();
 </script>
 </body>
