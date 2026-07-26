@@ -130,7 +130,8 @@
     · 세로로 들면 전화번호가 3줄로 나뉘어 더 크게 보입니다<br>
     · 표시 중에는 화면이 꺼지지 않습니다<br>
     · 표시 중 버튼은 완전히 숨겨집니다 → 화면을 한 번 터치하면 나타남<br>
-    · 나가기: 화면 터치 → 우측 아래 <b>✕ 나가기</b> (또는 뒤로가기 제스처)
+    · 나가기: 화면 터치 → 우측 아래 <b>✕ 나가기</b> (또는 뒤로가기 제스처)<br>
+    <span style="color:#bbb">버전 v7 (2026-07-26)</span>
   </div>
 </div>
 
@@ -353,6 +354,11 @@
   keepAwake(true);
   // 처음 열 때: 내용이 있으면 버튼 숨김, 비어 있으면 안내를 위해 표시
   if (data.name || data.tel) hideBtns(); else poke();
+
+  /* 서비스워커: 온라인이면 항상 최신본, 오프라인이면 캐시본 */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
 })();
 </script>
 </body>
