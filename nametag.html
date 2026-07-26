@@ -25,45 +25,39 @@
     position:fixed;inset:0;
     display:flex;flex-direction:column;
     align-items:center;justify-content:center;
-    padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));
-    gap:2vh;
+    padding:max(8px,env(safe-area-inset-top)) 6px max(8px,env(safe-area-inset-bottom));
   }
   #name{
-    font-weight:900;line-height:1.05;text-align:center;
-    letter-spacing:-.02em;white-space:nowrap;
+    font-weight:900;line-height:1;text-align:center;
+    letter-spacing:-.03em;white-space:nowrap;
   }
   #tel{
-    font-weight:700;line-height:1.1;text-align:center;
-    white-space:nowrap;opacity:.9;
+    text-align:center;font-weight:900;letter-spacing:-.01em;
     font-variant-numeric:tabular-nums;
   }
+  .telline{line-height:1.0;white-space:nowrap;}
   #empty{
     font-size:5vw;opacity:.35;text-align:center;line-height:1.7;font-weight:600;
   }
 
   /* ── 코너 버튼 (사진 방해 최소화) ── */
-  .btns{
-    position:fixed;inset:0;pointer-events:none;
-    transition:opacity .5s;
-  }
-  .btns.fade{opacity:.06;}
+  .btns{position:fixed;inset:0;pointer-events:none;transition:opacity .5s;}
+  .btns.fade{opacity:.05;}
   .btn{
     position:absolute;pointer-events:auto;
     background:rgba(128,128,128,.16);
     color:inherit;border:none;border-radius:999px;
-    font-size:15px;font-weight:700;font-family:inherit;
-    padding:11px 18px;cursor:pointer;
-    backdrop-filter:blur(4px);
+    font-size:14px;font-weight:700;font-family:inherit;
+    padding:10px 16px;cursor:pointer;backdrop-filter:blur(4px);
   }
-  #bEdit{top:max(12px,env(safe-area-inset-top));left:12px;}
-  #bTheme{top:max(12px,env(safe-area-inset-top));right:12px;}
-  #bFull{bottom:max(12px,env(safe-area-inset-bottom));right:12px;}
-  #bClear{bottom:max(12px,env(safe-area-inset-bottom));left:12px;}
+  #bEdit{top:max(10px,env(safe-area-inset-top));left:10px;}
+  #bTheme{top:max(10px,env(safe-area-inset-top));right:10px;}
+  #bFull{bottom:max(10px,env(safe-area-inset-bottom));right:10px;}
+  #bClear{bottom:max(10px,env(safe-area-inset-bottom));left:10px;}
 
   /* ── 편집 화면 ── */
   #edit{
-    position:fixed;inset:0;z-index:10;
-    background:#fff;color:#111;
+    position:fixed;inset:0;z-index:10;background:#fff;color:#111;
     display:none;flex-direction:column;
     padding:max(24px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));
     gap:16px;overflow-y:auto;
@@ -128,93 +122,137 @@
   <label style="margin-top:8px">최근 입력</label>
   <div class="recent" id="recent"></div>
   <div class="hint">
-    · 전화번호는 숫자만 입력하면 하이픈이 자동으로 붙습니다<br>
-    · 표시 화면에서는 화면이 꺼지지 않습니다<br>
-    · 코너 버튼은 잠시 후 흐려져 사진에 거의 안 나옵니다
+    · 숫자만 입력하면 하이픈이 자동으로 붙습니다<br>
+    · 세로로 들면 전화번호가 3줄로 나뉘어 더 크게 보입니다<br>
+    · 표시 중에는 화면이 꺼지지 않습니다
   </div>
 </div>
 
 <script>
 (function(){
   const $ = id => document.getElementById(id);
-  const showEl = $('show'), nameEl = $('name'), telEl = $('tel'), emptyEl = $('empty');
-  const editEl = $('edit'), nameI = $('name_i'), telI = $('tel_i'), recentEl = $('recent');
-  const btns = $('btns');
-  const LS = 'nametag_v1';
+  const showEl=$('show'), nameEl=$('name'), telEl=$('tel'), emptyEl=$('empty');
+  const editEl=$('edit'), nameI=$('name_i'), telI=$('tel_i'), recentEl=$('recent');
+  const btns=$('btns');
+  const LS='nametag_v1';
 
-  let data = { name:'', tel:'', dark:false, recent:[] };
-  try { Object.assign(data, JSON.parse(localStorage.getItem(LS) || '{}')); } catch(e){}
-
-  const save = () => { try { localStorage.setItem(LS, JSON.stringify(data)); } catch(e){} };
+  let data={name:'',tel:'',dark:false,recent:[]};
+  try{ Object.assign(data, JSON.parse(localStorage.getItem(LS)||'{}')); }catch(e){}
+  const save=()=>{ try{ localStorage.setItem(LS, JSON.stringify(data)); }catch(e){} };
 
   /* 전화번호 자동 하이픈 */
   function fmtTel(v){
-    const d = (v||'').replace(/\D/g,'').slice(0,11);
-    if (d.length < 4) return d;
-    if (d.startsWith('02')) {
-      if (d.length <= 5) return d.slice(0,2)+'-'+d.slice(2);
-      if (d.length <= 9) return d.slice(0,2)+'-'+d.slice(2,5)+'-'+d.slice(5);
+    const d=(v||'').replace(/\D/g,'').slice(0,11);
+    if(d.length<4) return d;
+    if(d.startsWith('02')){
+      if(d.length<=5) return d.slice(0,2)+'-'+d.slice(2);
+      if(d.length<=9) return d.slice(0,2)+'-'+d.slice(2,5)+'-'+d.slice(5);
       return d.slice(0,2)+'-'+d.slice(2,6)+'-'+d.slice(6,10);
     }
-    if (d.length <= 7) return d.slice(0,3)+'-'+d.slice(3);
-    if (d.length <= 10) return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+    if(d.length<=7) return d.slice(0,3)+'-'+d.slice(3);
+    if(d.length<=10) return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
     return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
   }
 
-  /* 화면 폭에 맞춰 글자 크기 자동 조절 */
-  function fit(el, maxVH){
-    if (!el.textContent) { el.style.fontSize = '0px'; return; }
-    const availW = window.innerWidth  * 0.92;
-    const availH = window.innerHeight * maxVH;
-    let lo = 10, hi = 900;
-    for (let i=0;i<22;i++){
-      const mid = (lo+hi)/2;
-      el.style.fontSize = mid+'px';
-      if (el.scrollWidth <= availW && el.scrollHeight <= availH) lo = mid; else hi = mid;
+  /* 한 줄짜리 요소 크기 맞춤 */
+  function fitOne(el, availW, availH){
+    if(!el.textContent){ el.style.fontSize='0px'; return 0; }
+    let lo=10, hi=1000;
+    for(let i=0;i<22;i++){
+      const mid=(lo+hi)/2;
+      el.style.fontSize=mid+'px';
+      if(el.scrollWidth<=availW && el.scrollHeight<=availH) lo=mid; else hi=mid;
     }
-    el.style.fontSize = Math.floor(lo)+'px';
+    const s=Math.floor(lo); el.style.fontSize=s+'px'; return s;
+  }
+
+  /* 여러 줄(전화번호 분할) 크기 맞춤 */
+  function fitLines(container, lines, availW, availH){
+    container.innerHTML='';
+    if(!lines.length){ container.style.fontSize='0px'; return 0; }
+    const divs=lines.map(t=>{
+      const d=document.createElement('div');
+      d.className='telline'; d.textContent=t;
+      container.appendChild(d); return d;
+    });
+    let lo=10, hi=1000;
+    for(let i=0;i<22;i++){
+      const mid=(lo+hi)/2;
+      container.style.fontSize=mid+'px';
+      let maxW=0; for(const d of divs) if(d.scrollWidth>maxW) maxW=d.scrollWidth;
+      if(maxW<=availW && container.scrollHeight<=availH) lo=mid; else hi=mid;
+    }
+    const s=Math.floor(lo); container.style.fontSize=s+'px'; return s;
+  }
+
+  /* 전화번호를 줄로 분할: 010- / 9198- / 2020 */
+  function telLines(tel){
+    if(!tel) return [];
+    const parts=tel.split('-').filter(Boolean);
+    if(parts.length<=1) return parts;
+    return parts.map((p,i)=> i<parts.length-1 ? p+'-' : p);
   }
 
   function render(){
     document.body.classList.toggle('dark', !!data.dark);
     document.querySelector('meta[name=theme-color]')
       .setAttribute('content', data.dark ? '#000000' : '#ffffff');
-    nameEl.textContent = data.name || '';
-    telEl.textContent  = data.tel  || '';
-    const has = !!(data.name || data.tel);
+
+    const has=!!(data.name||data.tel);
     emptyEl.style.display = has ? 'none' : 'block';
-    if (has){ fit(nameEl, data.tel ? 0.46 : 0.62); fit(telEl, 0.17); }
+    nameEl.textContent = data.name||'';
+    if(!has){ telEl.innerHTML=''; return; }
+
+    const W=window.innerWidth, H=window.innerHeight;
+    const availW = W*0.97;
+    const portrait = H >= W;          // 세로 모드
+    const gap = H*0.02;
+    showEl.style.gap = gap+'px';
+
+    if(!data.tel){                     // 이름만
+      fitOne(nameEl, availW, H*0.80);
+      telEl.innerHTML='';
+    } else if(!data.name){             // 번호만
+      nameEl.style.fontSize='0px';
+      fitLines(telEl, portrait ? telLines(data.tel) : [data.tel], availW, H*0.80);
+    } else if(portrait){               // 세로: 번호를 3줄로 크게
+      fitOne(nameEl, availW, H*0.30);
+      fitLines(telEl, telLines(data.tel), availW, H*0.60);
+    } else {                           // 가로: 번호 한 줄
+      fitOne(nameEl, availW, H*0.52);
+      fitLines(telEl, [data.tel], availW, H*0.30);
+    }
     renderRecent();
   }
 
   function renderRecent(){
-    recentEl.innerHTML = '';
-    (data.recent||[]).slice(0,8).forEach(r => {
-      const b = document.createElement('button');
-      b.className = 'chip';
-      b.textContent = r.name || r.tel;
-      b.onclick = () => { nameI.value = r.name; telI.value = r.tel; };
+    recentEl.innerHTML='';
+    (data.recent||[]).slice(0,8).forEach(r=>{
+      const b=document.createElement('button');
+      b.className='chip'; b.textContent=r.name||r.tel;
+      b.onclick=()=>{ nameI.value=r.name; telI.value=r.tel; };
       recentEl.appendChild(b);
     });
   }
-
-  function pushRecent(name, tel){
-    if (!name && !tel) return;
-    data.recent = (data.recent||[]).filter(r => !(r.name===name && r.tel===tel));
-    data.recent.unshift({name, tel});
-    data.recent = data.recent.slice(0,8);
+  function pushRecent(name,tel){
+    if(!name&&!tel) return;
+    data.recent=(data.recent||[]).filter(r=>!(r.name===name&&r.tel===tel));
+    data.recent.unshift({name,tel});
+    data.recent=data.recent.slice(0,8);
   }
 
   /* 화면 꺼짐 방지 */
-  let wl = null;
+  let wl=null;
   async function keepAwake(on){
-    try {
-      if (on && 'wakeLock' in navigator && !wl){ wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release',()=>{wl=null;}); }
-      else if (!on && wl){ await wl.release(); wl = null; }
-    } catch(e){}
+    try{
+      if(on && 'wakeLock' in navigator && !wl){
+        wl=await navigator.wakeLock.request('screen');
+        wl.addEventListener('release',()=>{wl=null;});
+      } else if(!on && wl){ await wl.release(); wl=null; }
+    }catch(e){}
   }
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && !editEl.classList.contains('on')) keepAwake(true);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible' && !editEl.classList.contains('on')) keepAwake(true);
   });
 
   /* 버튼 자동 흐려짐 */
@@ -222,42 +260,40 @@
   function poke(){
     btns.classList.remove('fade');
     clearTimeout(fadeT);
-    fadeT = setTimeout(() => btns.classList.add('fade'), 3000);
+    fadeT=setTimeout(()=>btns.classList.add('fade'),3000);
   }
-  showEl.addEventListener('pointerdown', poke);
+  showEl.addEventListener('pointerdown',poke);
   poke();
 
-  /* 편집 열고 닫기 */
   function openEdit(){
-    nameI.value = data.name; telI.value = data.tel;
-    editEl.classList.add('on');
-    keepAwake(false);
-    setTimeout(()=>nameI.focus(), 60);
+    nameI.value=data.name; telI.value=data.tel;
+    editEl.classList.add('on'); keepAwake(false);
+    setTimeout(()=>nameI.focus(),60);
   }
   function applyEdit(){
-    data.name = nameI.value.trim();
-    data.tel  = fmtTel(telI.value);
-    pushRecent(data.name, data.tel);
+    data.name=nameI.value.trim();
+    data.tel=fmtTel(telI.value);
+    pushRecent(data.name,data.tel);
     save(); editEl.classList.remove('on'); render(); poke(); keepAwake(true);
   }
 
-  $('bEdit').onclick  = openEdit;
-  $('bShow').onclick  = applyEdit;
-  $('bReset').onclick = () => { nameI.value=''; telI.value=''; nameI.focus(); };
-  $('bClear').onclick = () => { data.name=''; data.tel=''; save(); render(); poke(); };
-  $('bTheme').onclick = () => { data.dark = !data.dark; save(); render(); poke(); };
-  $('bFull').onclick  = () => {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  $('bEdit').onclick=openEdit;
+  $('bShow').onclick=applyEdit;
+  $('bReset').onclick=()=>{ nameI.value=''; telI.value=''; nameI.focus(); };
+  $('bClear').onclick=()=>{ data.name=''; data.tel=''; save(); render(); poke(); };
+  $('bTheme').onclick=()=>{ data.dark=!data.dark; save(); render(); poke(); };
+  $('bFull').onclick=()=>{
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
     else document.exitFullscreen?.();
     poke();
   };
 
-  telI.addEventListener('input', e => { e.target.value = fmtTel(e.target.value); });
-  nameI.addEventListener('keydown', e => { if (e.key==='Enter'){ e.preventDefault(); telI.focus(); } });
-  telI .addEventListener('keydown', e => { if (e.key==='Enter'){ e.preventDefault(); applyEdit(); } });
+  telI.addEventListener('input',e=>{ e.target.value=fmtTel(e.target.value); });
+  nameI.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); telI.focus(); } });
+  telI.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); applyEdit(); } });
 
-  window.addEventListener('resize', () => render());
-  window.addEventListener('orientationchange', () => setTimeout(render, 250));
+  window.addEventListener('resize',render);
+  window.addEventListener('orientationchange',()=>setTimeout(render,250));
 
   render();
   keepAwake(true);
