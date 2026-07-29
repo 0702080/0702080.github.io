@@ -108,12 +108,12 @@
   @media (min-width:700px){
     .fields{flex-direction:row;align-items:flex-end;gap:12px;}
     .fld{gap:6px;}
-    .fld:nth-child(1){flex:1 1 0;min-width:120px;}
-    .fld:nth-child(2){flex:1.35 1 0;min-width:170px;}
-    #mainBtns{flex:0 0 auto;}
+    .fld:nth-child(1){flex:0 1 240px;min-width:130px;}   /* 이름 */
+    .fld:nth-child(2){flex:0 1 250px;min-width:150px;}   /* 전화번호 — 폭 축소 */
+    #mainBtns{flex:1 1 auto;}                            /* 남은 폭 전부 차지 */
     .fields input{font-size:24px;padding:13px 15px;}
-    #mainBtns .go{font-size:17px;padding:15px 26px;white-space:nowrap;}
-    #mainBtns .sub{font-size:15px;padding:15px 18px;white-space:nowrap;}
+    #mainBtns .go{flex:1;font-size:19px;padding:15px 20px;white-space:nowrap;}
+    #mainBtns .sub{flex:0 0 auto;font-size:15px;padding:15px 18px;white-space:nowrap;}
     #edit{padding-top:20px;}
   }
   .go{
@@ -157,15 +157,15 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v11</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v12</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
       <input id="name_i" type="text" placeholder="김재식" autocomplete="off" enterkeyhint="next">
     </div>
     <div class="fld">
-      <label for="tel_i">전화번호</label>
-      <input id="tel_i" type="tel" inputmode="numeric" placeholder="01012345678" autocomplete="off" enterkeyhint="done">
+      <label for="tel_i">전화번호 <span style="font-weight:400;color:#999">(010 생략, 8자리)</span></label>
+      <input id="tel_i" type="tel" inputmode="numeric" placeholder="33334444" autocomplete="off" enterkeyhint="done">
     </div>
     <div class="row" id="mainBtns">
       <button class="go" id="bShow">전체화면 보기</button>
@@ -228,7 +228,17 @@
 
   /* 전화번호 자동 하이픈 */
   function fmtTel(v){
-    const d=(v||'').replace(/\D/g,'').slice(0,11);
+    let d=(v||'').replace(/\D/g,'');
+    if(!d) return '';
+    // 0으로 시작하지 않는 8자리 이하 = 010 생략 입력 → 010 자동 부여
+    if(d[0]!=='0' && d.length<=8) d='010'+d;
+    // 휴대폰(010): 010-XXXX-XXXX 로 진행형 표시
+    if(d.startsWith('010')){
+      const r=d.slice(3,11);
+      if(!r) return '010';
+      return r.length<=4 ? '010-'+r : '010-'+r.slice(0,4)+'-'+r.slice(4);
+    }
+    d=d.slice(0,11);
     if(d.length<4) return d;
     if(d.startsWith('02')){
       if(d.length<=5) return d.slice(0,2)+'-'+d.slice(2);
