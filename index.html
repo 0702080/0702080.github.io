@@ -55,6 +55,18 @@
 
   .telline{line-height:1.0;white-space:nowrap;}
 
+  /* ── 화면에서 바로 고치기 (파워포인트식 인라인 편집) ── */
+  #name,#tel{cursor:text;}
+  #name.editing,#tel.editing{
+    outline:3px dashed rgba(128,128,128,.5);
+    outline-offset:10px;border-radius:10px;
+  }
+  #name[contenteditable],#tel .telline[contenteditable]{
+    -webkit-user-select:text;user-select:text;
+    min-width:1.2em;min-height:1em;
+  }
+  #name[contenteditable]:focus,#tel .telline[contenteditable]:focus{outline:none;}
+
   #empty{
     font-size:5vw;opacity:.35;text-align:center;line-height:1.7;font-weight:600;
   }
@@ -157,7 +169,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v13</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v14</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -266,7 +278,7 @@
 
   /* 이름과 전화번호를 "같은 글자 크기"로, 화면에 최대한 크게 */
   function fitBoth(availW, availH, gap){
-    const hasName = !!nameEl.textContent;
+    const hasName = !!nameEl.textContent || nameEl.isContentEditable;  // 편집 중엔 비어도 표시
     const hasTel  = telEl.children.length > 0;
     nameEl.style.display = hasName ? 'block' : 'none';
     if(!hasName && !hasTel) return 0;
@@ -310,14 +322,92 @@
   }
 
 
-  function render(){
+  /* ───── 전체화면에서 바로 고치기 (파워포인트식) ─────
+     이름·전화번호를 클릭하면 그 자리에서 커서가 생겨 수정 가능 */
+  let telEditing = false, inlineBackup = null;
+
+  function setCE(el){                        // plaintext-only 우선, 미지원 시 true
+    el.setAttribute('contenteditable','plaintext-only');
+    if(el.contentEditable !== 'plaintext-only') el.setAttribute('contenteditable','true');
+  }
+  function selAll(el){
+    const r=document.createRange(); r.selectNodeContents(el);
+    const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  function caretEnd(el){
+    const r=document.createRange(); r.selectNodeContents(el); r.collapse(false);
+    const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  function isInlineEditing(){ return nameEl.isContentEditable || telEditing; }
+
+  /* 이름 인라인 편집 */
+  function startEditName(){
+    if(nameEl.isContentEditable) return;
+    endEditTel(true);
+    inlineBackup = data.name;
+    setCE(nameEl);
+    nameEl.classList.add('editing');
+    render({keepDom:true});
+    nameEl.focus(); selAll(nameEl);
+  }
+  function endEditName(commit){
+    if(!nameEl.isContentEditable) return;
+    const txt = nameEl.textContent.replace(/\s+/g,' ').trim();
+    nameEl.removeAttribute('contenteditable');
+    nameEl.classList.remove('editing');
+    data.name = commit ? txt : inlineBackup;
+    if(commit){ pushRecent(data.name, data.tel); save(); MIRROR.publish(); }
+    render();
+  }
+
+  /* 전화번호 인라인 편집 (편집 중엔 한 줄, 입력하면 자동 하이픈) */
+  function onTelInput(e){
+    const el = e.currentTarget;
+    const f = fmtTel(el.textContent);
+    if(el.textContent !== f){ el.textContent = f; caretEnd(el); }
+    data.tel = f;
+    render({keepDom:true});
+  }
+  function startEditTel(){
+    if(telEditing) return;
+    endEditName(true);
+    inlineBackup = data.tel;
+    telEditing = true;
+    telEl.classList.add('editing');
+    render();                                  // 한 줄로 다시 그림
+    const line = telEl.firstElementChild;
+    if(!line){ telEditing=false; telEl.classList.remove('editing'); return; }
+    setCE(line);
+    line.setAttribute('inputmode','numeric');
+    line.addEventListener('input', onTelInput);
+    line.addEventListener('blur', ()=>endEditTel(true));
+    line.focus(); selAll(line);
+  }
+  function endEditTel(commit){
+    if(!telEditing) return;
+    const line = telEl.firstElementChild;
+    if(line){
+      line.removeEventListener('input', onTelInput);
+      line.removeAttribute('contenteditable');
+    }
+    telEditing = false;
+    telEl.classList.remove('editing');
+    data.tel = commit ? fmtTel(data.tel) : inlineBackup;
+    if(commit){ pushRecent(data.name, data.tel); save(); MIRROR.publish(); }
+    render();
+  }
+
+  function render(opts){
+    opts = opts || {};
     document.body.classList.toggle('dark', !!data.dark);
     document.querySelector('meta[name=theme-color]')
       .setAttribute('content', data.dark ? '#000000' : '#ffffff');
 
-    const has=!!(data.name||data.tel);
+    const editingNow = nameEl.isContentEditable || telEditing;
+    const has = !!(data.name||data.tel) || editingNow;
     emptyEl.style.display = has ? 'none' : 'block';
-    nameEl.textContent = data.name||'';
+    // 편집 중에는 DOM을 갈아엎지 않음 (커서 유지)
+    if(!opts.keepDom && !nameEl.isContentEditable) nameEl.textContent = data.name||'';
     if(!has){ setTelLines([]); nameEl.style.display='none'; return; }
 
     const W=window.innerWidth, H=window.innerHeight;
@@ -328,8 +418,11 @@
     const gap = portrait ? H*0.07 : H*0.06;
     showEl.style.gap = gap+'px';
 
-    // 세로면 번호를 3줄로, 가로면 한 줄로
-    setTelLines(data.tel ? (portrait ? telLines(data.tel) : [data.tel]) : []);
+    // 세로면 번호를 3줄로, 가로면 한 줄로 (편집 중엔 한 줄)
+    if(!opts.keepDom){
+      setTelLines(telEditing ? [data.tel||'']
+                : (data.tel ? (portrait ? telLines(data.tel) : [data.tel]) : []));
+    }
 
     // 이름 · 전화번호를 같은 크기로 최대한 크게
     fitBoth(availW, H*0.88, gap);
@@ -382,6 +475,21 @@
     if (data.name || data.tel) hideT=setTimeout(()=>btns.classList.add('hidden'),4000);
   }
   showEl.addEventListener('pointerdown',poke);
+
+  /* 이름·전화번호를 클릭하면 그 자리에서 편집 시작 */
+  nameEl.addEventListener('click', e=>{ e.stopPropagation(); startEditName(); });
+  telEl .addEventListener('click', e=>{ e.stopPropagation(); startEditTel();  });
+  nameEl.addEventListener('blur',  ()=>endEditName(true));
+  document.addEventListener('keydown', e=>{
+    if(!isInlineEditing()) return;
+    if(e.key==='Enter'){
+      e.preventDefault();
+      if(nameEl.isContentEditable) endEditName(true); else endEditTel(true);
+    } else if(e.key==='Escape'){
+      e.preventDefault(); e.stopPropagation();
+      if(nameEl.isContentEditable) endEditName(false); else endEditTel(false);
+    }
+  }, true);
 
   function openEdit(){
     nameI.value=data.name; telI.value=data.tel;
@@ -465,7 +573,7 @@
 
 
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape' && document.fullscreenElement) exitFull();
+    if(e.key==='Escape' && document.fullscreenElement && !isInlineEditing()) exitFull();
   });
   updateFullBtn();
 
@@ -530,6 +638,7 @@
           try{
             const o=await decrypt(payload.toString());
             if(!o || o.from===myId) return;                 // 내가 보낸 건 무시
+            if(isInlineEditing()) return;                   // 편집 중엔 덮어쓰지 않음
             if(o.name===data.name && o.tel===data.tel) return;
             data.name=o.name||''; data.tel=o.tel||'';
             save(); render(); hideBtns();                   // 받은 쪽은 바로 표시
