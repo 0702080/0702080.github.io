@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#FBEEDC">
 
 <title>촬영명찰</title>
 <link rel="manifest" href="manifest.json">
@@ -17,13 +17,26 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
+  /* ── 색상 팔레트 ── */
+  :root{
+    --cream:#FBEEDC;   /* 배경 */
+    --lilac:#BFA7CC;   /* 이름 */
+    --plum:#8B6E9E;    /* 전화번호 */
+    --rose:#E4C1D9;
+    --mist:#D8CEDD;
+    --deep:#4A3B57;    /* 어두운 배경 */
+  }
   body{
     font-family:'Malgun Gothic','맑은 고딕','Noto Sans KR',-apple-system,sans-serif;
-    background:#fff;color:#111;
+    background:var(--cream);color:var(--plum);
     transition:background .2s,color .2s;
     -webkit-user-select:none;user-select:none;
   }
-  body.dark{background:#000;color:#fff;}
+  #name{color:var(--lilac);}
+  #tel {color:var(--plum);}
+  body.dark{background:var(--deep);}
+  body.dark #name{color:var(--rose);}
+  body.dark #tel {color:var(--cream);}
 
 
 
@@ -93,7 +106,7 @@
 
   /* ── 편집 화면 ── */
   #edit{
-    position:fixed;inset:0;z-index:10;background:#fff;color:#111;
+    position:fixed;inset:0;z-index:10;background:#FFF9F1;color:#3E3348;
     display:none;flex-direction:column;
     padding:max(24px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));
     gap:16px;overflow-y:auto;
@@ -108,7 +121,7 @@
     background:#fafafa;color:#111;
   }
 
-  input:focus{outline:none;border-color:#1E3A5F;background:#fff;}
+  input:focus{outline:none;border-color:var(--plum);background:#fff;}
   #tel_i{font-variant-numeric:tabular-nums;}
   .row{display:flex;gap:10px;}
   /* 입력 영역: 기본(세로 화면)은 위아래로 쌓임 */
@@ -131,7 +144,7 @@
   .go{
     flex:1;font-family:inherit;font-size:20px;font-weight:800;
     padding:20px;border:none;border-radius:14px;cursor:pointer;
-    background:#1E3A5F;color:#fff;
+    background:var(--plum);color:#fff;
   }
   .sub{
     font-family:inherit;font-size:17px;font-weight:700;
@@ -169,7 +182,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v15</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v16</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -401,7 +414,7 @@
     opts = opts || {};
     document.body.classList.toggle('dark', !!data.dark);
     document.querySelector('meta[name=theme-color]')
-      .setAttribute('content', data.dark ? '#000000' : '#ffffff');
+      .setAttribute('content', data.dark ? '#4A3B57' : '#FBEEDC');
 
     const editingNow = nameEl.isContentEditable || telEditing;
     const has = !!(data.name||data.tel) || editingNow;
