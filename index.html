@@ -68,6 +68,20 @@
 
   .telline{line-height:1.0;white-space:nowrap;}
 
+  /* 전화번호 편집용 실제 입력칸 (모바일 키보드 확실히 열림) */
+  #telLive{
+    display:none;width:100%;
+    font-family:inherit;font-weight:900;letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums;line-height:1;
+    text-align:center;background:transparent;color:inherit;
+    border:none;outline:none;padding:0;margin:0;
+    -webkit-user-select:text;user-select:text;
+    -webkit-text-stroke:0.028em currentColor;
+    paint-order:stroke fill;
+  }
+  #telLive.on{display:block;}
+  #telLive:focus{background:transparent;border:none;outline:none;}
+
   /* ── 화면에서 바로 고치기 (파워포인트식 인라인 편집) ── */
   #name,#tel{cursor:text;}
   #name.editing,#tel.editing{
@@ -203,6 +217,7 @@
 <div id="show">
   <div id="name"></div>
   <div id="tel"></div>
+  <input id="telLive" type="tel" inputmode="numeric" autocomplete="off" enterkeyhint="done">
   <div id="empty">이름과 전화번호를 입력하세요<br>왼쪽 위 <b>편집</b> 버튼</div>
 </div>
 
@@ -217,7 +232,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v18</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v19</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -426,65 +441,58 @@
     render();
   }
 
-  /* 전화번호 인라인 편집 (편집 중엔 한 줄, 입력하면 자동 하이픈) */
-  function onTelInput(e){
-    const el = e.currentTarget;
-    const f = fmtTel(el.textContent);
-    if(el.textContent !== f){ el.textContent = f; caretEnd(el); }
+  /* 전화번호 인라인 편집 — 실제 <input>을 겹쳐 써서 모바일 키보드를 확실히 띄움 */
+  const telLive = $('telLive');
+  telLive.addEventListener('input', ()=>{
+    const f = fmtTel(telLive.value);
+    if(telLive.value !== f) telLive.value = f;
     data.tel = f;
-    render({keepDom:true});
-  }
-  function startEditTel(touched){
+  });
+  telLive.addEventListener('blur', ()=>endEditTel(true));
+  telLive.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); endEditTel(true); }
+    else if(e.key==='Escape'){ e.preventDefault(); endEditTel(false); }
+  });
+  function startEditTel(){
     if(telEditing) return;
     endEditName(true);
     inlineBackup = data.tel;
     telEditing = true;
-    telEl.classList.add('editing');
 
-    /* ★ 모바일: 터치한 요소를 그대로 살려 써야 포커스·키보드가 열림
-       (DOM을 새로 만들면 제스처가 끊겨 키보드가 안 나옴) */
-    let line = (touched && touched.classList && touched.classList.contains('telline'))
-               ? touched : telEl.firstElementChild;
-    if(!line){
-      line = document.createElement('div');
-      line.className = 'telline';
-      telEl.appendChild(line);
+    // ① 최대 길이 기준으로 글자 크기를 산정 (입력 중 넘치지 않게)
+    setTelLines(['010-0000-0000']);
+    render({keepDom:true});
+    const fs = telEl.style.fontSize;
+
+    // ② 표시용 숫자를 감추고 실제 입력칸으로 교체
+    telEl.style.display = 'none';
+    telLive.style.fontSize = fs;
+    telLive.style.color = colors().tel;
+    telLive.value = data.tel || '';
+    telLive.classList.add('on');
+    void telLive.offsetHeight;                 // 강제 리플로우 후 포커스
+    telLive.focus();
+    if(telLive.setSelectionRange){
+      const n = telLive.value.length;
+      try{ telLive.setSelectionRange(n, n); }catch(e){}
     }
-    Array.prototype.slice.call(telEl.children).forEach(ch=>{
-      if(ch !== line) telEl.removeChild(ch);          // 나머지 줄만 제거
-    });
-    line.textContent = data.tel || '';
-    telEl.style.display = 'block';
 
-    setCE(line);
-    line.setAttribute('inputmode','numeric');
-    line.addEventListener('input', onTelInput);
-    line.addEventListener('blur', ()=>endEditTel(true));
-    line.focus(); selAll(line);
-    render({keepDom:true});                            // 크기만 다시 계산
-
-    /* 그래도 포커스가 안 잡히면(구형 브라우저 등) 입력 화면으로 대체 */
+    // ③ 그래도 포커스가 안 잡히면 입력 화면으로 대체
     setTimeout(()=>{
-      if(!telEditing) return;
-      const sel = getSelection();
-      const inside = sel && sel.anchorNode && line.contains(sel.anchorNode);
-      if(document.activeElement !== line && !inside){
+      if(telEditing && document.activeElement !== telLive){
         endEditTel(false);
         openEdit();
         setTimeout(()=>{ telI.focus(); if(telI.select) telI.select(); }, 80);
       }
-    }, 350);
+    }, 400);
   }
   function endEditTel(commit){
     if(!telEditing) return;
-    const line = telEl.firstElementChild;
-    if(line){
-      line.removeEventListener('input', onTelInput);
-      line.removeAttribute('contenteditable');
-    }
     telEditing = false;
+    telLive.classList.remove('on');
+    telEl.style.display = '';
     telEl.classList.remove('editing');
-    data.tel = commit ? fmtTel(data.tel) : inlineBackup;
+    data.tel = commit ? fmtTel(telLive.value) : inlineBackup;
     if(commit){ pushRecent(data.name, data.tel); save(); MIRROR.publish(); }
     render();
   }
@@ -568,7 +576,7 @@
 
   /* 이름·전화번호를 클릭하면 그 자리에서 편집 시작 */
   nameEl.addEventListener('click', e=>{ e.stopPropagation(); startEditName(); });
-  telEl .addEventListener('click', e=>{ e.stopPropagation(); startEditTel(e.target); });
+  telEl .addEventListener('click', e=>{ e.stopPropagation(); startEditTel(); });
   nameEl.addEventListener('blur',  ()=>endEditName(true));
   /* 이름 ↔ 전화번호 칸 이동 */
   function moveToName(){ endEditTel(true);  startEditName(); }
@@ -660,6 +668,7 @@
     document.body.style.color=c.tel;      // 코너 버튼 글자색도 따라감
     nameEl.style.color=c.name;
     telEl.style.color=c.tel;
+    telLive.style.color=c.tel;
     const m=document.querySelector('meta[name=theme-color]');
     if(m) m.setAttribute('content', c.bg);
   }
