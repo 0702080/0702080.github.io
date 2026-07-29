@@ -500,10 +500,12 @@
     } else if(e.key==='Escape'){
       e.preventDefault(); e.stopPropagation();
       if(nameEl.isContentEditable) endEditName(false); else endEditTel(false);
-    } else if(e.key==='ArrowDown' || e.key==='ArrowUp'){
-      // 위·아래 화살표로 두 칸을 오감 (칸이 둘뿐이라 어느 쪽 키든 전환)
+    } else if(e.key==='ArrowDown'){
       e.preventDefault(); e.stopPropagation();
-      if(nameEl.isContentEditable) moveToTel(); else moveToName();
+      if(nameEl.isContentEditable) moveToTel();    // 이름 → 아래 칸(전화번호)
+    } else if(e.key==='ArrowUp'){
+      e.preventDefault(); e.stopPropagation();
+      if(telEditing) moveToName();                 // 전화번호 → 위 칸(이름)
     }
   }, true);
 
