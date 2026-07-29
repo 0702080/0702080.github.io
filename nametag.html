@@ -99,6 +99,23 @@
   input:focus{outline:none;border-color:#1E3A5F;background:#fff;}
   #tel_i{font-variant-numeric:tabular-nums;}
   .row{display:flex;gap:10px;}
+  /* 입력 영역: 기본(세로 화면)은 위아래로 쌓임 */
+  .fields{display:flex;flex-direction:column;gap:16px;}
+  .fld{display:flex;flex-direction:column;gap:8px;}
+  .fld label{margin-bottom:0;}
+
+  /* PC·가로 화면: 이름·전화번호·버튼을 한 줄로 */
+  @media (min-width:700px){
+    .fields{flex-direction:row;align-items:flex-end;gap:12px;}
+    .fld{gap:6px;}
+    .fld:nth-child(1){flex:1 1 0;min-width:120px;}
+    .fld:nth-child(2){flex:1.35 1 0;min-width:170px;}
+    #mainBtns{flex:0 0 auto;}
+    .fields input{font-size:24px;padding:13px 15px;}
+    #mainBtns .go{font-size:17px;padding:15px 26px;white-space:nowrap;}
+    #mainBtns .sub{font-size:15px;padding:15px 18px;white-space:nowrap;}
+    #edit{padding-top:20px;}
+  }
   .go{
     flex:1;font-family:inherit;font-size:20px;font-weight:800;
     padding:20px;border:none;border-radius:14px;cursor:pointer;
@@ -140,14 +157,20 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v10</span></h1>
-  <label for="name_i">이름</label>
-  <input id="name_i" type="text" placeholder="김재식" autocomplete="off" enterkeyhint="next">
-  <label for="tel_i">전화번호</label>
-  <input id="tel_i" type="tel" inputmode="numeric" placeholder="01012345678" autocomplete="off" enterkeyhint="done">
-  <div class="row">
-    <button class="go" id="bShow">전체화면 보기</button>
-    <button class="sub" id="bReset">비우기</button>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v11</span></h1>
+  <div class="fields">
+    <div class="fld">
+      <label for="name_i">이름</label>
+      <input id="name_i" type="text" placeholder="김재식" autocomplete="off" enterkeyhint="next">
+    </div>
+    <div class="fld">
+      <label for="tel_i">전화번호</label>
+      <input id="tel_i" type="tel" inputmode="numeric" placeholder="01012345678" autocomplete="off" enterkeyhint="done">
+    </div>
+    <div class="row" id="mainBtns">
+      <button class="go" id="bShow">전체화면 보기</button>
+      <button class="sub" id="bReset">비우기</button>
+    </div>
   </div>
   <label style="margin-top:8px">최근 입력</label>
   <div class="recent" id="recent"></div>
