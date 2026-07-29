@@ -108,11 +108,11 @@
   @media (min-width:700px){
     .fields{flex-direction:row;align-items:flex-end;gap:12px;}
     .fld{gap:6px;}
-    .fld:nth-child(1){flex:0 1 240px;min-width:130px;}   /* 이름 */
-    .fld:nth-child(2){flex:0 1 250px;min-width:150px;}   /* 전화번호 — 폭 축소 */
-    #mainBtns{flex:1 1 auto;}                            /* 남은 폭 전부 차지 */
+    .fld:nth-child(1){flex:1 1 288px;max-width:288px;min-width:130px;}  /* 이름 +20% */
+    .fld:nth-child(2){flex:1 1 300px;max-width:300px;min-width:150px;}  /* 전화 +20% */
+    #mainBtns{flex:0 1 auto;}
     .fields input{font-size:24px;padding:13px 15px;}
-    #mainBtns .go{flex:1;font-size:19px;padding:15px 20px;white-space:nowrap;}
+    #mainBtns .go{flex:1 1 315px;max-width:315px;font-size:19px;padding:15px 20px;white-space:nowrap;}
     #mainBtns .sub{flex:0 0 auto;font-size:15px;padding:15px 18px;white-space:nowrap;}
     #edit{padding-top:20px;}
   }
@@ -157,7 +157,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v12</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v13</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
