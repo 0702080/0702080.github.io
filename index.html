@@ -169,7 +169,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v14</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v15</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -480,14 +480,30 @@
   nameEl.addEventListener('click', e=>{ e.stopPropagation(); startEditName(); });
   telEl .addEventListener('click', e=>{ e.stopPropagation(); startEditTel();  });
   nameEl.addEventListener('blur',  ()=>endEditName(true));
+  /* 이름 ↔ 전화번호 칸 이동 */
+  function moveToName(){ endEditTel(true);  startEditName(); }
+  function moveToTel (){ endEditName(true); startEditTel();  }
+
   document.addEventListener('keydown', e=>{
-    if(!isInlineEditing()) return;
+    // 편집 화면(입력 폼)이 열려 있으면 방향키는 그대로 둠
+    if(editEl.classList.contains('on')) return;
+
+    if(!isInlineEditing()){
+      // 편집 중이 아닐 때: ↓ 이름부터, ↑ 전화번호부터 편집 시작
+      if(e.key==='ArrowDown'){ e.preventDefault(); startEditName(); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); startEditTel(); }
+      return;
+    }
     if(e.key==='Enter'){
       e.preventDefault();
       if(nameEl.isContentEditable) endEditName(true); else endEditTel(true);
     } else if(e.key==='Escape'){
       e.preventDefault(); e.stopPropagation();
       if(nameEl.isContentEditable) endEditName(false); else endEditTel(false);
+    } else if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+      // 위·아래 화살표로 두 칸을 오감 (칸이 둘뿐이라 어느 쪽 키든 전환)
+      e.preventDefault(); e.stopPropagation();
+      if(nameEl.isContentEditable) moveToTel(); else moveToName();
     }
   }, true);
 
