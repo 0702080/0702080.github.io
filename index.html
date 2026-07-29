@@ -2,53 +2,604 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1E3A5F">
-<title>웹 도구</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧰%3C/text%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ffffff">
+
+<title>촬영명찰</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏷️%3C/text%3E%3C/svg%3E">
+
+
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
   body{
     font-family:'Malgun Gothic','맑은 고딕','Noto Sans KR',-apple-system,sans-serif;
-    background:#f4f6f9;color:#1B1F2A;
-    min-height:100vh;padding:32px 20px max(32px,env(safe-area-inset-bottom));
+    background:#fff;color:#111;
+    transition:background .2s,color .2s;
+    -webkit-user-select:none;user-select:none;
   }
-  .wrap{max-width:560px;margin:0 auto;}
-  h1{font-size:26px;font-weight:900;color:#1E3A5F;margin-bottom:6px;}
-  .sub{color:#7a8494;font-size:14px;margin-bottom:26px;}
-  a.card{
-    display:block;text-decoration:none;color:inherit;
-    background:#fff;border:1px solid #e2e7ee;border-left:5px solid #C9A66B;
-    border-radius:14px;padding:20px 22px;margin-bottom:14px;
-    box-shadow:0 1px 3px rgba(20,39,68,.06);
+  body.dark{background:#000;color:#fff;}
+
+
+
+  /* ── 표시 화면 ── */
+  #show{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:max(8px,env(safe-area-inset-top)) 6px max(8px,env(safe-area-inset-bottom));
   }
-  a.card:active{background:#f8f9fb;}
-  .t{font-size:19px;font-weight:800;margin-bottom:5px;}
-  .d{font-size:14px;color:#6b7585;line-height:1.55;}
-  .foot{margin-top:26px;font-size:12.5px;color:#9aa3b0;line-height:1.7;}
-  @media (prefers-color-scheme:dark){
-    body{background:#12161d;color:#e8ecf2;}
-    a.card{background:#1a212b;border-color:#2a3341;box-shadow:none;}
-    a.card:active{background:#212a36;}
-    h1{color:#93b4e6;} .d{color:#95a0b0;} .sub,.foot{color:#78828f;}
+
+
+  #name{
+    font-weight:900;line-height:1;text-align:center;
+    letter-spacing:-.03em;white-space:nowrap;
   }
+
+
+  #tel{
+    text-align:center;font-weight:900;letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums;
+    /* 안드로이드에서 숫자는 한글보다 얇은 폰트로 대체되므로
+       외곽선을 더해 한글 굵기와 맞춤 */
+    -webkit-text-stroke:0.028em currentColor;
+    text-stroke:0.028em currentColor;
+    paint-order:stroke fill;
+  }
+
+
+  .telline{line-height:1.0;white-space:nowrap;}
+
+  #empty{
+    font-size:5vw;opacity:.35;text-align:center;line-height:1.7;font-weight:600;
+  }
+
+
+
+  /* ── 코너 버튼 (사진 방해 최소화) ── */
+  .btns{position:fixed;inset:0;pointer-events:none;transition:opacity .35s;}
+  .btns.hidden{opacity:0;}
+  .btns.hidden .btn{pointer-events:none;}   /* 안 보일 땐 눌리지도 않게 */
+  .btn{
+    position:absolute;pointer-events:auto;
+    background:rgba(128,128,128,.16);
+    color:inherit;border:none;border-radius:999px;
+    font-size:14px;font-weight:700;font-family:inherit;
+    padding:10px 16px;cursor:pointer;backdrop-filter:blur(4px);
+  }
+
+  #bEdit{top:max(10px,env(safe-area-inset-top));left:10px;}
+  #bTheme{top:max(10px,env(safe-area-inset-top));right:10px;}
+  #bFull{bottom:max(10px,env(safe-area-inset-bottom));right:10px;}
+  #bClear{bottom:max(10px,env(safe-area-inset-bottom));left:10px;}
+
+
+  /* ── 편집 화면 ── */
+  #edit{
+    position:fixed;inset:0;z-index:10;background:#fff;color:#111;
+    display:none;flex-direction:column;
+    padding:max(24px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));
+    gap:16px;overflow-y:auto;
+  }
+
+  #edit.on{display:flex;}
+  #edit h1{font-size:22px;font-weight:800;margin-bottom:4px;}
+  label{font-size:15px;font-weight:700;color:#555;margin-bottom:-8px;}
+  input{
+    width:100%;font-family:inherit;font-size:30px;font-weight:800;
+    padding:16px 18px;border:2.5px solid #ddd;border-radius:14px;
+    background:#fafafa;color:#111;
+  }
+
+  input:focus{outline:none;border-color:#1E3A5F;background:#fff;}
+  #tel_i{font-variant-numeric:tabular-nums;}
+  .row{display:flex;gap:10px;}
+  /* 입력 영역: 기본(세로 화면)은 위아래로 쌓임 */
+  .fields{display:flex;flex-direction:column;gap:16px;}
+  .fld{display:flex;flex-direction:column;gap:8px;}
+  .fld label{margin-bottom:0;}
+
+  /* PC·가로 화면: 이름·전화번호·버튼을 한 줄로 */
+  @media (min-width:700px){
+    .fields{flex-direction:row;align-items:flex-end;gap:12px;}
+    .fld{gap:6px;}
+    .fld:nth-child(1){flex:1 1 288px;max-width:288px;min-width:130px;}  /* 이름 +20% */
+    .fld:nth-child(2){flex:1 1 300px;max-width:300px;min-width:150px;}  /* 전화 +20% */
+    #mainBtns{flex:0 1 410px;}   /* 전체화면(315) + 간격(10) + 비우기(85) */
+    .fields input{font-size:24px;padding:13px 15px;}
+    #mainBtns .go{flex:1 1 315px;max-width:315px;font-size:19px;padding:15px 20px;white-space:nowrap;}
+    #mainBtns .sub{flex:0 0 auto;font-size:15px;padding:15px 18px;white-space:nowrap;}
+    #edit{padding-top:20px;}
+  }
+  .go{
+    flex:1;font-family:inherit;font-size:20px;font-weight:800;
+    padding:20px;border:none;border-radius:14px;cursor:pointer;
+    background:#1E3A5F;color:#fff;
+  }
+  .sub{
+    font-family:inherit;font-size:17px;font-weight:700;
+    padding:20px 22px;border:2px solid #ddd;border-radius:14px;
+    background:#fff;color:#666;cursor:pointer;
+  }
+  .recent{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px;}
+  .chip{
+    font-family:inherit;font-size:15px;font-weight:700;
+    padding:9px 15px;border-radius:999px;border:1.5px solid #ddd;
+    background:#f5f5f5;color:#333;cursor:pointer;
+  }
+  .hint{font-size:13px;color:#999;line-height:1.6;margin-top:2px;}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>🧰 웹 도구</h1>
-  <div class="sub">설치 없이 바로 쓰는 도구 모음</div>
 
-  <a class="card" href="nametag.html">
-    <div class="t">🏷️ 명찰</div>
-    <div class="d">이름·전화번호를 화면 가득 크게 표시합니다.
-      사진 촬영 시 명찰 대용으로 사용하세요.</div>
-  </a>
 
-  <div class="foot">
-    각 도구는 인터넷 없이도 동작합니다.<br>
-    크롬에서 열고 <b>⋮ → 홈 화면에 추가</b> 하면 앱처럼 쓸 수 있습니다.
+
+<!-- 표시 화면 -->
+<div id="show">
+  <div id="name"></div>
+  <div id="tel"></div>
+  <div id="empty">이름과 전화번호를 입력하세요<br>왼쪽 위 <b>편집</b> 버튼</div>
+</div>
+
+
+<div class="btns" id="btns">
+  <button class="btn" id="bEdit">✏️ 편집</button>
+  <button class="btn" id="bTheme">◐ 배경</button>
+  <button class="btn" id="bClear">✕ 지우기</button>
+  <button class="btn" id="bFull">⛶ 전체화면</button>
+</div>
+
+
+<!-- 편집 화면 -->
+<div id="edit">
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v13</span></h1>
+  <div class="fields">
+    <div class="fld">
+      <label for="name_i">이름</label>
+      <input id="name_i" type="text" placeholder="김재식" autocomplete="off" enterkeyhint="next">
+    </div>
+    <div class="fld">
+      <label for="tel_i">전화번호 <span style="font-weight:400;color:#999">(010 생략, 8자리)</span></label>
+      <input id="tel_i" type="tel" inputmode="numeric" placeholder="33334444" autocomplete="off" enterkeyhint="done">
+    </div>
+    <div class="row" id="mainBtns">
+      <button class="go" id="bShow">전체화면 보기</button>
+      <button class="sub" id="bReset">비우기</button>
+    </div>
+  </div>
+  <label style="margin-top:8px">최근 입력</label>
+  <div class="recent" id="recent"></div>
+
+  <label style="margin-top:8px">📡 실시간 공유 (다른 폰에 즉시 표시)</label>
+  <div class="hint" id="mirrorBox" style="margin-top:0"></div>
+  <div class="row">
+    <button class="sub" id="bRoom" style="flex:1;padding:14px">방 코드 변경</button>
+    <button class="sub" id="bCopy" style="flex:1;padding:14px">공유 주소 복사</button>
   </div>
 </div>
+
+
+<script src="mqtt.min.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const showEl=$('show'), nameEl=$('name'), telEl=$('tel'), emptyEl=$('empty');
+  const editEl=$('edit'), nameI=$('name_i'), telI=$('tel_i'), recentEl=$('recent');
+  const btns=$('btns');
+  const LS='nametag_v1';
+
+  let data={name:'',tel:'',dark:false,recent:[]};
+  try{ Object.assign(data, JSON.parse(localStorage.getItem(LS)||'{}')); }catch(e){}
+  const save=()=>{ try{ localStorage.setItem(LS, JSON.stringify(data)); }catch(e){} };
+
+  /* 버튼 누를 때 진동 + "띡" 소리 */
+  let actx=null;
+  function beep(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      if(!actx) actx = new AC();
+      if(actx.state === 'suspended') actx.resume();
+      const t = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = 'square';
+      o.frequency.setValueAtTime(2200, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.22, t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.075);
+      o.connect(g); g.connect(actx.destination);
+      o.start(t); o.stop(t + 0.09);
+    }catch(e){}
+  }
+  function feedback(){
+    try{ if(navigator.vibrate) navigator.vibrate(28); }catch(e){}
+    beep();
+  }
+  // 모든 버튼에 공통 적용 (캡처 단계라 각 핸들러보다 먼저 실행)
+  document.addEventListener('click', e=>{
+    if(e.target.closest && e.target.closest('button')) feedback();
+  }, true);
+
+
+  /* 전화번호 자동 하이픈 */
+  function fmtTel(v){
+    let d=(v||'').replace(/\D/g,'');
+    if(!d) return '';
+    // 0으로 시작하지 않는 8자리 이하 = 010 생략 입력 → 010 자동 부여
+    if(d[0]!=='0' && d.length<=8) d='010'+d;
+    // 휴대폰(010): 010-XXXX-XXXX 로 진행형 표시
+    if(d.startsWith('010')){
+      const r=d.slice(3,11);
+      if(!r) return '010';
+      return r.length<=4 ? '010-'+r : '010-'+r.slice(0,4)+'-'+r.slice(4);
+    }
+    d=d.slice(0,11);
+    if(d.length<4) return d;
+    if(d.startsWith('02')){
+      if(d.length<=5) return d.slice(0,2)+'-'+d.slice(2);
+      if(d.length<=9) return d.slice(0,2)+'-'+d.slice(2,5)+'-'+d.slice(5);
+      return d.slice(0,2)+'-'+d.slice(2,6)+'-'+d.slice(6,10);
+    }
+    if(d.length<=7) return d.slice(0,3)+'-'+d.slice(3);
+    if(d.length<=10) return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+    return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
+  }
+
+
+  /* 전화번호 줄 구성 */
+  function setTelLines(lines){
+    telEl.innerHTML='';
+    lines.forEach(t=>{
+      const d=document.createElement('div');
+      d.className='telline'; d.textContent=t;
+      telEl.appendChild(d);
+    });
+    telEl.style.display = lines.length ? 'block' : 'none';
+  }
+
+
+
+  /* 이름과 전화번호를 "같은 글자 크기"로, 화면에 최대한 크게 */
+  function fitBoth(availW, availH, gap){
+    const hasName = !!nameEl.textContent;
+    const hasTel  = telEl.children.length > 0;
+    nameEl.style.display = hasName ? 'block' : 'none';
+    if(!hasName && !hasTel) return 0;
+
+    let lo=10, hi=1000;
+    for(let i=0;i<24;i++){
+      const mid=(lo+hi)/2;
+      nameEl.style.fontSize=mid+'px';
+      telEl.style.fontSize=mid+'px';
+
+      let ok=true;
+      if(hasName && nameEl.scrollWidth>availW) ok=false;
+      if(ok && hasTel){
+        for(const d of telEl.children) if(d.scrollWidth>availW){ ok=false; break; }
+      }
+      if(ok){
+        const h=(hasName?nameEl.scrollHeight:0)
+              + (hasTel ?telEl.scrollHeight :0)
+              + ((hasName&&hasTel)?gap:0);
+        if(h>availH) ok=false;
+      }
+      if(ok) lo=mid; else hi=mid;
+    }
+    const s=Math.floor(lo);
+    nameEl.style.fontSize=s+'px';
+    telEl.style.fontSize=s+'px';
+    return s;
+  }
+
+
+
+  /* 세로 표시용 전화번호 분할
+     010-3333-4444  →  "3333" / "4444"  (010 생략, 하이픈 없음) */
+  function telLines(tel){
+    if(!tel) return [];
+    const parts=tel.split('-').filter(Boolean);
+    if(parts.length<=1) return parts;
+    // 휴대폰(010)이면 앞자리 생략해 뒷번호만 크게
+    if(parts[0]==='010' && parts.length===3) return parts.slice(1);
+    return parts;
+  }
+
+
+  function render(){
+    document.body.classList.toggle('dark', !!data.dark);
+    document.querySelector('meta[name=theme-color]')
+      .setAttribute('content', data.dark ? '#000000' : '#ffffff');
+
+    const has=!!(data.name||data.tel);
+    emptyEl.style.display = has ? 'none' : 'block';
+    nameEl.textContent = data.name||'';
+    if(!has){ setTelLines([]); nameEl.style.display='none'; return; }
+
+    const W=window.innerWidth, H=window.innerHeight;
+    const availW = W*0.97;
+    const portrait = H >= W;          // 세로 모드
+
+    // 이름과 전화번호 사이 여백
+    const gap = portrait ? H*0.07 : H*0.06;
+    showEl.style.gap = gap+'px';
+
+    // 세로면 번호를 3줄로, 가로면 한 줄로
+    setTelLines(data.tel ? (portrait ? telLines(data.tel) : [data.tel]) : []);
+
+    // 이름 · 전화번호를 같은 크기로 최대한 크게
+    fitBoth(availW, H*0.88, gap);
+
+    renderRecent();
+  }
+
+
+  function renderRecent(){
+    recentEl.innerHTML='';
+    (data.recent||[]).slice(0,8).forEach(r=>{
+      const b=document.createElement('button');
+      b.className='chip'; b.textContent=r.name||r.tel;
+      b.onclick=()=>{ nameI.value=r.name; telI.value=r.tel; };
+      recentEl.appendChild(b);
+    });
+  }
+
+
+  function pushRecent(name,tel){
+    if(!name&&!tel) return;
+    data.recent=(data.recent||[]).filter(r=>!(r.name===name&&r.tel===tel));
+    data.recent.unshift({name,tel});
+    data.recent=data.recent.slice(0,8);
+  }
+
+
+  /* 화면 꺼짐 방지 */
+  let wl=null;
+  async function keepAwake(on){
+    try{
+      if(on && 'wakeLock' in navigator && !wl){
+        wl=await navigator.wakeLock.request('screen');
+        wl.addEventListener('release',()=>{wl=null;});
+      } else if(!on && wl){ await wl.release(); wl=null; }
+    }catch(e){}
+  }
+
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible' && !editEl.classList.contains('on')) keepAwake(true);
+  });
+
+
+  /* 버튼: 평소엔 완전히 숨김, 화면을 터치하면 나타남 */
+  let hideT;
+  function hideBtns(){ clearTimeout(hideT); btns.classList.add('hidden'); }
+  function poke(){                       // 터치 시 4초간 표시
+    clearTimeout(hideT);
+    btns.classList.remove('hidden');
+    if (data.name || data.tel) hideT=setTimeout(()=>btns.classList.add('hidden'),4000);
+  }
+  showEl.addEventListener('pointerdown',poke);
+
+  function openEdit(){
+    nameI.value=data.name; telI.value=data.tel;
+    editEl.classList.add('on'); keepAwake(false);
+    MIRROR.status();
+    setTimeout(()=>nameI.focus(),60);
+  }
+
+
+  /* 홈 화면 앱으로 실행 중이면 이미 전체화면 → 크롬 안내문구 안 뜸 */
+  function isAppMode(){
+    return window.matchMedia('(display-mode: fullscreen)').matches
+        || window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+  }
+
+
+  function goFull(){
+    if(document.fullscreenElement || isAppMode()) return;
+    try{
+      const p = document.documentElement.requestFullscreen?.({navigationUI:'hide'});
+      if(p && p.catch) p.catch(()=>{});
+    }catch(e){}
+  }
+
+
+  function applyEdit(){
+    data.name=nameI.value.trim();
+    data.tel=fmtTel(telI.value);
+    pushRecent(data.name,data.tel);
+    save();
+    MIRROR.publish();                   // 다른 폰에 즉시 전송
+    editEl.classList.remove('on');
+    nameI.blur(); telI.blur();          // 키보드 내리기
+    goFull();                           // 입력 즉시 전체화면
+    render(); keepAwake(true);
+    hideBtns();                         // 버튼 바로 숨김 (사진에 안 나오게)
+    setTimeout(()=>{ render(); hideBtns(); }, 400);  // 전체화면 전환 후 재계산
+  }
+
+
+  $('bEdit').onclick=openEdit;
+  $('bShow').onclick=applyEdit;
+  $('bReset').onclick=()=>{ nameI.value=''; telI.value=''; nameI.focus(); };
+  $('bClear').onclick=()=>{ data.name=''; data.tel=''; save(); MIRROR.publish(); render(); poke(); };
+  $('bTheme').onclick=()=>{ data.dark=!data.dark; save(); render(); poke(); };
+
+
+  /* 우하단 버튼: 현재 상태에 따라 들어가기 / 나가기 */
+  const bFullEl=$('bFull');
+  function updateFullBtn(){
+    if(isAppMode())                     bFullEl.textContent='✕ 앱 닫기';
+    else if(document.fullscreenElement) bFullEl.textContent='✕ 나가기';
+    else                                bFullEl.textContent='⛶ 전체화면';
+  }
+
+  function exitFull(){
+    if(document.fullscreenElement){
+      const p=document.exitFullscreen?.();
+      if(p&&p.catch) p.catch(()=>{});
+    }
+  }
+
+  bFullEl.onclick=()=>{
+    if(isAppMode()){                    // 홈 화면 앱으로 실행 중 → 앱 종료 시도
+      try{ window.close(); }catch(e){}
+      setTimeout(()=>{ alert('뒤로가기 제스처(화면 가장자리에서 안쪽으로 쓸기)로 나갈 수 있습니다.'); },400);
+      return;
+    }
+    if(document.fullscreenElement) exitFull(); else goFull();
+    poke();
+  };
+
+
+  document.addEventListener('fullscreenchange',()=>{
+    updateFullBtn();
+    if(document.fullscreenElement) hideBtns();  // 들어갈 땐 계속 숨김
+    else poke();                                // 나왔을 때만 잠시 표시
+    setTimeout(render,300);             // 화면 크기 바뀌었으니 글자 재계산
+  });
+
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape' && document.fullscreenElement) exitFull();
+  });
+  updateFullBtn();
+
+  telI.addEventListener('input',e=>{ e.target.value=fmtTel(e.target.value); });
+  nameI.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); telI.focus(); } });
+  telI.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); applyEdit(); } });
+
+  window.addEventListener('resize',render);
+  window.addEventListener('orientationchange',()=>setTimeout(render,250));
+
+
+  /* ────────── 실시간 공유(미러링) ──────────
+     정적 사이트라 서버가 없으므로 공개 MQTT 브로커를 중계로 사용.
+     내용은 방 코드로 만든 키로 암호화해서 보내므로 브로커에는
+     암호문만 남는다.                                        */
+  const MIRROR = (function(){
+    const BROKER='wss://broker.emqx.io:8084/mqtt';
+    const myId = Math.random().toString(36).slice(2,10);
+    let client=null, key=null, topic=null, connected=false, room='';
+
+    const te=new TextEncoder(), td=new TextDecoder();
+    async function sha(s){ return new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode(s))); }
+    async function setup(code){
+      room=code;
+      key = await crypto.subtle.importKey('raw', await sha('nametag-key:'+code),
+                                          {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+      const h = await sha('nametag-topic:'+code);
+      topic = 'nmtg/' + [...h].slice(0,10).map(x=>x.toString(16).padStart(2,'0')).join('');
+    }
+
+    async function encrypt(obj){
+      const iv=crypto.getRandomValues(new Uint8Array(12));
+      const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,te.encode(JSON.stringify(obj))));
+      const out=new Uint8Array(12+ct.length); out.set(iv,0); out.set(ct,12);
+      let s=''; out.forEach(b=>s+=String.fromCharCode(b)); return btoa(s);
+    }
+
+    async function decrypt(b64){
+      const raw=Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+      const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:raw.slice(0,12)},key,raw.slice(12));
+      return JSON.parse(td.decode(pt));
+    }
+
+    function getRoom(){
+      const m=/[#&]r=([^&]+)/.exec(location.hash);
+      if(m) return decodeURIComponent(m[1]);
+      return data.room || 'default';
+    }
+
+    async function start(){
+      if(typeof mqtt==='undefined' || !crypto.subtle) { status(); return; }
+      try{
+        await setup(getRoom());
+        client = mqtt.connect(BROKER, {
+          clientId:'nmtg_'+myId, clean:true,
+          reconnectPeriod:4000, connectTimeout:8000, keepalive:30
+        });
+        client.on('connect', ()=>{ connected=true; status(); client.subscribe(topic,{qos:0}); });
+        client.on('close',   ()=>{ connected=false; status(); });
+        client.on('error',   ()=>{ connected=false; status(); });
+        client.on('message', async (t,payload)=>{
+          try{
+            const o=await decrypt(payload.toString());
+            if(!o || o.from===myId) return;                 // 내가 보낸 건 무시
+            if(o.name===data.name && o.tel===data.tel) return;
+            data.name=o.name||''; data.tel=o.tel||'';
+            save(); render(); hideBtns();                   // 받은 쪽은 바로 표시
+          }catch(e){}
+        });
+      }catch(e){ status(); }
+    }
+
+    async function publish(){
+      if(!client || !connected || !key) return;
+      try{
+        const msg=await encrypt({name:data.name, tel:data.tel, from:myId, t:Date.now()});
+        client.publish(topic, msg, {qos:0, retain:true});    // retain: 나중에 접속해도 현재값 수신
+      }catch(e){}
+    }
+
+    function shareUrl(){
+      const base=location.origin+location.pathname;
+      return room==='default' ? base : base+'#r='+encodeURIComponent(room);
+    }
+
+
+    function status(){
+      const box=$('mirrorBox'); if(!box) return;
+      const st = connected ? '🟢 연결됨 — 같은 방의 다른 폰에 즉시 표시됩니다'
+                           : (typeof mqtt==='undefined' ? '⚪ 공유 기능 사용 불가(스크립트 없음)'
+                                                        : '🟡 연결 중…(인터넷 필요)');
+      box.innerHTML = st + '<br>방 코드: <b>' + (room||'-') + '</b>'
+                    + '<br><span style="word-break:break-all;color:#aaa">' + shareUrl() + '</span>';
+    }
+
+
+    async function changeRoom(){
+      const v=prompt('방 코드를 입력하세요.\n같은 코드를 쓰는 기기끼리만 공유됩니다.\n(비워두면 기본 방)', room==='default'?'':room);
+      if(v===null) return;
+      const code=(v.trim()||'default');
+      data.room=code; save();
+
+      if(code==='default') history.replaceState(null,'',location.pathname);
+      else history.replaceState(null,'','#r='+encodeURIComponent(code));
+      if(client){ try{ client.end(true); }catch(e){} client=null; connected=false; }
+      await start();
+      status();
+    }
+
+    return { start, publish, status, changeRoom, shareUrl };
+  })();
+
+
+  $('bRoom').onclick = ()=>MIRROR.changeRoom();
+  $('bCopy').onclick = async ()=>{
+    const url=MIRROR.shareUrl();
+    try{ await navigator.clipboard.writeText(url); $('bCopy').textContent='복사됨 ✓';
+         setTimeout(()=>$('bCopy').textContent='공유 주소 복사',1500); }
+    catch(e){ prompt('아래 주소를 복사하세요', url); }
+  };
+
+  render();
+  keepAwake(true);
+
+  
+  // 처음 열 때: 내용이 있으면 버튼 숨김, 비어 있으면 안내를 위해 표시
+  if (data.name || data.tel) hideBtns(); else poke();
+  MIRROR.start();
+
+  /* 서비스워커: 온라인이면 항상 최신본, 오프라인이면 캐시본 */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+})();
+</script>
 </body>
 </html>

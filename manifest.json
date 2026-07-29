@@ -2,7 +2,7 @@
   "name": "명찰",
   "short_name": "명찰",
   "description": "이름과 전화번호를 화면 가득 크게 표시하는 명찰",
-  "start_url": "./nametag.html",
+  "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone"],
