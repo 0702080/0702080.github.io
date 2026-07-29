@@ -232,7 +232,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v19</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v20</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -457,14 +457,15 @@
     if(telEditing) return;
     endEditName(true);
     inlineBackup = data.tel;
-    telEditing = true;
 
     // ① 최대 길이 기준으로 글자 크기를 산정 (입력 중 넘치지 않게)
+    //    ※ render 가 편집 중엔 조기 반환하므로 telEditing 을 켜기 전에 계산
     setTelLines(['010-0000-0000']);
     render({keepDom:true});
     const fs = telEl.style.fontSize;
 
-    // ② 표시용 숫자를 감추고 실제 입력칸으로 교체
+    // ② 이제 편집 상태로 전환하고, 표시용 숫자를 감추고 입력칸으로 교체
+    telEditing = true;
     telEl.style.display = 'none';
     telLive.style.fontSize = fs;
     telLive.style.color = colors().tel;
@@ -516,10 +517,17 @@
     const gap = portrait ? H*0.07 : H*0.06;
     showEl.style.gap = gap+'px';
 
-    // 세로면 번호를 3줄로, 가로면 한 줄로 (편집 중엔 한 줄)
+    // ★ 전화번호 편집 중에는 표시용 숫자를 계속 숨김
+    //   (모바일 키보드가 올라오면 resize→render 가 불려 입력칸과 겹쳐 보이던 문제)
+    if(telEditing){
+      telEl.style.display = 'none';
+      renderRecent();
+      return;                       // 크기도 그대로 유지 (입력 중 흔들림 방지)
+    }
+
+    // 세로면 번호를 두 줄로, 가로면 한 줄로
     if(!opts.keepDom){
-      setTelLines(telEditing ? [data.tel||'']
-                : (data.tel ? (portrait ? telLines(data.tel) : [data.tel]) : []));
+      setTelLines(data.tel ? (portrait ? telLines(data.tel) : [data.tel]) : []);
     }
 
     // 이름 · 전화번호를 같은 크기로 최대한 크게
