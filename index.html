@@ -158,6 +158,41 @@
     background:#f5f5f5;color:#333;cursor:pointer;
   }
   .hint{font-size:13px;color:#999;line-height:1.6;margin-top:2px;}
+
+  /* ── 색상 조절 패널 (전체화면에서도 사용) ── */
+  #palette{
+    position:fixed;inset:0;z-index:20;display:none;
+    align-items:center;justify-content:center;
+    background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+    padding:16px;
+  }
+  #palette.on{display:flex;}
+  .pal-box{
+    background:#fff;color:#333;border-radius:18px;
+    padding:20px;width:100%;max-width:380px;
+    box-shadow:0 12px 40px rgba(0,0,0,.35);
+    max-height:92vh;overflow-y:auto;
+  }
+  .pal-box h2{font-size:18px;font-weight:800;margin-bottom:14px;}
+  .pal-row{
+    display:flex;align-items:center;gap:10px;margin-bottom:12px;
+  }
+  .pal-row>span{font-size:15px;font-weight:700;width:66px;flex:0 0 auto;}
+  .pal-row input[type=color]{
+    width:52px;height:40px;border:2px solid #ddd;border-radius:10px;
+    background:none;cursor:pointer;padding:2px;flex:0 0 auto;
+  }
+  .pal-row b{font-size:13px;font-family:monospace;color:#777;width:66px;flex:0 0 auto;}
+  .pal-row i{font-size:12.5px;font-style:normal;color:#888;flex:1;text-align:right;}
+  .pal-row i.bad{color:#c0392b;font-weight:700;}
+  .pal-row i.ok{color:#1d7a45;font-weight:700;}
+  .pal-presets{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 16px;}
+  .pset{
+    border:1.5px solid #ddd;border-radius:10px;cursor:pointer;
+    padding:6px 8px;display:flex;align-items:center;gap:5px;
+    font-family:inherit;font-size:12.5px;font-weight:700;color:#555;background:#fff;
+  }
+  .pset .sw{width:15px;height:15px;border-radius:4px;border:1px solid rgba(0,0,0,.15);}
 </style>
 </head>
 <body>
@@ -174,7 +209,7 @@
 
 <div class="btns" id="btns">
   <button class="btn" id="bEdit">✏️ 편집</button>
-  <button class="btn" id="bTheme">◐ 배경</button>
+  <button class="btn" id="bTheme">🎨 색상</button>
   <button class="btn" id="bClear">✕ 지우기</button>
   <button class="btn" id="bFull">⛶ 전체화면</button>
 </div>
@@ -182,7 +217,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v16</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v17</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -208,6 +243,24 @@
   </div>
 </div>
 
+
+<!-- 색상 조절 패널 -->
+<div id="palette">
+  <div class="pal-box">
+    <h2>🎨 색상 바꾸기</h2>
+    <div class="pal-row">
+      <span>배경</span><input type="color" id="cBg"><b id="vBg"></b><i></i>
+    </div>
+    <div class="pal-row">
+      <span>이름</span><input type="color" id="cName"><b id="vName"></b><i id="rName"></i>
+    </div>
+    <div class="pal-row">
+      <span>전화번호</span><input type="color" id="cTel"><b id="vTel"></b><i id="rTel"></i>
+    </div>
+    <div class="pal-presets" id="presets"></div>
+    <button class="go" id="cClose" style="width:100%;padding:16px">닫기</button>
+  </div>
+</div>
 
 <script src="mqtt.min.js"></script>
 <script>
@@ -412,9 +465,7 @@
 
   function render(opts){
     opts = opts || {};
-    document.body.classList.toggle('dark', !!data.dark);
-    document.querySelector('meta[name=theme-color]')
-      .setAttribute('content', data.dark ? '#4A3B57' : '#FBEEDC');
+    applyColors();
 
     const editingNow = nameEl.isContentEditable || telEditing;
     const has = !!(data.name||data.tel) || editingNow;
@@ -566,7 +617,73 @@
   $('bShow').onclick=applyEdit;
   $('bReset').onclick=()=>{ nameI.value=''; telI.value=''; nameI.focus(); };
   $('bClear').onclick=()=>{ data.name=''; data.tel=''; save(); MIRROR.publish(); render(); poke(); };
-  $('bTheme').onclick=()=>{ data.dark=!data.dark; save(); render(); poke(); };
+  /* ───── 색상 직접 조절 (전체화면에서도 가능) ───── */
+  const DEF_COLORS={bg:'#FBEEDC', name:'#8B6E9E', tel:'#6B5280'};
+  const PRESETS=[
+    {t:'크림·보라', bg:'#FBEEDC', name:'#8B6E9E', tel:'#6B5280'},
+    {t:'연보라',   bg:'#FBEEDC', name:'#BFA7CC', tel:'#8B6E9E'},
+    {t:'딥퍼플',   bg:'#4A3B57', name:'#E4C1D9', tel:'#FBEEDC'},
+    {t:'흑백',     bg:'#FFFFFF', name:'#111111', tel:'#111111'},
+    {t:'반전',     bg:'#000000', name:'#FFFFFF', tel:'#FFFFFF'},
+    {t:'네이비',   bg:'#0F2540', name:'#FFD98E', tel:'#FFFFFF'}
+  ];
+  function colors(){ return Object.assign({}, DEF_COLORS, data.colors||{}); }
+  function applyColors(){
+    const c=colors();
+    document.body.style.background=c.bg;
+    document.body.style.color=c.tel;      // 코너 버튼 글자색도 따라감
+    nameEl.style.color=c.name;
+    telEl.style.color=c.tel;
+    const m=document.querySelector('meta[name=theme-color]');
+    if(m) m.setAttribute('content', c.bg);
+  }
+  function hexLum(h){
+    const m=h.replace('#','').match(/../g).map(x=>parseInt(x,16)/255)
+      .map(v=> v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4));
+    return 0.2126*m[0]+0.7152*m[1]+0.0722*m[2];
+  }
+  function contrast(a,b){
+    const l1=hexLum(a), l2=hexLum(b);
+    return (Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+  }
+  function showRatio(el, r){
+    el.className = r>=4.5 ? 'ok' : (r>=3 ? '' : 'bad');
+    el.textContent = '대비 '+r.toFixed(1)+':1 ' + (r>=4.5?'✓ 좋음':(r>=3?'보통':'⚠ 낮음'));
+  }
+  function paintPalUI(){
+    const c=colors();
+    $('cBg').value=c.bg; $('cName').value=c.name; $('cTel').value=c.tel;
+    $('vBg').textContent=c.bg.toUpperCase();
+    $('vName').textContent=c.name.toUpperCase();
+    $('vTel').textContent=c.tel.toUpperCase();
+    showRatio($('rName'), contrast(c.name, c.bg));
+    showRatio($('rTel'),  contrast(c.tel,  c.bg));
+  }
+  function setColor(key, val){
+    data.colors = Object.assign({}, colors());
+    data.colors[key]=val;
+    save(); applyColors(); paintPalUI();
+  }
+  [['cBg','bg'],['cName','name'],['cTel','tel']].forEach(([id,key])=>{
+    $(id).addEventListener('input', e=>setColor(key, e.target.value));
+  });
+  (function buildPresets(){
+    const box=$('presets');
+    PRESETS.forEach(p=>{
+      const b=document.createElement('button');
+      b.className='pset';
+      b.innerHTML='<span class="sw" style="background:'+p.bg+'"></span>'
+                 +'<span class="sw" style="background:'+p.name+'"></span>'
+                 +'<span class="sw" style="background:'+p.tel+'"></span>'+p.t;
+      b.onclick=()=>{ data.colors={bg:p.bg,name:p.name,tel:p.tel}; save(); applyColors(); paintPalUI(); };
+      box.appendChild(b);
+    });
+  })();
+  $('bTheme').onclick=()=>{ paintPalUI(); $('palette').classList.add('on'); };
+  $('cClose').onclick=()=>{ $('palette').classList.remove('on'); poke(); };
+  $('palette').addEventListener('click', e=>{
+    if(e.target===$('palette')) $('palette').classList.remove('on');
+  });
 
 
   /* 우하단 버튼: 현재 상태에 따라 들어가기 / 나가기 */
