@@ -81,6 +81,8 @@
   }
   #telLive.on{display:block;}
   #telLive:focus{background:transparent;border:none;outline:none;}
+  /* 편집 중에는 표시용 숫자를 무조건 숨김 (어떤 경로로도 다시 나타나지 않게) */
+  #show.telediting #tel{display:none !important;}
 
   /* ── 화면에서 바로 고치기 (파워포인트식 인라인 편집) ── */
   #name,#tel{cursor:text;}
@@ -232,7 +234,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v20</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v21</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -466,6 +468,7 @@
 
     // ② 이제 편집 상태로 전환하고, 표시용 숫자를 감추고 입력칸으로 교체
     telEditing = true;
+    showEl.classList.add('telediting');        // CSS 로 확실히 숨김
     telEl.style.display = 'none';
     telLive.style.fontSize = fs;
     telLive.style.color = colors().tel;
@@ -491,6 +494,7 @@
     if(!telEditing) return;
     telEditing = false;
     telLive.classList.remove('on');
+    showEl.classList.remove('telediting');
     telEl.style.display = '';
     telEl.classList.remove('editing');
     data.tel = commit ? fmtTel(telLive.value) : inlineBackup;
@@ -510,11 +514,14 @@
     if(!has){ setTelLines([]); nameEl.style.display='none'; return; }
 
     const W=window.innerWidth, H=window.innerHeight;
-    const availW = W*0.97;
     const portrait = H >= W;          // 세로 모드
 
+    // 가로 모드는 여백을 20px만 남기고 최대한 크게
+    const availW = portrait ? W*0.97 : (W - 20);
+    const availH = portrait ? H*0.88 : (H - 20);
+
     // 이름과 전화번호 사이 여백
-    const gap = portrait ? H*0.07 : H*0.06;
+    const gap = portrait ? H*0.07 : H*0.04;
     showEl.style.gap = gap+'px';
 
     // ★ 전화번호 편집 중에는 표시용 숫자를 계속 숨김
@@ -525,13 +532,18 @@
       return;                       // 크기도 그대로 유지 (입력 중 흔들림 방지)
     }
 
-    // 세로면 번호를 두 줄로, 가로면 한 줄로
+    // 세로: 두 줄 / 가로: 한 줄 (둘 다 010 은 생략해 숫자를 더 크게)
     if(!opts.keepDom){
-      setTelLines(data.tel ? (portrait ? telLines(data.tel) : [data.tel]) : []);
+      let lines = [];
+      if(data.tel){
+        const parts = telLines(data.tel);          // 010 제거된 조각들
+        lines = portrait ? parts : [parts.join('-')];
+      }
+      setTelLines(lines);
     }
 
     // 이름 · 전화번호를 같은 크기로 최대한 크게
-    fitBoth(availW, H*0.88, gap);
+    fitBoth(availW, availH, gap);
 
     renderRecent();
   }
