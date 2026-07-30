@@ -234,7 +234,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v21</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v22</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -445,15 +445,54 @@
 
   /* 전화번호 인라인 편집 — 실제 <input>을 겹쳐 써서 모바일 키보드를 확실히 띄움 */
   const telLive = $('telLive');
+  const isDigit = c => c>='0' && c<='9';
+
+  /* 커서 위치 유지용: 커서 왼쪽의 숫자 개수를 기준으로 되돌린다
+     (값을 다시 대입하면 커서가 맨 끝으로 튀는 문제 해결) */
+  function digitsBefore(str, pos){
+    let n=0;
+    for(let i=0; i<pos && i<str.length; i++) if(isDigit(str[i])) n++;
+    return n;
+  }
+  function posAfterDigits(str, n){
+    if(n<=0) return 0;
+    let c=0;
+    for(let i=0; i<str.length; i++){
+      if(isDigit(str[i])){ c++; if(c===n) return i+1; }
+    }
+    return str.length;
+  }
+
   telLive.addEventListener('input', ()=>{
-    const f = fmtTel(telLive.value);
-    if(telLive.value !== f) telLive.value = f;
+    const raw   = telLive.value;
+    const caret = (telLive.selectionStart==null) ? raw.length : telLive.selectionStart;
+    const keep  = digitsBefore(raw, caret);          // 커서 왼쪽 숫자 개수 기억
+    const f     = fmtTel(raw);
+    if(raw !== f){
+      telLive.value = f;
+      const p = posAfterDigits(f, keep);             // 같은 숫자 개수 뒤로 커서 복원
+      try{ telLive.setSelectionRange(p, p); }catch(e){}
+    }
     data.tel = f;
   });
+
   telLive.addEventListener('blur', ()=>endEditTel(true));
   telLive.addEventListener('keydown', e=>{
-    if(e.key==='Enter'){ e.preventDefault(); endEditTel(true); }
-    else if(e.key==='Escape'){ e.preventDefault(); endEditTel(false); }
+    if(e.key==='Enter'){ e.preventDefault(); endEditTel(true); return; }
+    if(e.key==='Escape'){ e.preventDefault(); endEditTel(false); return; }
+
+    /* 백스페이스가 하이픈 위에 걸리면 그 앞의 숫자를 지움 */
+    if(e.key==='Backspace'){
+      const v=telLive.value, s=telLive.selectionStart, en=telLive.selectionEnd;
+      if(s===en && s>1 && !isDigit(v[s-1])){
+        e.preventDefault();
+        const j=s-2;                                 // 하이픈 앞 숫자 위치
+        if(j<0) return;
+        telLive.value = v.slice(0,j) + v.slice(j+1);
+        try{ telLive.setSelectionRange(j, j); }catch(err){}
+        telLive.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+    }
   });
   function startEditTel(){
     if(telEditing) return;
@@ -464,7 +503,8 @@
     //    ※ render 가 편집 중엔 조기 반환하므로 telEditing 을 켜기 전에 계산
     setTelLines(['010-0000-0000']);
     render({keepDom:true});
-    const fs = telEl.style.fontSize;
+    // 실제 폰 글꼴은 폭이 조금씩 달라 딱 맞추면 잘린다 → 15% 여유
+    const fs = Math.max(16, Math.floor(parseFloat(telEl.style.fontSize||'40') * 0.85)) + 'px';
 
     // ② 이제 편집 상태로 전환하고, 표시용 숫자를 감추고 입력칸으로 교체
     telEditing = true;
