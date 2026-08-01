@@ -224,7 +224,8 @@
     padding:12px 4px;border:2px solid #e2e2e2;border-radius:12px;
     background:#fafafa;color:#777;cursor:pointer;
   }
-  .ptab.on{background:#3E3348;border-color:#3E3348;color:#fff;}
+  /* 선택 표시는 테두리로만 (배경은 각자 담당 색이 들어감) */
+  .ptab.on{border-width:3px;border-color:#2B2333;box-shadow:0 0 0 3px rgba(43,35,51,.22);}
 
   .pcur{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
   .pcur-sw{width:44px;height:36px;border-radius:9px;border:2px solid #ddd;flex:0 0 auto;}
@@ -288,7 +289,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v32</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v33</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -922,9 +923,14 @@
   function paintPalUI(){
     const c=colors(), cur=c[curKey];
 
-    // 탭 표시
+    // 탭 표시 — 각 버튼 배경을 담당 색으로, 글자색은 읽히는 쪽으로
     Array.prototype.forEach.call($('ptabs').children, t=>{
+      const col = c[t.dataset.k];
       t.classList.toggle('on', t.dataset.k===curKey);
+      t.style.background = col;
+      t.style.color = (contrast(col,'#FFFFFF') >= contrast(col,'#111111')) ? '#FFFFFF' : '#111111';
+      if(t.dataset.k!==curKey) t.style.borderColor='rgba(0,0,0,.18)';
+      else t.style.borderColor='';
     });
 
     // 현재 색 + 대비
