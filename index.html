@@ -281,7 +281,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v27</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v29</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -314,9 +314,9 @@
     <h2>🎨 색상 바꾸기</h2>
 
     <div class="ptabs" id="ptabs">
-      <button class="ptab on" data-k="bg">배경</button>
-      <button class="ptab" data-k="name">이름</button>
+      <button class="ptab on" data-k="name">이름</button>
       <button class="ptab" data-k="tel">전화번호</button>
+      <button class="ptab" data-k="bg">배경</button>
     </div>
 
     <div class="pcur">
@@ -338,7 +338,10 @@
     <div class="psec">조합 프리셋</div>
     <div class="pal-presets" id="presets"></div>
 
-    <button class="go" id="cClose" style="width:100%;padding:16px">닫기</button>
+    <div class="row" style="margin-top:6px">
+      <button class="sub" id="cCancel" style="flex:1;padding:16px">취소</button>
+      <button class="go"  id="cClose"  style="flex:1.7;padding:16px">닫기</button>
+    </div>
   </div>
 </div>
 
@@ -878,7 +881,7 @@
     return out;
   })();
 
-  let curKey = 'bg';                       // 현재 조절 대상
+  let curKey = 'name';                     // 현재 조절 대상 (기본: 이름)
 
   function pushHist(hex){
     hex=(hex||'').toUpperCase();
@@ -981,7 +984,20 @@
       box.appendChild(b);
     });
   })();
-  $('bTheme').onclick=()=>{ paintPalUI(); $('palette').classList.add('on'); };
+  /* 패널 열 때 색을 백업해 두고, 취소하면 되돌린다 */
+  let palBackup = null;
+  $('bTheme').onclick=()=>{
+    palBackup = colors();
+    curKey='name';
+    paintPalUI();
+    $('palette').classList.add('on');
+  };
+  $('cCancel').onclick=()=>{
+    if(palBackup) data.colors = Object.assign({}, palBackup);
+    save(); applyColors();
+    $('palette').classList.remove('on');
+    poke();
+  };
   $('cClose').onclick=()=>{ $('palette').classList.remove('on'); poke(); };
   $('palette').addEventListener('click', e=>{
     if(e.target===$('palette')) $('palette').classList.remove('on');
