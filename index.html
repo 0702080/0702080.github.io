@@ -52,6 +52,10 @@
   #name{
     font-weight:900;line-height:1;text-align:center;
     letter-spacing:-.03em;white-space:nowrap;
+    /* 숫자와 같은 굵기감을 내기 위해 외곽선을 더함 */
+    -webkit-text-stroke:0.035em currentColor;
+    text-stroke:0.035em currentColor;
+    paint-order:stroke fill;
   }
 
 
@@ -234,7 +238,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v23</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v24</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
