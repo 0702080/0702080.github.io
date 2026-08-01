@@ -234,7 +234,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v22</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v23</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -360,17 +360,45 @@
 
 
   /* 이름과 전화번호를 "같은 글자 크기"로, 화면에 최대한 크게 */
+  /* 한글과 숫자는 같은 폰트 크기라도 실제 글자 높이가 다르다.
+     캔버스로 실제 잉크 높이를 재서 두 줄의 글자 높이를 똑같이 맞춘다. */
+  let inkCv = null;
+  function inkH(ctx, text){
+    const m = ctx.measureText(text);
+    const a = m.actualBoundingBoxAscent, d = m.actualBoundingBoxDescent;
+    return (a===undefined || d===undefined) ? 0 : (a + d);
+  }
+  function telScale(){
+    try{
+      const nameTxt = nameEl.textContent || '';
+      const telTxt  = Array.prototype.map.call(telEl.children, d=>d.textContent).join('');
+      if(!nameTxt || !telTxt) return 1;
+      if(!inkCv) inkCv = document.createElement('canvas');
+      const ctx = inkCv.getContext('2d');
+      ctx.font = '900 100px ' + getComputedStyle(nameEl).fontFamily;
+      const hn = inkH(ctx, nameTxt);
+      const ht = inkH(ctx, telTxt);
+      if(hn > 0 && ht > 0){
+        const k = hn / ht;
+        return Math.min(1.6, Math.max(0.6, k));   // 과도한 배율 방지
+      }
+    }catch(e){}
+    return 1;
+  }
+
   function fitBoth(availW, availH, gap){
     const hasName = !!nameEl.textContent || nameEl.isContentEditable;  // 편집 중엔 비어도 표시
     const hasTel  = telEl.children.length > 0;
     nameEl.style.display = hasName ? 'block' : 'none';
     if(!hasName && !hasTel) return 0;
 
+    const k = (hasName && hasTel) ? telScale() : 1;   // 전화번호 글자 배율
+
     let lo=10, hi=1000;
     for(let i=0;i<24;i++){
       const mid=(lo+hi)/2;
       nameEl.style.fontSize=mid+'px';
-      telEl.style.fontSize=mid+'px';
+      telEl.style.fontSize=(mid*k)+'px';
 
       let ok=true;
       if(hasName && nameEl.scrollWidth>availW) ok=false;
@@ -387,7 +415,7 @@
     }
     const s=Math.floor(lo);
     nameEl.style.fontSize=s+'px';
-    telEl.style.fontSize=s+'px';
+    telEl.style.fontSize=Math.floor(s*k)+'px';
     return s;
   }
 
