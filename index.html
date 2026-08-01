@@ -238,7 +238,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v24</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v25</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -397,11 +397,12 @@
     if(!hasName && !hasTel) return 0;
 
     const k = (hasName && hasTel) ? telScale() : 1;   // 전화번호 글자 배율
+    const NB = 1.03;                                   // 이름만 3% 더 크게
 
     let lo=10, hi=1000;
     for(let i=0;i<24;i++){
       const mid=(lo+hi)/2;
-      nameEl.style.fontSize=mid+'px';
+      nameEl.style.fontSize=(mid*NB)+'px';
       telEl.style.fontSize=(mid*k)+'px';
 
       let ok=true;
@@ -418,7 +419,7 @@
       if(ok) lo=mid; else hi=mid;
     }
     const s=Math.floor(lo);
-    nameEl.style.fontSize=s+'px';
+    nameEl.style.fontSize=Math.floor(s*NB)+'px';
     telEl.style.fontSize=Math.floor(s*k)+'px';
     return s;
   }
