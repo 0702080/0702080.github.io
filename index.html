@@ -263,6 +263,10 @@
     background:#fff;border:3px solid #3E3348;cursor:pointer;
     box-shadow:0 1px 4px rgba(0,0,0,.3);
   }
+  /* 하단 버튼: 두 개를 정확히 같은 폭으로 */
+  .palbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+  .palbtns>button{width:100%;padding:16px;margin:0;border-radius:14px;font-size:18px;}
+
   .rng::-moz-range-thumb{
     width:22px;height:22px;border-radius:50%;
     background:#fff;border:3px solid #3E3348;cursor:pointer;
@@ -292,7 +296,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v30</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v31</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -349,9 +353,9 @@
     <div class="psec">조합 프리셋</div>
     <div class="pal-presets" id="presets"></div>
 
-    <div class="row" style="margin-top:6px">
-      <button class="sub" id="cCancel" style="flex:1 1 0;padding:16px">취소</button>
-      <button class="go"  id="cClose"  style="flex:1 1 0;padding:16px">닫기</button>
+    <div class="palbtns">
+      <button class="sub" id="cCancel">취소</button>
+      <button class="go"  id="cClose">닫기</button>
     </div>
   </div>
 </div>
