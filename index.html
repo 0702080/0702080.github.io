@@ -213,6 +213,49 @@
     font-family:inherit;font-size:12.5px;font-weight:700;color:#555;background:#fff;
   }
   .pset .sw{width:15px;height:15px;border-radius:4px;border:1px solid rgba(0,0,0,.15);}
+
+  /* ── 새 색상 선택 UI ── */
+  .ptabs{display:flex;gap:6px;margin-bottom:12px;}
+  .ptab{
+    flex:1;font-family:inherit;font-size:15px;font-weight:800;
+    padding:12px 4px;border:2px solid #e2e2e2;border-radius:12px;
+    background:#fafafa;color:#777;cursor:pointer;
+  }
+  .ptab.on{background:#3E3348;border-color:#3E3348;color:#fff;}
+
+  .pcur{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .pcur-sw{width:44px;height:36px;border-radius:9px;border:2px solid #ddd;flex:0 0 auto;}
+  .pcur b{font-size:14px;font-family:monospace;color:#666;}
+  .pcur i{font-size:12.5px;font-style:normal;color:#888;flex:1;text-align:right;}
+  .pcur i.bad{color:#c0392b;font-weight:800;}
+  .pcur i.ok{color:#1d7a45;font-weight:800;}
+
+  .psec{font-size:13px;font-weight:700;color:#999;margin:14px 0 7px;}
+
+  .swgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;}
+  .swgrid .sw{
+    aspect-ratio:1/1;border-radius:8px;border:1.5px solid rgba(0,0,0,.14);
+    cursor:pointer;padding:0;
+  }
+  .swgrid .sw.sel{outline:3px solid #3E3348;outline-offset:2px;}
+  .swgrid .none{
+    grid-column:1/-1;font-size:12.5px;color:#bbb;padding:6px 2px;text-align:center;
+  }
+
+  .rng{
+    -webkit-appearance:none;appearance:none;
+    width:100%;height:26px;border-radius:13px;margin:8px 0 4px;
+    border:1.5px solid #ddd;padding:0;background:#eee;
+  }
+  .rng::-webkit-slider-thumb{
+    -webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+    background:#fff;border:3px solid #3E3348;cursor:pointer;
+    box-shadow:0 1px 4px rgba(0,0,0,.3);
+  }
+  .rng::-moz-range-thumb{
+    width:22px;height:22px;border-radius:50%;
+    background:#fff;border:3px solid #3E3348;cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -238,7 +281,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v26</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v27</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -269,16 +312,32 @@
 <div id="palette">
   <div class="pal-box">
     <h2>🎨 색상 바꾸기</h2>
-    <div class="pal-row">
-      <span>배경</span><input type="color" id="cBg"><b id="vBg"></b><i></i>
+
+    <div class="ptabs" id="ptabs">
+      <button class="ptab on" data-k="bg">배경</button>
+      <button class="ptab" data-k="name">이름</button>
+      <button class="ptab" data-k="tel">전화번호</button>
     </div>
-    <div class="pal-row">
-      <span>이름</span><input type="color" id="cName"><b id="vName"></b><i id="rName"></i>
+
+    <div class="pcur">
+      <span class="pcur-sw" id="curSw"></span>
+      <b id="curHex">#000000</b>
+      <i id="curRatio"></i>
     </div>
-    <div class="pal-row">
-      <span>전화번호</span><input type="color" id="cTel"><b id="vTel"></b><i id="rTel"></i>
-    </div>
+
+    <div class="psec">최근 사용한 색</div>
+    <div class="swgrid" id="histGrid"></div>
+
+    <div class="psec">색상표 — 눌러서 바로 적용</div>
+    <div class="swgrid" id="colorGrid"></div>
+
+    <div class="psec">미세 조절</div>
+    <input type="range" id="sHue" min="0" max="360" step="1" class="rng">
+    <input type="range" id="sLit" min="4"  max="96" step="1" class="rng">
+
+    <div class="psec">조합 프리셋</div>
     <div class="pal-presets" id="presets"></div>
+
     <button class="go" id="cClose" style="width:100%;padding:16px">닫기</button>
   </div>
 </div>
@@ -778,23 +837,134 @@
     el.className = r>=4.5 ? 'ok' : (r>=3 ? '' : 'bad');
     el.textContent = '대비 '+r.toFixed(1)+':1 ' + (r>=4.5?'✓ 좋음':(r>=3?'보통':'⚠ 낮음'));
   }
-  function paintPalUI(){
-    const c=colors();
-    $('cBg').value=c.bg; $('cName').value=c.name; $('cTel').value=c.tel;
-    $('vBg').textContent=c.bg.toUpperCase();
-    $('vName').textContent=c.name.toUpperCase();
-    $('vTel').textContent=c.tel.toUpperCase();
-    showRatio($('rName'), contrast(c.name, c.bg));
-    showRatio($('rTel'),  contrast(c.tel,  c.bg));
+  /* ── 색상 변환 도우미 ── */
+  function hex2rgb(h){
+    const m=h.replace('#','').match(/../g).map(x=>parseInt(x,16));
+    return {r:m[0],g:m[1],b:m[2]};
   }
-  function setColor(key, val){
+  function rgb2hex(r,g,b){
+    const f=v=>('0'+Math.max(0,Math.min(255,Math.round(v))).toString(16)).slice(-2);
+    return '#'+f(r)+f(g)+f(b);
+  }
+  function hsl2hex(h,s,l){
+    h=((h%360)+360)%360; s/=100; l/=100;
+    const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2;
+    let r,g,b;
+    if(h<60){r=c;g=x;b=0;} else if(h<120){r=x;g=c;b=0;}
+    else if(h<180){r=0;g=c;b=x;} else if(h<240){r=0;g=x;b=c;}
+    else if(h<300){r=x;g=0;b=c;} else {r=c;g=0;b=x;}
+    return rgb2hex((r+m)*255,(g+m)*255,(b+m)*255);
+  }
+  function hex2hsl(hex){
+    const {r,g,b}=hex2rgb(hex);
+    const R=r/255,G=g/255,B=b/255;
+    const mx=Math.max(R,G,B), mn=Math.min(R,G,B), d=mx-mn;
+    let h=0;
+    if(d){
+      if(mx===R) h=60*(((G-B)/d)%6);
+      else if(mx===G) h=60*((B-R)/d+2);
+      else h=60*((R-G)/d+4);
+    }
+    const l=(mx+mn)/2;
+    const s=d ? d/(1-Math.abs(2*l-1)) : 0;
+    return {h:((h%360)+360)%360, s:s*100, l:l*100};
+  }
+
+  /* ── 색상표 (누르면 바로 적용) ── */
+  const GRID_COLORS = (function(){
+    const out=['#000000','#3A3A3A','#6E6E6E','#A0A0A0','#D0D0D0','#FFFFFF','#5B3A29','#F5E6D3'];
+    const hues=[0,25,45,80,150,185,215,265,300,330];
+    [72,52,34].forEach(l=>hues.forEach(h=>out.push(hsl2hex(h,70,l))));
+    return out;
+  })();
+
+  let curKey = 'bg';                       // 현재 조절 대상
+
+  function pushHist(hex){
+    hex=(hex||'').toUpperCase();
+    if(!/^#[0-9A-F]{6}$/.test(hex)) return;
+    data.colorHist=(data.colorHist||[]).filter(x=>x.toUpperCase()!==hex);
+    data.colorHist.unshift(hex);
+    data.colorHist=data.colorHist.slice(0,16);
+  }
+  function setColor(key, val, remember){
     data.colors = Object.assign({}, colors());
     data.colors[key]=val;
+    if(remember!==false) pushHist(val);
     save(); applyColors(); paintPalUI();
   }
-  [['cBg','bg'],['cName','name'],['cTel','tel']].forEach(([id,key])=>{
-    $(id).addEventListener('input', e=>setColor(key, e.target.value));
+
+  function swatch(hex, cur){
+    const b=document.createElement('button');
+    b.className='sw'+(hex.toUpperCase()===String(cur).toUpperCase()?' sel':'');
+    b.style.background=hex;
+    b.title=hex;
+    b.onclick=()=>setColor(curKey, hex);
+    return b;
+  }
+
+  function paintPalUI(){
+    const c=colors(), cur=c[curKey];
+
+    // 탭 표시
+    Array.prototype.forEach.call($('ptabs').children, t=>{
+      t.classList.toggle('on', t.dataset.k===curKey);
+    });
+
+    // 현재 색 + 대비
+    $('curSw').style.background=cur;
+    $('curHex').textContent=cur.toUpperCase();
+    if(curKey==='bg'){
+      const r1=contrast(c.name,c.bg), r2=contrast(c.tel,c.bg);
+      showRatio($('curRatio'), Math.min(r1,r2));
+    } else {
+      showRatio($('curRatio'), contrast(cur, c.bg));
+    }
+
+    // 최근 사용
+    const hg=$('histGrid'); hg.innerHTML='';
+    const hist=(data.colorHist||[]);
+    if(!hist.length){
+      const d=document.createElement('div');
+      d.className='none'; d.textContent='색을 고르면 여기에 쌓입니다';
+      hg.appendChild(d);
+    } else hist.forEach(h=>hg.appendChild(swatch(h,cur)));
+
+    // 색상표
+    const cg=$('colorGrid');
+    if(!cg.children.length || cg.dataset.cur!==cur){
+      cg.innerHTML=''; cg.dataset.cur=cur;
+      GRID_COLORS.forEach(h=>cg.appendChild(swatch(h,cur)));
+    }
+
+    // 슬라이더
+    const hsl=hex2hsl(cur);
+    $('sHue').value=Math.round(hsl.h);
+    $('sLit').value=Math.round(hsl.l);
+    $('sHue').style.background='linear-gradient(90deg,'
+      +[0,60,120,180,240,300,360].map(x=>hsl2hex(x,70,50)).join(',')+')';
+    $('sLit').style.background='linear-gradient(90deg,#000,'
+      +hsl2hex(hsl.h, Math.max(hsl.s,10), 50)+',#fff)';
+  }
+
+  /* 탭 전환 */
+  $('ptabs').addEventListener('click', e=>{
+    const t=e.target.closest('.ptab'); if(!t) return;
+    curKey=t.dataset.k; paintPalUI();
   });
+
+  /* 슬라이더 — 색조 / 밝기 */
+  function fromSliders(){
+    const base=hex2hsl(colors()[curKey]);
+    const s = base.s < 8 ? 65 : base.s;          // 무채색이면 채도 부여
+    const hex = hsl2hex(+$('sHue').value, s, +$('sLit').value);
+    setColor(curKey, hex, false);                 // 드래그 중엔 히스토리 미기록
+  }
+  ['sHue','sLit'].forEach(id=>{
+    $(id).addEventListener('input', fromSliders);
+    $(id).addEventListener('change', ()=>pushHist(colors()[curKey]) || save());
+  });
+
   (function buildPresets(){
     const box=$('presets');
     PRESETS.forEach(p=>{
@@ -803,7 +973,11 @@
       b.innerHTML='<span class="sw" style="background:'+p.bg+'"></span>'
                  +'<span class="sw" style="background:'+p.name+'"></span>'
                  +'<span class="sw" style="background:'+p.tel+'"></span>'+p.t;
-      b.onclick=()=>{ data.colors={bg:p.bg,name:p.name,tel:p.tel}; save(); applyColors(); paintPalUI(); };
+      b.onclick=()=>{
+        data.colors={bg:p.bg,name:p.name,tel:p.tel};
+        pushHist(p.bg); pushHist(p.name); pushHist(p.tel);
+        save(); applyColors(); paintPalUI();
+      };
       box.appendChild(b);
     });
   })();
