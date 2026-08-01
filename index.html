@@ -192,18 +192,10 @@
     padding:20px;width:100%;max-width:380px;
     box-shadow:0 12px 40px rgba(0,0,0,.35);
     max-height:92vh;overflow-y:auto;
-    scrollbar-width:thin;                       /* 파이어폭스: 얇게, 화살표 없음 */
-    scrollbar-color:rgba(0,0,0,.22) transparent;
+    scrollbar-width:none;        /* 스크롤바 완전히 감춤 (스크롤은 그대로 동작) */
+    -ms-overflow-style:none;
   }
-  /* 스크롤바 화살표 제거 + 얇고 둥글게 → 우측 모서리도 둥글게 유지 */
-  .pal-box::-webkit-scrollbar{width:7px;}
-  .pal-box::-webkit-scrollbar-button{display:none;width:0;height:0;}
-  .pal-box::-webkit-scrollbar-track{background:transparent;}
-  .pal-box::-webkit-scrollbar-corner{background:transparent;}
-  .pal-box::-webkit-scrollbar-thumb{
-    background:rgba(0,0,0,.22);border-radius:999px;
-    border:2px solid transparent;background-clip:content-box;
-  }
+  .pal-box::-webkit-scrollbar{display:none;width:0;height:0;}
   .pal-box h2{font-size:18px;font-weight:800;margin-bottom:14px;}
   .pal-row{
     display:flex;align-items:center;gap:10px;margin-bottom:12px;
@@ -296,7 +288,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v31</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v32</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -905,11 +897,17 @@
     data.colorHist.unshift(hex);
     data.colorHist=data.colorHist.slice(0,16);
   }
+  /* 색 변경을 다른 기기에도 전송 (슬라이더 드래그 중엔 몰아서 한 번) */
+  let colorPubT=null;
+  function publishColorsSoon(){
+    clearTimeout(colorPubT);
+    colorPubT=setTimeout(()=>{ try{ MIRROR.publish(); }catch(e){} }, 250);
+  }
   function setColor(key, val, remember){
     data.colors = Object.assign({}, colors());
     data.colors[key]=val;
     if(remember!==false) pushHist(val);
-    save(); applyColors(); paintPalUI();
+    save(); applyColors(); paintPalUI(); publishColorsSoon();
   }
 
   function swatch(hex, cur){
@@ -994,7 +992,7 @@
       b.onclick=()=>{
         data.colors={bg:p.bg,name:p.name,tel:p.tel};
         pushHist(p.bg); pushHist(p.name); pushHist(p.tel);
-        save(); applyColors(); paintPalUI();
+        save(); applyColors(); paintPalUI(); publishColorsSoon();
       };
       box.appendChild(b);
     });
@@ -1009,7 +1007,7 @@
   };
   $('cCancel').onclick=()=>{
     if(palBackup) data.colors = Object.assign({}, palBackup);
-    save(); applyColors();
+    save(); applyColors(); publishColorsSoon();
     $('palette').classList.remove('on');
     poke();
   };
@@ -1120,9 +1118,20 @@
             const o=await decrypt(payload.toString());
             if(!o || o.from===myId) return;                 // 내가 보낸 건 무시
             if(isInlineEditing()) return;                   // 편집 중엔 덮어쓰지 않음
-            if(o.name===data.name && o.tel===data.tel) return;
-            data.name=o.name||''; data.tel=o.tel||'';
-            save(); render(); hideBtns();                   // 받은 쪽은 바로 표시
+
+            let changed=false;
+            // 색상 동기화 (다른 기기에서 바꾸면 즉시 반영)
+            if(o.colors && JSON.stringify(o.colors)!==JSON.stringify(data.colors||{})){
+              data.colors=o.colors; changed=true;
+            }
+            // 이름·전화번호 동기화
+            if((o.name||'')!==data.name || (o.tel||'')!==data.tel){
+              data.name=o.name||''; data.tel=o.tel||''; changed=true;
+            }
+            if(!changed) return;
+            save(); render();
+            if($('palette').classList.contains('on')) paintPalUI();
+            else hideBtns();                                // 받은 쪽은 바로 표시
           }catch(e){}
         });
       }catch(e){ status(); }
@@ -1131,7 +1140,11 @@
     async function publish(){
       if(!client || !connected || !key) return;
       try{
-        const msg=await encrypt({name:data.name, tel:data.tel, from:myId, t:Date.now()});
+        const msg=await encrypt({
+          name:data.name, tel:data.tel,
+          colors:colors(),                                   // 색상도 함께 전송
+          from:myId, t:Date.now()
+        });
         client.publish(topic, msg, {qos:0, retain:true});    // retain: 나중에 접속해도 현재값 수신
       }catch(e){}
     }
