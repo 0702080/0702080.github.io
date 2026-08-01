@@ -192,6 +192,17 @@
     padding:20px;width:100%;max-width:380px;
     box-shadow:0 12px 40px rgba(0,0,0,.35);
     max-height:92vh;overflow-y:auto;
+    scrollbar-width:thin;                       /* 파이어폭스: 얇게, 화살표 없음 */
+    scrollbar-color:rgba(0,0,0,.22) transparent;
+  }
+  /* 스크롤바 화살표 제거 + 얇고 둥글게 → 우측 모서리도 둥글게 유지 */
+  .pal-box::-webkit-scrollbar{width:7px;}
+  .pal-box::-webkit-scrollbar-button{display:none;width:0;height:0;}
+  .pal-box::-webkit-scrollbar-track{background:transparent;}
+  .pal-box::-webkit-scrollbar-corner{background:transparent;}
+  .pal-box::-webkit-scrollbar-thumb{
+    background:rgba(0,0,0,.22);border-radius:999px;
+    border:2px solid transparent;background-clip:content-box;
   }
   .pal-box h2{font-size:18px;font-weight:800;margin-bottom:14px;}
   .pal-row{
@@ -281,7 +292,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v29</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v30</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -339,8 +350,8 @@
     <div class="pal-presets" id="presets"></div>
 
     <div class="row" style="margin-top:6px">
-      <button class="sub" id="cCancel" style="flex:1;padding:16px">취소</button>
-      <button class="go"  id="cClose"  style="flex:1.7;padding:16px">닫기</button>
+      <button class="sub" id="cCancel" style="flex:1 1 0;padding:16px">취소</button>
+      <button class="go"  id="cClose"  style="flex:1 1 0;padding:16px">닫기</button>
     </div>
   </div>
 </div>
