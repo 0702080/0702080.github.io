@@ -99,7 +99,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v47</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v48</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -237,10 +237,17 @@
       $('capRotate').style.display='none';
       try{
         stream = await navigator.mediaDevices.getUserMedia({
-          video:{ facingMode:facing, width:{ideal:1080}, height:{ideal:1920} },
+          video:{ facingMode:facing, width:{ideal:1080}, height:{ideal:1920}, zoom:{ideal:1} },
           audio:false
         });
         video.srcObject = stream;
+        // 일부 기기는 zoom 이 getUserMedia 제약으로는 안 먹고 트랙에 별도로 걸어야 적용됨
+        // (기본 카메라 앱의 "1x"와 같은 배율로 맞춰 화각이 더 넓게/좁게 나오는 걸 방지)
+        try{
+          const track=stream.getVideoTracks()[0];
+          const caps=track.getCapabilities && track.getCapabilities();
+          if(caps && caps.zoom) await track.applyConstraints({advanced:[{zoom:1}]});
+        }catch(e2){}
       }catch(e){
         alert('카메라를 열 수 없습니다.\n브라우저에 카메라 권한을 허용해주세요.');
         close();
