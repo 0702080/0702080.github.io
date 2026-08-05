@@ -99,7 +99,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v45</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v46</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -250,21 +250,40 @@
       if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
     }
 
-    /* +90도, -90도 둘 다 틀어져 보였다는 건 이 기기에서는 애초에
-       회전 보정이 필요 없다는 뜻 — video 프레임을 방향 그대로(회전 없이) 캡처한다.
-       (ImageCapture.takePhoto() 는 미리보기와 다른 화각·비율을 내놓는 기기가 있어 쓰지 않음) */
+    /* 회전 없이 그대로 캡처했더니 이 기기는 카메라 원본 자체가 가로(vw>vh)로
+       나온다는 게 확인됨 — 세로로 들고 있어도 원본은 가로이므로 90도 돌려야 한다.
+       (안드로이드 카메라 센서는 원래 가로가 기본 방향이라 흔한 현상.
+        표준 EXIF 규칙(Orientation 6)대로 시계 방향 90도 회전으로 맞춘다.) */
+    function frameGeom(){
+      const vw=video.videoWidth||1080, vh=video.videoHeight||1440;
+      const devicePortrait = window.innerHeight >= window.innerWidth;
+      const rotate = devicePortrait && vw>vh;
+      return { vw, vh, rotate, w: rotate?vh:vw, h: rotate?vw:vh };
+    }
+    function drawFrame(ctx, g){
+      if(g.rotate){
+        ctx.save();
+        ctx.translate(g.w/2, g.h/2);
+        ctx.rotate(Math.PI/2);
+        ctx.drawImage(video, -g.vw/2, -g.vh/2, g.vw, g.vh);
+        ctx.restore();
+      }else{
+        ctx.drawImage(video, 0, 0, g.w, g.h);
+      }
+    }
+
     /* 미리보기 화면(#capVideo)에 거는 CSS 필터와 반드시 같은 값을 써야
        "찍을 때 보이던 산뜻한 색감"이 저장 파일에도 그대로 남는다.
        (CSS 필터는 화면 표시에만 적용되고 canvas drawImage 로는 절대 넘어오지 않음) */
     const LIVE_FILTER = 'contrast(1.05) saturate(1.08) brightness(1.02)';
 
-    /* 촬영: 미리보기와 화각·비율·방향·색감이 모두 동일하도록 video 프레임을 그대로 캡처 */
+    /* 촬영: 세로 기기에 맞게 방향을 바로잡고, 미리보기와 같은 화각·색감으로 캡처 */
     function shoot(){
-      const w=video.videoWidth||1080, h=video.videoHeight||1440;
-      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      const g=frameGeom();
+      const cv=document.createElement('canvas'); cv.width=g.w; cv.height=g.h;
       const ctx=cv.getContext('2d');
       ctx.filter=LIVE_FILTER;
-      ctx.drawImage(video,0,0,w,h);
+      drawFrame(ctx, g);
       ctx.filter='none';
 
       shotCanvas=cv;
