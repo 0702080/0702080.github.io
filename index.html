@@ -99,7 +99,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v42</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v43</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -251,22 +251,24 @@
     }
 
     /* 일부 안드로이드 기기는 세로로 들고 찍어도 카메라 원본이 가로로 나옴
-       → 화면(세로)과 원본(가로)이 어긋나면 90도 돌려서 세로로 맞춤 */
+       → 화면(세로)과 원본(가로)이 어긋나면 90도 돌려서 세로로 맞춤
+       (ImageCapture 로 찍을 수 있는 기기는 이 추측이 아예 필요 없음 — 아래 shoot() 참고) */
     function frameGeom(){
       const vw=video.videoWidth||1080, vh=video.videoHeight||1440;
       const devicePortrait = window.innerHeight >= window.innerWidth;
       const rotate = devicePortrait && vw>vh;
       return { vw, vh, rotate, w: rotate?vh:vw, h: rotate?vw:vh };
     }
-    function drawFrame(ctx, g){
+    function drawFrame(ctx, g, source){
+      source = source || video;
       if(g.rotate){
         ctx.save();
         ctx.translate(g.w/2, g.h/2);
         ctx.rotate(Math.PI/2);
-        ctx.drawImage(video, -g.vw/2, -g.vh/2, g.vw, g.vh);
+        ctx.drawImage(source, -g.vw/2, -g.vh/2, g.vw, g.vh);
         ctx.restore();
       }else{
-        ctx.drawImage(video, 0, 0, g.w, g.h);
+        ctx.drawImage(source, 0, 0, g.w, g.h);
       }
     }
 
@@ -275,19 +277,35 @@
        (CSS 필터는 화면 표시에만 적용되고 canvas drawImage 로는 절대 넘어오지 않음) */
     const LIVE_FILTER = 'contrast(1.05) saturate(1.08) brightness(1.02)';
 
-    /* 촬영: 원본 위에 부드럽게 뭉갠 버전을 겹쳐 피부결을 완화(소프트 글로우) */
-    function shoot(){
-      const g=frameGeom();
+    /* 촬영: 원본 위에 부드럽게 뭉갠 버전을 겹쳐 피부결을 완화(소프트 글로우)
+       가능하면 ImageCapture.takePhoto() 로 찍는다 — 브라우저의 카메라 스틸샷
+       파이프라인을 그대로 쓰므로 방향이 항상 미리보기와 정확히 일치한다.
+       (미지원 기기에서만 예전 방식 video 프레임 캡처+회전 추측으로 대체) */
+    async function shoot(){
+      let bitmap=null;
+      try{
+        if(stream && window.ImageCapture){
+          const track=stream.getVideoTracks()[0];
+          const blob=await (new ImageCapture(track)).takePhoto();
+          bitmap=await createImageBitmap(blob);
+        }
+      }catch(e){ bitmap=null; }
+
+      const g = bitmap
+        ? { vw:bitmap.width, vh:bitmap.height, rotate:false, w:bitmap.width, h:bitmap.height }
+        : frameGeom();
+      const source = bitmap || video;
+
       const cv=document.createElement('canvas'); cv.width=g.w; cv.height=g.h;
       const ctx=cv.getContext('2d');
       ctx.filter=LIVE_FILTER;
-      drawFrame(ctx, g);
+      drawFrame(ctx, g, source);
       ctx.filter='none';
 
       const blur=document.createElement('canvas'); blur.width=g.w; blur.height=g.h;
       const bctx=blur.getContext('2d');
       bctx.filter=LIVE_FILTER+' blur('+Math.round(g.w*0.012)+'px)';
-      drawFrame(bctx, g);
+      drawFrame(bctx, g, source);
 
       ctx.save();
       ctx.globalAlpha=0.5;
