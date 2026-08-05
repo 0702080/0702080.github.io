@@ -155,10 +155,7 @@
     .fld{gap:6px;}
     .fld:nth-child(1){flex:1 1 288px;max-width:288px;min-width:130px;}  /* 이름 +20% */
     .fld:nth-child(2){flex:1 1 300px;max-width:300px;min-width:150px;}  /* 전화 +20% */
-    #mainBtns{flex:0 1 410px;}   /* 전체화면(315) + 간격(10) + 비우기(85) */
     .fields input{font-size:24px;padding:13px 15px;}
-    #mainBtns .go{flex:1 1 315px;max-width:315px;font-size:19px;padding:15px 20px;white-space:nowrap;}
-    #mainBtns .sub{flex:0 0 auto;font-size:15px;padding:15px 18px;white-space:nowrap;}
     #edit{padding-top:20px;}
   }
   .go{
@@ -394,7 +391,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v38</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v39</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -404,13 +401,7 @@
       <label for="tel_i">전화번호 <span style="font-weight:400;color:#999">(010 생략, 8자리)</span></label>
       <input id="tel_i" type="tel" inputmode="numeric" placeholder="33334444" autocomplete="off" enterkeyhint="done">
     </div>
-    <div class="row" id="mainBtns">
-      <button class="go" id="bShow">전체화면 보기</button>
-      <button class="sub" id="bReset">비우기</button>
-    </div>
   </div>
-  <label style="margin-top:8px">최근 입력</label>
-  <div class="recent" id="recent"></div>
 
   <label style="margin-top:8px">📸 촬영 → 이름표 자동 저장 (가장 간단)</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
@@ -518,7 +509,7 @@
 (function(){
   const $ = id => document.getElementById(id);
   const showEl=$('show'), nameEl=$('name'), telEl=$('tel'), emptyEl=$('empty');
-  const editEl=$('edit'), nameI=$('name_i'), telI=$('tel_i'), recentEl=$('recent');
+  const editEl=$('edit'), nameI=$('name_i'), telI=$('tel_i');
   const btns=$('btns');
   const LS='nametag_v1';
 
@@ -831,7 +822,6 @@
     //   (모바일 키보드가 올라오면 resize→render 가 불려 입력칸과 겹쳐 보이던 문제)
     if(telEditing){
       telEl.style.display = 'none';
-      renderRecent();
       return;                       // 크기도 그대로 유지 (입력 중 흔들림 방지)
     }
 
@@ -847,19 +837,6 @@
 
     // 이름 · 전화번호를 같은 크기로 최대한 크게
     fitBoth(availW, availH, gap);
-
-    renderRecent();
-  }
-
-
-  function renderRecent(){
-    recentEl.innerHTML='';
-    (data.recent||[]).slice(0,8).forEach(r=>{
-      const b=document.createElement('button');
-      b.className='chip'; b.textContent=r.name||r.tel;
-      b.onclick=()=>{ nameI.value=r.name; telI.value=r.tel; };
-      recentEl.appendChild(b);
-    });
   }
 
 
@@ -972,8 +949,6 @@
 
 
   $('bEdit').onclick=openEdit;
-  $('bShow').onclick=applyEdit;
-  $('bReset').onclick=()=>{ nameI.value=''; telI.value=''; nameI.focus(); };
   $('bClear').onclick=()=>{ data.name=''; data.tel=''; save(); MIRROR.publish(); render(); poke(); };
   /* ───── 색상 직접 조절 (전체화면에서도 가능) ───── */
   const DEF_COLORS={bg:'#FBEEDC', name:'#8B6E9E', tel:'#6B5280'};
