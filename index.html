@@ -76,6 +76,18 @@
     width:74px;height:74px;border-radius:50%;padding:0;
     background:#fff;border:6px solid rgba(255,255,255,.35);cursor:pointer;
   }
+  #capZoom{
+    position:absolute;left:0;right:0;
+    bottom:calc(max(26px,env(safe-area-inset-bottom)) + 92px);
+    display:none;justify-content:center;gap:8px;z-index:2;
+  }
+  #capZoom.show{display:flex;}
+  #capZoom button{
+    background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:999px;
+    font-size:13px;font-weight:700;font-family:inherit;padding:8px 14px;cursor:pointer;
+    backdrop-filter:blur(4px);
+  }
+  #capZoom button.sel{background:#fff;color:#111;}
   #capBottom{
     position:absolute;left:0;right:0;bottom:0;z-index:2;
     display:none;flex-direction:column;gap:10px;
@@ -99,7 +111,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v48</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v49</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -115,6 +127,7 @@
     <button id="capRotate" style="display:none">↻ 방향 고치기</button>
     <button id="capFlip">🔄 전/후면</button>
   </div>
+  <div id="capZoom"></div>
   <div id="capShutterWrap">
     <button id="capShutter" aria-label="촬영"></button>
   </div>
@@ -235,6 +248,7 @@
       shutterWrap.classList.remove('hide');
       bottom.classList.remove('on');
       $('capRotate').style.display='none';
+      $('capZoom').classList.remove('show');
       try{
         stream = await navigator.mediaDevices.getUserMedia({
           video:{ facingMode:facing, width:{ideal:1080}, height:{ideal:1920}, zoom:{ideal:1} },
@@ -243,11 +257,12 @@
         video.srcObject = stream;
         // 일부 기기는 zoom 이 getUserMedia 제약으로는 안 먹고 트랙에 별도로 걸어야 적용됨
         // (기본 카메라 앱의 "1x"와 같은 배율로 맞춰 화각이 더 넓게/좁게 나오는 걸 방지)
+        const track=stream.getVideoTracks()[0];
         try{
-          const track=stream.getVideoTracks()[0];
           const caps=track.getCapabilities && track.getCapabilities();
           if(caps && caps.zoom) await track.applyConstraints({advanced:[{zoom:1}]});
         }catch(e2){}
+        setupZoomUI(track);
       }catch(e){
         alert('카메라를 열 수 없습니다.\n브라우저에 카메라 권한을 허용해주세요.');
         close();
@@ -255,6 +270,33 @@
     }
     function stopCam(){
       if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+    }
+
+    /* zoom 이 지원되는 기기에서만 1x/2x 같은 배율 버튼을 보여주고,
+       탭하면 즉시 그 배율로 전환한다 (자동 1x 고정이 안 먹는 기기를 위한 수동 대안) */
+    function setupZoomUI(track){
+      const box=$('capZoom'); box.innerHTML='';
+      const caps=track.getCapabilities && track.getCapabilities();
+      if(!caps || !caps.zoom || caps.zoom.min===caps.zoom.max){
+        box.classList.remove('show');
+        return;
+      }
+      const min=caps.zoom.min, max=caps.zoom.max;
+      const levels=[min,1,max].filter(z=>z>=min && z<=max)
+                              .filter((z,i,a)=>a.indexOf(z)===i)
+                              .sort((a,b)=>a-b);
+      levels.forEach(z=>{
+        const b=document.createElement('button');
+        b.textContent=(Math.round(z*10)/10)+'x';
+        b.classList.toggle('sel', z===1);
+        b.onclick=()=>{
+          track.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});
+          Array.prototype.forEach.call(box.children, c=>c.classList.remove('sel'));
+          b.classList.add('sel');
+        };
+        box.appendChild(b);
+      });
+      box.classList.add('show');
     }
 
     /* 회전 문제가 아니었다 — 미리보기(#capVideo)는 object-fit:cover 로
@@ -294,6 +336,7 @@
       photo.src=cv.toDataURL('image/jpeg',0.92);
       photo.classList.add('on'); video.classList.remove('on');
       shutterWrap.classList.add('hide');
+      $('capZoom').classList.remove('show');
       bottom.classList.add('on');
       $('capRotate').style.display='inline-block';
       stopCam();
