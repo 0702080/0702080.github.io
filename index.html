@@ -88,6 +88,13 @@
     backdrop-filter:blur(4px);
   }
   #capZoom button.sel{background:#fff;color:#111;}
+  #capFocusRing{
+    position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;
+    border:2px solid #fff;border-radius:10px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.35);
+    pointer-events:none;opacity:0;transition:opacity .25s;z-index:3;
+  }
+  #capFocusRing.show{opacity:1;}
   #capBottom{
     position:absolute;left:0;right:0;bottom:0;z-index:2;
     display:none;flex-direction:column;gap:10px;
@@ -111,7 +118,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v49</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v50</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -121,6 +128,7 @@
   <div id="capStage">
     <video id="capVideo" autoplay playsinline muted></video>
     <img id="capPhoto" alt="">
+    <div id="capFocusRing"></div>
   </div>
   <div id="capTop">
     <button id="capClose">✕ 닫기</button>
@@ -240,7 +248,7 @@
     const video=$('capVideo'), photo=$('capPhoto');
     const bottom=$('capBottom'), shutterWrap=$('capShutterWrap');
     const nI=$('capName'), tI=$('capTel'), hintEl=$('capHint');
-    let stream=null, facing='environment', shotCanvas=null;
+    let stream=null, curTrack=null, facing='environment', shotCanvas=null, focusRingT=null;
 
     async function openCam(){
       stopCam();
@@ -258,6 +266,7 @@
         // 일부 기기는 zoom 이 getUserMedia 제약으로는 안 먹고 트랙에 별도로 걸어야 적용됨
         // (기본 카메라 앱의 "1x"와 같은 배율로 맞춰 화각이 더 넓게/좁게 나오는 걸 방지)
         const track=stream.getVideoTracks()[0];
+        curTrack=track;
         try{
           const caps=track.getCapabilities && track.getCapabilities();
           if(caps && caps.zoom) await track.applyConstraints({advanced:[{zoom:1}]});
@@ -270,7 +279,46 @@
     }
     function stopCam(){
       if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+      curTrack=null;
     }
+
+    /* 화면 터치 지점에 초점을 맞춘다 (기기가 지원할 때만 실제 초점 이동,
+       지원 안 해도 터치 피드백 사각형은 항상 보여줌).
+       ※ 진짜 얼굴 자동 인식(Shape Detection FaceDetector)은 2026년 현재도
+         크롬 실험 플래그 뒤에 있어 일반 사용자 폰에서 그냥 켜지지 않는다 —
+         그래서 "터치로 초점 맞추기"만 넣고, 얼굴 자동 인식은 넣지 않았다. */
+    function showFocusRing(x,y){
+      const ring=$('capFocusRing');
+      ring.style.left=x+'px'; ring.style.top=y+'px';
+      ring.classList.remove('show'); void ring.offsetWidth; ring.classList.add('show');
+      clearTimeout(focusRingT);
+      focusRingT=setTimeout(()=>ring.classList.remove('show'), 700);
+    }
+    function focusAt(clientX, clientY){
+      const rect=video.getBoundingClientRect();
+      const tapX=clientX-rect.left, tapY=clientY-rect.top;
+      showFocusRing(tapX, tapY);
+      if(!curTrack) return;
+      try{
+        const cw=rect.width, ch=rect.height;
+        const vw=video.videoWidth||cw, vh=video.videoHeight||ch;
+        const scale=Math.max(cw/vw, ch/vh);          // object-fit:cover 와 같은 배율
+        const offX=(vw*scale-cw)/2, offY=(vh*scale-ch)/2;
+        let nx=(tapX+offX)/scale/vw, ny=(tapY+offY)/scale/vh;
+        nx=Math.min(1,Math.max(0,nx)); ny=Math.min(1,Math.max(0,ny));
+
+        const caps=curTrack.getCapabilities && curTrack.getCapabilities();
+        if(!caps || !caps.pointsOfInterest) return;
+        const adv={ pointsOfInterest:[{x:nx,y:ny}] };
+        if(caps.focusMode){
+          if(caps.focusMode.includes('single-shot')) adv.focusMode='single-shot';
+          else if(caps.focusMode.includes('continuous')) adv.focusMode='continuous';
+          else if(caps.focusMode.includes('manual')) adv.focusMode='manual';
+        }
+        curTrack.applyConstraints({advanced:[adv]}).catch(()=>{});
+      }catch(e){}
+    }
+    video.addEventListener('click', e=>focusAt(e.clientX, e.clientY));
 
     /* zoom 이 지원되는 기기에서만 1x/2x 같은 배율 버튼을 보여주고,
        탭하면 즉시 그 배율로 전환한다 (자동 1x 고정이 안 먹는 기기를 위한 수동 대안) */
