@@ -327,6 +327,48 @@
     width:22px;height:22px;border-radius:50%;
     background:#fff;border:3px solid #3E3348;cursor:pointer;
   }
+
+  /* ── 원스텝 촬영 (피부보정 + 이름표 합성 + 자동저장) ── */
+  #capture{position:fixed;inset:0;z-index:50;display:none;background:#000;flex-direction:column;}
+  #capture.on{display:flex;}
+  #capStage{position:relative;flex:1;overflow:hidden;background:#000;}
+  #capVideo,#capPhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;}
+  #capVideo.on,#capPhoto.on{display:block;}
+  #capVideo{filter:contrast(1.05) saturate(1.08) brightness(1.02);}
+  #capTop{
+    position:absolute;top:max(12px,env(safe-area-inset-top));left:0;right:0;
+    display:flex;justify-content:space-between;padding:0 14px;z-index:2;
+  }
+  #capTop button{
+    background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:999px;
+    font-size:14px;font-weight:700;font-family:inherit;padding:10px 16px;cursor:pointer;
+    backdrop-filter:blur(4px);
+  }
+  #capShutterWrap{
+    position:absolute;left:0;right:0;bottom:max(26px,env(safe-area-inset-bottom));
+    display:flex;justify-content:center;z-index:2;
+  }
+  #capShutterWrap.hide{display:none;}
+  #capShutter{
+    width:74px;height:74px;border-radius:50%;padding:0;
+    background:#fff;border:6px solid rgba(255,255,255,.35);cursor:pointer;
+  }
+  #capBottom{
+    position:absolute;left:0;right:0;bottom:0;z-index:2;
+    display:none;flex-direction:column;gap:10px;
+    padding:14px 16px max(16px,env(safe-area-inset-bottom));
+    background:linear-gradient(transparent,rgba(0,0,0,.75) 42%);
+  }
+  #capBottom.on{display:flex;}
+  #capBottom .row{gap:8px;}
+  #capBottom input{
+    font-size:20px;padding:12px 14px;border-radius:12px;border:none;
+    background:rgba(255,255,255,.94);color:#111;font-weight:800;
+    width:100%;font-family:inherit;
+  }
+  #capActions{display:flex;gap:10px;}
+  #capActions>button{flex:1;padding:15px;border-radius:12px;font-size:16px;}
+  #capHint{color:#f0e9da;font-size:12px;text-align:center;opacity:.9;min-height:15px;}
 </style>
 </head>
 <body>
@@ -352,7 +394,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v37</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v38</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -370,7 +412,11 @@
   <label style="margin-top:8px">최근 입력</label>
   <div class="recent" id="recent"></div>
 
-  <label style="margin-top:8px">📷 촬영 → 파일명 정리</label>
+  <label style="margin-top:8px">📸 촬영 → 이름표 자동 저장 (가장 간단)</label>
+  <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
+  <div class="hint" style="margin-top:0">찍고 이름·전화번호만 입력하면<br><b>날짜_이름_전화번호.jpg</b>로 바로 저장됩니다</div>
+
+  <label style="margin-top:10px">기타 방법 (Ulike 등 외부 앱을 쓰고 싶을 때)</label>
   <div class="hint" id="fnPreview" style="margin-top:0"></div>
   <div class="row">
     <button class="sub" id="bUlike"  style="flex:1;padding:14px">① Ulike 열기</button>
@@ -439,6 +485,33 @@
   </div>
 </div>
 <div id="btZoom"><img id="btZoomImg" alt=""></div>
+
+<!-- 원스텝 촬영: 찍기 → 이름/번호 입력 → 자동 저장 -->
+<div id="capture">
+  <div id="capStage">
+    <video id="capVideo" autoplay playsinline muted></video>
+    <img id="capPhoto" alt="">
+  </div>
+  <div id="capTop">
+    <button id="capClose">✕ 닫기</button>
+    <button id="capFlip">🔄 전/후면</button>
+  </div>
+  <div id="capShutterWrap">
+    <button id="capShutter" aria-label="촬영"></button>
+  </div>
+  <div id="capBottom">
+    <div class="row">
+      <input id="capName" type="text" placeholder="이름" autocomplete="off" enterkeyhint="next">
+      <input id="capTel"  type="tel" inputmode="numeric" placeholder="전화번호(8자리)" autocomplete="off" enterkeyhint="done">
+    </div>
+    <div class="recent" id="capChips"></div>
+    <div id="capHint"></div>
+    <div id="capActions">
+      <button class="sub" id="capRetake">다시 찍기</button>
+      <button class="go"  id="capSave">저장</button>
+    </div>
+  </div>
+</div>
 
 <script src="mqtt.min.js"></script>
 <script>
@@ -833,8 +906,9 @@
   function moveToTel (){ endEditName(true); startEditTel();  }
 
   document.addEventListener('keydown', e=>{
-    // 편집 화면(입력 폼)이 열려 있으면 방향키는 그대로 둠
+    // 편집 화면(입력 폼)이나 촬영 화면이 열려 있으면 방향키는 그대로 둠
     if(editEl.classList.contains('on')) return;
+    if($('capture').classList.contains('on')) return;
 
     if(!isInlineEditing()){
       // 편집 중이 아닐 때: ↓ 이름부터, ↑ 전화번호부터 편집 시작
@@ -1448,6 +1522,145 @@
     e.target.value='';
   });
   $('fCam') .addEventListener('change', e=>{ saveRenamed(e.target.files); e.target.value=''; });
+
+  /* ───── 원스텝 촬영: 찍기 → 이름/번호 입력 → 자동 저장 ─────
+     Ulike 없이 이 화면 안에서 피부 보정 + 이름표 합성 + 파일 저장을 한 번에 처리.
+     (진짜 AI 피부보정은 웹에서 재현 불가 → 소프트 블러를 겹쳐 매끈한 느낌만 근사) */
+  const CAP = (function(){
+    const video=$('capVideo'), photo=$('capPhoto');
+    const bottom=$('capBottom'), shutterWrap=$('capShutterWrap');
+    const nI=$('capName'), tI=$('capTel'), hintEl=$('capHint');
+    let stream=null, facing='environment', shotCanvas=null;
+
+    async function openCam(){
+      stopCam();
+      video.classList.add('on'); photo.classList.remove('on');
+      shutterWrap.classList.remove('hide');
+      bottom.classList.remove('on');
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({
+          video:{ facingMode:facing, width:{ideal:1920}, height:{ideal:1920} },
+          audio:false
+        });
+        video.srcObject = stream;
+      }catch(e){
+        alert('카메라를 열 수 없습니다.\n브라우저에 카메라 권한을 허용해주세요.');
+        close();
+      }
+    }
+    function stopCam(){
+      if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+    }
+
+    /* 촬영: 원본 위에 부드럽게 뭉갠 버전을 겹쳐 피부결을 완화(소프트 글로우) */
+    function shoot(){
+      const w=video.videoWidth||1080, h=video.videoHeight||1440;
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      const ctx=cv.getContext('2d');
+      ctx.drawImage(video,0,0,w,h);
+
+      const blur=document.createElement('canvas'); blur.width=w; blur.height=h;
+      const bctx=blur.getContext('2d');
+      bctx.filter='blur('+Math.round(w*0.012)+'px)';
+      bctx.drawImage(video,0,0,w,h);
+
+      ctx.save();
+      ctx.globalAlpha=0.5;
+      ctx.filter='brightness(1.04) saturate(1.06)';
+      ctx.drawImage(blur,0,0,w,h);
+      ctx.restore();
+
+      shotCanvas=cv;
+      photo.src=cv.toDataURL('image/jpeg',0.92);
+      photo.classList.add('on'); video.classList.remove('on');
+      shutterWrap.classList.add('hide');
+      bottom.classList.add('on');
+      stopCam();
+
+      nI.value=''; tI.value=''; hintEl.textContent='';
+      renderCapChips();
+      setTimeout(()=>nI.focus(),120);
+    }
+
+    function renderCapChips(){
+      const box=$('capChips'); box.innerHTML='';
+      (data.recent||[]).slice(0,8).forEach(r=>{
+        const b=document.createElement('button');
+        b.className='chip'; b.textContent=r.name||r.tel;
+        b.onmousedown=e=>e.preventDefault();
+        b.onclick=()=>{ nI.value=r.name||''; tI.value=r.tel||''; };
+        box.appendChild(b);
+      });
+    }
+
+    function capFileBase(){
+      const nm=safeSeg(nI.value)||'이름없음';
+      const tel=fmtTel(tI.value).replace(/[\\/:*?"<>|\s]/g,'');
+      return todayStamp()+'_'+nm+(tel?'_'+tel:'');
+    }
+
+    function saveShot(){
+      if(!shotCanvas) return;
+      const nm=nI.value.trim(), tel=fmtTel(tI.value);
+      if(!nm && !tel){ hintEl.textContent='이름 또는 전화번호를 입력해주세요'; return; }
+
+      const cv=document.createElement('canvas');
+      cv.width=shotCanvas.width; cv.height=shotCanvas.height;
+      const ctx=cv.getContext('2d');
+      ctx.drawImage(shotCanvas,0,0);
+
+      const w=cv.width, h=cv.height;
+      const barH=Math.round(h*0.16);
+      ctx.fillStyle='rgba(0,0,0,.55)';
+      ctx.fillRect(0,h-barH,w,barH);
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
+      if(nm){
+        ctx.font='900 '+Math.round(barH*0.42)+'px "Malgun Gothic",sans-serif';
+        ctx.fillText(nm, w/2, h-barH*0.62);
+      }
+      if(tel){
+        ctx.font='800 '+Math.round(barH*0.30)+'px "Malgun Gothic",sans-serif';
+        ctx.fillText(tel, w/2, h-barH*0.22);
+      }
+
+      cv.toBlob(blob=>{
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url; a.download=capFileBase()+'.jpg';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),5000);
+
+        pushRecent(nm,tel); save();
+        hintEl.textContent='✅ 저장됨: '+capFileBase()+'.jpg';
+        setTimeout(openCam, 700);           // 바로 다음 사람 촬영으로
+      }, 'image/jpeg', 0.92);
+    }
+
+    function open(){
+      $('capture').classList.add('on');
+      editEl.classList.remove('on');
+      keepAwake(true);
+      openCam();
+    }
+    function close(){
+      stopCam();
+      $('capture').classList.remove('on');
+      openEdit();
+    }
+
+    $('capShutter').onclick=shoot;
+    $('capRetake').onclick=openCam;
+    $('capSave').onclick=saveShot;
+    $('capClose').onclick=close;
+    $('capFlip').onclick=()=>{ facing = facing==='environment' ? 'user' : 'environment'; openCam(); };
+    nI.addEventListener('input', ()=>{ if(hintEl.textContent) hintEl.textContent=''; });
+    nI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); tI.focus(); } });
+    tI.addEventListener('input', e=>{ e.target.value=fmtTel(e.target.value); });
+    tI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveShot(); } });
+
+    return { open };
+  })();
+  $('bCapture').onclick = CAP.open;
 
   $('bRoom').onclick = ()=>MIRROR.changeRoom();
   $('bCopy').onclick = async ()=>{
