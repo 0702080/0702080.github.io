@@ -305,6 +305,19 @@
     background:#fff;color:#555;cursor:pointer;
   }
   .bt-row.done .bt-save{background:#e9f5ec;border-color:#9CC7A8;color:#1d7a45;}
+  .bt-when{font-size:11px;color:#a99b86;line-height:1.45;}
+  .bt-when b{color:#1d7a45;}
+  .bt-when .warn{color:#c0392b;font-weight:700;}
+  .bt-thumb{cursor:zoom-in;}
+
+  /* 썸네일 크게 보기 */
+  #btZoom{
+    position:fixed;inset:0;z-index:40;display:none;
+    align-items:center;justify-content:center;
+    background:rgba(0,0,0,.88);padding:12px;
+  }
+  #btZoom.on{display:flex;}
+  #btZoom img{max-width:100%;max-height:100%;border-radius:10px;}
 
   /* 하단 버튼: 두 개를 정확히 같은 폭으로 */
   .palbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
@@ -339,7 +352,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v36</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v37</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -421,9 +434,11 @@
   </div>
   <div class="bt-chips" id="btChips"></div>
   <div class="bt-list" id="btList">
-    <div class="bt-empty">위 <b>＋ 사진 고르기</b>로<br>Ulike로 찍은 사진들을 한꺼번에 선택하세요</div>
+    <div class="bt-empty">위 <b>＋ 사진 고르기</b>로<br>Ulike로 찍은 사진들을 한꺼번에 선택하세요<br><br>
+      <b>⏱ 촬영 시각으로 이름이 자동으로 채워집니다</b></div>
   </div>
 </div>
+<div id="btZoom"><img id="btZoomImg" alt=""></div>
 
 <script src="mqtt.min.js"></script>
 <script>
@@ -614,7 +629,7 @@
     nameEl.removeAttribute('contenteditable');
     nameEl.classList.remove('editing');
     data.name = commit ? txt : inlineBackup;
-    if(commit){ pushRecent(data.name, data.tel); save(); MIRROR.publish(); }
+    if(commit){ pushRecent(data.name, data.tel); save(); logShown(); MIRROR.publish(); }
     render();
   }
 
@@ -713,7 +728,7 @@
     telEl.style.display = '';
     telEl.classList.remove('editing');
     data.tel = commit ? fmtTel(telLive.value) : inlineBackup;
-    if(commit){ pushRecent(data.name, data.tel); save(); MIRROR.publish(); }
+    if(commit){ pushRecent(data.name, data.tel); save(); logShown(); MIRROR.publish(); }
     render();
   }
 
@@ -871,7 +886,7 @@
     data.name=nameI.value.trim();
     data.tel=fmtTel(telI.value);
     pushRecent(data.name,data.tel);
-    save();
+    save(); logShown();
     MIRROR.publish();                   // 다른 폰에 즉시 전송
     editEl.classList.remove('on');
     nameI.blur(); telI.blur();          // 키보드 내리기
@@ -1182,7 +1197,7 @@
               data.name=o.name||''; data.tel=o.tel||''; changed=true;
             }
             if(!changed) return;
-            save(); render();
+            save(); logShown(); render();
             if($('palette').classList.contains('on')) paintPalUI();
             else hideBtns();                                // 받은 쪽은 바로 표시
           }catch(e){}
@@ -1269,7 +1284,37 @@
   $('bBatch').onclick =()=>{ $('batch').classList.add('on'); renderChips();
                              if(!batch.length) $('fPick').click(); };
   $('btClose').onclick=()=>{ $('batch').classList.remove('on'); };
+  $('btZoom').onclick =()=>{ $('btZoom').classList.remove('on'); };
   $('btPick').onclick =()=>$('fPick').click();
+
+  /* ───── 명찰 표시 기록 ─────
+     "언제 누구 명찰을 띄웠는지"를 남겨두고,
+     나중에 사진의 촬영 시각과 대조해 자동으로 이름을 채운다.  */
+  function logShown(){
+    if(!data.name && !data.tel) return;
+    data.log = data.log || [];
+    const last = data.log[data.log.length-1];
+    if(last && last.name===data.name && last.tel===data.tel) return;  // 같은 사람 중복 기록 방지
+    data.log.push({ name:data.name, tel:data.tel, t:Date.now() });
+    if(data.log.length>500) data.log = data.log.slice(-500);
+    save();
+  }
+  /* 사진 찍힌 시각에 화면에 떠 있던 명찰 찾기 */
+  function matchByTime(f){
+    const t=(f && f.lastModified) || 0;
+    if(!t) return null;
+    const log=data.log||[];
+    let best=null;
+    for(let i=0;i<log.length;i++){
+      if(log[i].t <= t+10000) best=log[i];    // 10초 여유(시계 오차)
+      else break;
+    }
+    return best;
+  }
+  function hhmm(ms){
+    const d=new Date(ms), p=n=>('0'+n).slice(-2);
+    return p(d.getHours())+':'+p(d.getMinutes());
+  }
 
   /* ───── 여러 장 한꺼번에 이름 붙이기 ─────
      날짜는 각 사진이 찍힌 날짜를 자동으로 사용 */
@@ -1316,7 +1361,9 @@
     if(!list.length) return;
     if(!batch.length) $('btList').innerHTML='';
     list.forEach(f=>{
-      const it={file:f, url:URL.createObjectURL(f), name:'', tel:'', saved:false};
+      const hit = matchByTime(f);                 // 촬영 시각으로 자동 매칭
+      const it={file:f, url:URL.createObjectURL(f),
+                name:(hit&&hit.name)||'', tel:(hit&&hit.tel)||'', saved:false};
       const row=document.createElement('div');
       row.className='bt-row';
       row.innerHTML=
@@ -1325,16 +1372,29 @@
        +'  <input class="bt-name" type="text" placeholder="이름" autocomplete="off" enterkeyhint="next">'
        +'  <input class="bt-tel"  type="tel" inputmode="numeric" placeholder="번호 8자리" autocomplete="off" enterkeyhint="next">'
        +'  <div class="bt-fn"></div>'
+       +'  <div class="bt-when"></div>'
        +'</div>'
        +'<button class="bt-save">저장</button>';
       it.el=row; batch.push(it);
       $('btList').appendChild(row);
 
       const iN=row.querySelector('.bt-name'), iT=row.querySelector('.bt-tel');
-      const fn=row.querySelector('.bt-fn');
+      const fn=row.querySelector('.bt-fn'), wh=row.querySelector('.bt-when');
       const idx=batch.length-1;
+      iN.value=it.name; iT.value=it.tel;
+      wh.innerHTML = f.lastModified
+        ? ('촬영 '+hhmm(f.lastModified)
+           + (hit ? ' · <b>⏱ 자동매칭</b> (명찰 '+hhmm(hit.t)+')'
+                  : ' · <span class="warn">매칭 기록 없음 — 직접 입력</span>'))
+        : '촬영 시각 정보 없음 — 직접 입력';
       const upd=()=>{ fn.textContent=rowFileName(it); };
       upd();
+
+      // 썸네일 눌러 크게 보기 (누가 누군지 확인용)
+      row.querySelector('.bt-thumb').onclick=()=>{
+        $('btZoomImg').src=it.url;
+        $('btZoom').classList.add('on');
+      };
 
       iN.addEventListener('focus', ()=>focusRow=idx);
       iT.addEventListener('focus', ()=>focusRow=idx);
