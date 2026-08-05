@@ -289,7 +289,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v33</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v34</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -306,6 +306,17 @@
   </div>
   <label style="margin-top:8px">최근 입력</label>
   <div class="recent" id="recent"></div>
+
+  <label style="margin-top:8px">📷 촬영 → 파일명 정리</label>
+  <div class="hint" id="fnPreview" style="margin-top:0"></div>
+  <div class="row">
+    <button class="sub" id="bUlike"  style="flex:1;padding:14px">① Ulike 열기</button>
+    <button class="sub" id="bCamera" style="flex:1;padding:14px">① 기본 카메라</button>
+  </div>
+  <button class="go" id="bRename" style="padding:16px">② 찍은 사진 이름 바꿔 저장</button>
+  <div class="hint" id="renameLog" style="margin-top:0"></div>
+  <input type="file" id="fPick" accept="image/*" multiple style="display:none">
+  <input type="file" id="fCam"  accept="image/*" capture="environment" style="display:none">
 
   <label style="margin-top:8px">📡 실시간 공유 (다른 폰에 즉시 표시)</label>
   <div class="hint" id="mirrorBox" style="margin-top:0"></div>
@@ -330,21 +341,16 @@
     <div class="pcur">
       <span class="pcur-sw" id="curSw"></span>
       <b id="curHex">#000000</b>
-      <i id="curRatio"></i>
     </div>
 
-    <div class="psec">최근 사용한 색</div>
+    <div class="psec" id="histLabel">최근 사용한 색</div>
     <div class="swgrid" id="histGrid"></div>
 
-    <div class="psec">색상표 — 눌러서 바로 적용</div>
     <div class="swgrid" id="colorGrid"></div>
 
     <div class="psec">미세 조절</div>
     <input type="range" id="sHue" min="0" max="360" step="1" class="rng">
     <input type="range" id="sLit" min="4"  max="96" step="1" class="rng">
-
-    <div class="psec">조합 프리셋</div>
-    <div class="pal-presets" id="presets"></div>
 
     <div class="palbtns">
       <button class="sub" id="cCancel">취소</button>
@@ -773,7 +779,7 @@
   function openEdit(){
     nameI.value=data.name; telI.value=data.tel;
     editEl.classList.add('on'); keepAwake(false);
-    MIRROR.status();
+    MIRROR.status(); fnPreview();
     setTimeout(()=>nameI.focus(),60);
   }
 
@@ -933,24 +939,15 @@
       else t.style.borderColor='';
     });
 
-    // 현재 색 + 대비
+    // 현재 색
     $('curSw').style.background=cur;
     $('curHex').textContent=cur.toUpperCase();
-    if(curKey==='bg'){
-      const r1=contrast(c.name,c.bg), r2=contrast(c.tel,c.bg);
-      showRatio($('curRatio'), Math.min(r1,r2));
-    } else {
-      showRatio($('curRatio'), contrast(cur, c.bg));
-    }
 
-    // 최근 사용
+    // 최근 사용 (없으면 라벨까지 숨김)
     const hg=$('histGrid'); hg.innerHTML='';
     const hist=(data.colorHist||[]);
-    if(!hist.length){
-      const d=document.createElement('div');
-      d.className='none'; d.textContent='색을 고르면 여기에 쌓입니다';
-      hg.appendChild(d);
-    } else hist.forEach(h=>hg.appendChild(swatch(h,cur)));
+    $('histLabel').style.display = hist.length ? '' : 'none';
+    hist.forEach(h=>hg.appendChild(swatch(h,cur)));
 
     // 색상표
     const cg=$('colorGrid');
@@ -987,22 +984,6 @@
     $(id).addEventListener('change', ()=>pushHist(colors()[curKey]) || save());
   });
 
-  (function buildPresets(){
-    const box=$('presets');
-    PRESETS.forEach(p=>{
-      const b=document.createElement('button');
-      b.className='pset';
-      b.innerHTML='<span class="sw" style="background:'+p.bg+'"></span>'
-                 +'<span class="sw" style="background:'+p.name+'"></span>'
-                 +'<span class="sw" style="background:'+p.tel+'"></span>'+p.t;
-      b.onclick=()=>{
-        data.colors={bg:p.bg,name:p.name,tel:p.tel};
-        pushHist(p.bg); pushHist(p.name); pushHist(p.tel);
-        save(); applyColors(); paintPalUI(); publishColorsSoon();
-      };
-      box.appendChild(b);
-    });
-  })();
   /* 패널 열 때 색을 백업해 두고, 취소하면 되돌린다 */
   let palBackup = null;
   $('bTheme').onclick=()=>{
@@ -1187,6 +1168,61 @@
     return { start, publish, status, changeRoom, shareUrl };
   })();
 
+
+  /* ───── 촬영 → 파일명 정리 (2단계) ─────
+     ① Ulike/기본 카메라로 촬영  ② 여기서 사진을 불러와 이름 바꿔 저장
+     ※ 웹은 갤러리 파일을 직접 이름 바꿀 수 없어, 규칙대로 이름 붙인
+       복사본을 '다운로드' 폴더에 저장하는 방식 */
+  const ULIKE_PKG = 'com.gorgeous.liteinternational';
+
+  function safeSeg(s){
+    return (s||'').replace(/[\\/:*?"<>|.]/g,'').replace(/\s+/g,'').trim();
+  }
+  function todayStamp(){
+    const d=new Date(), p=n=>('0'+n).slice(-2);
+    return ''+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate());
+  }
+  function fileBase(){
+    const nm  = safeSeg(data.name) || '이름없음';
+    const tel = (data.tel||'').replace(/\D/g,'');
+    return todayStamp()+'_'+nm+(tel ? '_'+tel : '');
+  }
+  function fnPreview(){
+    const el=$('fnPreview'); if(el) el.textContent = '저장될 이름: '+fileBase()+'.jpg';
+  }
+
+  $('bUlike').onclick=()=>{
+    fnPreview();
+    const fb='https://play.google.com/store/apps/details?id='+ULIKE_PKG;
+    const intent='intent://#Intent;package='+ULIKE_PKG
+               +';S.browser_fallback_url='+encodeURIComponent(fb)+';end';
+    try{ location.href=intent; }catch(e){ location.href=fb; }
+  };
+  $('bCamera').onclick=()=>{ fnPreview(); $('fCam').click(); };
+  $('bRename').onclick=()=>{ fnPreview(); $('fPick').click(); };
+
+  async function saveRenamed(files){
+    const list=Array.prototype.slice.call(files||[]);
+    if(!list.length) return;
+    const base=fileBase();
+    let n=0;
+    for(const f of list){
+      n++;
+      const m=(f.name||'').match(/\.[A-Za-z0-9]+$/);
+      const ext=m ? m[0].toLowerCase() : '.jpg';
+      const name=base+(list.length>1 ? '_'+('0'+n).slice(-2) : '')+ext;
+      const url=URL.createObjectURL(f);
+      const a=document.createElement('a');
+      a.href=url; a.download=name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 5000);
+      await new Promise(r=>setTimeout(r, 400));      // 연속 저장 간격
+    }
+    $('renameLog').textContent =
+      '✅ '+list.length+'장 저장 완료 → 다운로드 폴더 · '+base+'.jpg';
+  }
+  $('fPick').addEventListener('change', e=>{ saveRenamed(e.target.files); e.target.value=''; });
+  $('fCam') .addEventListener('change', e=>{ saveRenamed(e.target.files); e.target.value=''; });
 
   $('bRoom').onclick = ()=>MIRROR.changeRoom();
   $('bCopy').onclick = async ()=>{
