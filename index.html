@@ -391,7 +391,7 @@
 
 <!-- 편집 화면 -->
 <div id="edit">
-  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v39</span></h1>
+  <h1>🏷️ 명찰 입력 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v40</span></h1>
   <div class="fields">
     <div class="fld">
       <label for="name_i">이름</label>
@@ -485,6 +485,7 @@
   </div>
   <div id="capTop">
     <button id="capClose">✕ 닫기</button>
+    <button id="capRotate" style="display:none">↻ 방향 고치기</button>
     <button id="capFlip">🔄 전/후면</button>
   </div>
   <div id="capShutterWrap">
@@ -1512,6 +1513,7 @@
       video.classList.add('on'); photo.classList.remove('on');
       shutterWrap.classList.remove('hide');
       bottom.classList.remove('on');
+      $('capRotate').style.display='none';
       try{
         stream = await navigator.mediaDevices.getUserMedia({
           video:{ facingMode:facing, width:{ideal:1920}, height:{ideal:1920} },
@@ -1527,22 +1529,42 @@
       if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
     }
 
+    /* 일부 안드로이드 기기는 세로로 들고 찍어도 카메라 원본이 가로로 나옴
+       → 화면(세로)과 원본(가로)이 어긋나면 90도 돌려서 세로로 맞춤 */
+    function frameGeom(){
+      const vw=video.videoWidth||1080, vh=video.videoHeight||1440;
+      const devicePortrait = window.innerHeight >= window.innerWidth;
+      const rotate = devicePortrait && vw>vh;
+      return { vw, vh, rotate, w: rotate?vh:vw, h: rotate?vw:vh };
+    }
+    function drawFrame(ctx, g){
+      if(g.rotate){
+        ctx.save();
+        ctx.translate(g.w/2, g.h/2);
+        ctx.rotate(Math.PI/2);
+        ctx.drawImage(video, -g.vw/2, -g.vh/2, g.vw, g.vh);
+        ctx.restore();
+      }else{
+        ctx.drawImage(video, 0, 0, g.w, g.h);
+      }
+    }
+
     /* 촬영: 원본 위에 부드럽게 뭉갠 버전을 겹쳐 피부결을 완화(소프트 글로우) */
     function shoot(){
-      const w=video.videoWidth||1080, h=video.videoHeight||1440;
-      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      const g=frameGeom();
+      const cv=document.createElement('canvas'); cv.width=g.w; cv.height=g.h;
       const ctx=cv.getContext('2d');
-      ctx.drawImage(video,0,0,w,h);
+      drawFrame(ctx, g);
 
-      const blur=document.createElement('canvas'); blur.width=w; blur.height=h;
+      const blur=document.createElement('canvas'); blur.width=g.w; blur.height=g.h;
       const bctx=blur.getContext('2d');
-      bctx.filter='blur('+Math.round(w*0.012)+'px)';
-      bctx.drawImage(video,0,0,w,h);
+      bctx.filter='blur('+Math.round(g.w*0.012)+'px)';
+      drawFrame(bctx, g);
 
       ctx.save();
       ctx.globalAlpha=0.5;
       ctx.filter='brightness(1.04) saturate(1.06)';
-      ctx.drawImage(blur,0,0,w,h);
+      ctx.drawImage(blur,0,0,g.w,g.h);
       ctx.restore();
 
       shotCanvas=cv;
@@ -1550,11 +1572,25 @@
       photo.classList.add('on'); video.classList.remove('on');
       shutterWrap.classList.add('hide');
       bottom.classList.add('on');
+      $('capRotate').style.display='inline-block';
       stopCam();
 
       nI.value=''; tI.value=''; hintEl.textContent='';
       renderCapChips();
       setTimeout(()=>nI.focus(),120);
+    }
+
+    /* 자동 보정이 반대로 틀어졌을 때 수동으로 90도씩 돌리는 비상 버튼 */
+    function rotateShot(){
+      if(!shotCanvas) return;
+      const w=shotCanvas.width, h=shotCanvas.height;
+      const rc=document.createElement('canvas'); rc.width=h; rc.height=w;
+      const rctx=rc.getContext('2d');
+      rctx.translate(h/2, w/2);
+      rctx.rotate(Math.PI/2);
+      rctx.drawImage(shotCanvas, -w/2, -h/2);
+      shotCanvas=rc;
+      photo.src=shotCanvas.toDataURL('image/jpeg',0.92);
     }
 
     function renderCapChips(){
@@ -1626,6 +1662,7 @@
     $('capShutter').onclick=shoot;
     $('capRetake').onclick=openCam;
     $('capSave').onclick=saveShot;
+    $('capRotate').onclick=rotateShot;
     $('capClose').onclick=close;
     $('capFlip').onclick=()=>{ facing = facing==='environment' ? 'user' : 'environment'; openCam(); };
     nI.addEventListener('input', ()=>{ if(hintEl.textContent) hintEl.textContent=''; });
