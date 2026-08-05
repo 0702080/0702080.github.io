@@ -99,7 +99,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v41</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v42</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -237,7 +237,7 @@
       $('capRotate').style.display='none';
       try{
         stream = await navigator.mediaDevices.getUserMedia({
-          video:{ facingMode:facing, width:{ideal:1920}, height:{ideal:1920} },
+          video:{ facingMode:facing, width:{ideal:1080}, height:{ideal:1920} },
           audio:false
         });
         video.srcObject = stream;
@@ -270,16 +270,23 @@
       }
     }
 
+    /* 미리보기 화면(#capVideo)에 거는 CSS 필터와 반드시 같은 값을 써야
+       "찍을 때 보이던 산뜻한 색감"이 저장 파일에도 그대로 남는다.
+       (CSS 필터는 화면 표시에만 적용되고 canvas drawImage 로는 절대 넘어오지 않음) */
+    const LIVE_FILTER = 'contrast(1.05) saturate(1.08) brightness(1.02)';
+
     /* 촬영: 원본 위에 부드럽게 뭉갠 버전을 겹쳐 피부결을 완화(소프트 글로우) */
     function shoot(){
       const g=frameGeom();
       const cv=document.createElement('canvas'); cv.width=g.w; cv.height=g.h;
       const ctx=cv.getContext('2d');
+      ctx.filter=LIVE_FILTER;
       drawFrame(ctx, g);
+      ctx.filter='none';
 
       const blur=document.createElement('canvas'); blur.width=g.w; blur.height=g.h;
       const bctx=blur.getContext('2d');
-      bctx.filter='blur('+Math.round(g.w*0.012)+'px)';
+      bctx.filter=LIVE_FILTER+' blur('+Math.round(g.w*0.012)+'px)';
       drawFrame(bctx, g);
 
       ctx.save();
@@ -346,13 +353,14 @@
       ctx.fillStyle='rgba(0,0,0,.55)';
       ctx.fillRect(0,h-barH,w,barH);
       ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
+      const fs=Math.round(barH*0.36);          // 이름·전화번호 같은 크기
       if(nm){
-        ctx.font='900 '+Math.round(barH*0.42)+'px "Malgun Gothic",sans-serif';
-        ctx.fillText(nm, w/2, h-barH*0.62);
+        ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
+        ctx.fillText(nm, w/2, h-barH*0.60);
       }
       if(tel){
-        ctx.font='800 '+Math.round(barH*0.30)+'px "Malgun Gothic",sans-serif';
-        ctx.fillText(tel, w/2, h-barH*0.22);
+        ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
+        ctx.fillText(tel, w/2, h-barH*0.24);
       }
 
       cv.toBlob(blob=>{
