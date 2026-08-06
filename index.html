@@ -13,7 +13,6 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏷️%3C/text%3E%3C/svg%3E">
 
-
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
@@ -23,148 +22,109 @@
     background:#FFF9F1;color:#3E3348;
     -webkit-user-select:none;user-select:none;
   }
-
-  /* ── 메인 화면 ── */
-  #edit{
-    height:100%;background:#FFF9F1;color:#3E3348;
-    display:flex;flex-direction:column;justify-content:center;
-    padding:max(24px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));
-    gap:16px;
-  }
-  #edit h1{font-size:22px;font-weight:800;margin-bottom:4px;}
-  label{font-size:15px;font-weight:700;color:#555;margin-bottom:-8px;}
-  .row{display:flex;gap:10px;}
   .go{
-    flex:1;font-family:inherit;font-size:20px;font-weight:800;
+    font-family:inherit;font-size:20px;font-weight:800;width:100%;
     padding:20px;border:none;border-radius:14px;cursor:pointer;
     background:var(--plum);color:#fff;
   }
   .sub{
-    font-family:inherit;font-size:17px;font-weight:700;
-    padding:20px 22px;border:2px solid #ddd;border-radius:14px;
+    font-family:inherit;font-size:17px;font-weight:700;width:100%;
+    padding:18px 22px;border:2px solid #ddd;border-radius:14px;
     background:#fff;color:#666;cursor:pointer;
   }
-  .recent{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px;}
   .chip{
     font-family:inherit;font-size:15px;font-weight:700;
     padding:9px 15px;border-radius:999px;border:1.5px solid #ddd;
     background:#f5f5f5;color:#333;cursor:pointer;
   }
 
-  /* ── 원스텝 촬영 (피부보정 + 이름표 합성 + 자동저장) ── */
-  #capture{position:fixed;inset:0;z-index:50;display:none;background:#000;flex-direction:column;}
-  #capture.on{display:flex;}
-  #capStage{position:relative;flex:1;overflow:hidden;background:#000;}
-  #capVideo,#capPhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;}
-  #capVideo.on,#capPhoto.on{display:block;}
-  #capTop{
-    position:absolute;top:max(12px,env(safe-area-inset-top));left:0;right:0;
-    display:flex;justify-content:space-between;padding:0 14px;z-index:2;
+  /* ── 첫 화면 ── */
+  #home{
+    height:100%;display:flex;flex-direction:column;justify-content:center;gap:14px;
+    padding:max(24px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));
   }
-  #capTop button{
-    background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:999px;
+  #home h1{font-size:22px;font-weight:800;margin-bottom:2px;}
+  #home .hint{font-size:13.5px;color:#9b8fa6;line-height:1.65;}
+
+  /* ── 사진 + 이름 입력 화면 ── */
+  #editor{
+    position:fixed;inset:0;z-index:50;display:none;background:#000;flex-direction:column;
+  }
+  #editor.on{display:flex;}
+  #edStage{position:relative;flex:1;overflow:hidden;background:#000;}
+  #edPhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+  #edTop{
+    position:absolute;top:max(12px,env(safe-area-inset-top));left:0;right:0;
+    display:flex;justify-content:space-between;gap:8px;padding:0 14px;z-index:2;
+  }
+  #edTop button{
+    background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;
     font-size:14px;font-weight:700;font-family:inherit;padding:10px 16px;cursor:pointer;
     backdrop-filter:blur(4px);
   }
-  #capTop button.sel{background:#fff;color:#111;}
-  #capShutterWrap{
-    position:absolute;left:0;right:0;bottom:max(26px,env(safe-area-inset-bottom));
-    display:flex;justify-content:center;z-index:2;
-  }
-  #capShutterWrap.hide{display:none;}
-  #capShutter{
-    width:74px;height:74px;border-radius:50%;padding:0;
-    background:#fff;border:6px solid rgba(255,255,255,.35);cursor:pointer;
-  }
-  #capZoom{
-    position:absolute;left:0;right:0;
-    bottom:calc(max(26px,env(safe-area-inset-bottom)) + 92px);
-    display:none;justify-content:center;gap:8px;z-index:2;
-  }
-  #capZoom.show{display:flex;}
-  #capZoom button{
-    background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:999px;
-    font-size:13px;font-weight:700;font-family:inherit;padding:8px 14px;cursor:pointer;
-    backdrop-filter:blur(4px);
-  }
-  #capZoom button.sel{background:#fff;color:#111;}
-  #capLens{
-    position:absolute;left:0;right:0;
-    bottom:calc(max(26px,env(safe-area-inset-bottom)) + 134px);
-    display:none;justify-content:center;gap:8px;z-index:2;flex-wrap:wrap;padding:0 10px;
-  }
-  #capLens.show{display:flex;}
-  #capLens button{
-    background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:999px;
-    font-size:12px;font-weight:700;font-family:inherit;padding:7px 12px;cursor:pointer;
-    backdrop-filter:blur(4px);
-  }
-  #capLens button.sel{background:#fff;color:#111;}
-  #capFocusRing{
-    position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;
-    border:2px solid #fff;border-radius:10px;
-    box-shadow:0 0 0 1px rgba(0,0,0,.35);
-    pointer-events:none;opacity:0;transition:opacity .25s;z-index:3;
-  }
-  #capFocusRing.show{opacity:1;}
-  #capBottom{
+  #edTop button.sel{background:#fff;color:#111;}
+  #edBottom{
     position:absolute;left:0;right:0;bottom:0;z-index:2;
-    display:none;flex-direction:column;gap:10px;
+    display:flex;flex-direction:column;gap:10px;
     padding:14px 16px max(16px,env(safe-area-inset-bottom));
-    background:linear-gradient(transparent,rgba(0,0,0,.75) 42%);
+    background:linear-gradient(transparent,rgba(0,0,0,.8) 40%);
   }
-  #capBottom.on{display:flex;}
-  #capBottom .row{gap:8px;}
-  #capBottom input{
+  #edBottom .row{display:flex;gap:8px;}
+  #edBottom input{
     font-size:20px;padding:12px 14px;border-radius:12px;border:none;
-    background:rgba(255,255,255,.94);color:#111;font-weight:800;
+    background:rgba(255,255,255,.95);color:#111;font-weight:800;
     width:100%;font-family:inherit;
   }
-  #capActions{display:flex;gap:10px;}
-  #capActions>button{flex:1;padding:15px;border-radius:12px;font-size:16px;}
-  #capHint{color:#f0e9da;font-size:12px;text-align:center;opacity:.9;min-height:15px;}
+  #edChips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
+  #edChips::-webkit-scrollbar{display:none;}
+  #edChips .chip{flex:0 0 auto;font-size:14px;padding:8px 13px;}
+  #edActions{display:flex;gap:10px;}
+  #edActions>button{flex:1;padding:15px;border-radius:12px;font-size:16px;width:auto;}
+  #edHint{color:#f0e9da;font-size:12.5px;text-align:center;opacity:.95;min-height:16px;}
 </style>
 </head>
 <body>
 
-
-<!-- 메인 화면 -->
-<div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v56</span></h1>
-  <label>📸 촬영 → 이름표 자동 저장</label>
-  <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
+<!-- 첫 화면 -->
+<div id="home">
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v57</span></h1>
+  <button class="go" id="bShoot">📷 카메라로 찍기</button>
+  <button class="sub" id="bPick">🖼 갤러리에서 고르기</button>
+  <div class="hint">
+    폰의 <b>기본 카메라 앱</b>으로 찍습니다 (화각·화질 그대로).<br>
+    찍고 나면 이름·전화번호만 넣으면<br>
+    <b>날짜_이름_전화번호.jpg</b> 로 저장됩니다.
+  </div>
+  <div id="homeLog" class="hint"></div>
 </div>
 
-<!-- 원스텝 촬영: 찍기 → 이름/번호 입력 → 자동 저장 -->
-<div id="capture">
-  <div id="capStage">
-    <video id="capVideo" autoplay playsinline muted></video>
-    <img id="capPhoto" alt="">
-    <div id="capFocusRing"></div>
+<!-- 사진에 이름표 붙이기 -->
+<div id="editor">
+  <div id="edStage">
+    <img id="edPhoto" alt="">
   </div>
-  <div id="capTop">
-    <button id="capClose">✕ 닫기</button>
-    <button id="capRotate" style="display:none">↻ 방향 고치기</button>
-    <button id="capBright">🔆 밝게</button>
+  <div id="edTop">
+    <button id="edClose">✕ 닫기</button>
+    <button id="edRotate">↻ 방향</button>
+    <button id="edBright">🔆 밝게</button>
   </div>
-  <div id="capLens"></div>
-  <div id="capZoom"></div>
-  <div id="capShutterWrap">
-    <button id="capShutter" aria-label="촬영"></button>
-  </div>
-  <div id="capBottom">
+  <div id="edBottom">
     <div class="row">
-      <input id="capName" type="text" placeholder="이름" autocomplete="off" enterkeyhint="next">
-      <input id="capTel"  type="tel" inputmode="numeric" placeholder="전화번호(8자리)" autocomplete="off" enterkeyhint="done">
+      <input id="edName" type="text" placeholder="이름" autocomplete="off" enterkeyhint="next">
+      <input id="edTel"  type="tel" inputmode="numeric" placeholder="전화번호(8자리)" autocomplete="off" enterkeyhint="done">
     </div>
-    <div class="recent" id="capChips"></div>
-    <div id="capHint"></div>
-    <div id="capActions">
-      <button class="sub" id="capRetake">다시 찍기</button>
-      <button class="go"  id="capSave">저장</button>
+    <div id="edChips"></div>
+    <div id="edHint"></div>
+    <div id="edActions">
+      <button class="sub" id="edAgain">다시 찍기</button>
+      <button class="go"  id="edSave">저장</button>
     </div>
   </div>
 </div>
+
+<!-- 기본 카메라 앱 호출 / 갤러리 선택 -->
+<input type="file" id="fCam"  accept="image/*" capture="environment" style="display:none">
+<input type="file" id="fPick" accept="image/*" multiple style="display:none">
 
 <script>
 (function(){
@@ -179,38 +139,33 @@
   let actx=null;
   function beep(){
     try{
-      const AC = window.AudioContext || window.webkitAudioContext;
+      const AC=window.AudioContext||window.webkitAudioContext;
       if(!AC) return;
-      if(!actx) actx = new AC();
-      if(actx.state === 'suspended') actx.resume();
-      const t = actx.currentTime;
-      const o = actx.createOscillator(), g = actx.createGain();
-      o.type = 'square';
-      o.frequency.setValueAtTime(2200, t);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.22, t + 0.006);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.075);
+      if(!actx) actx=new AC();
+      if(actx.state==='suspended') actx.resume();
+      const t=actx.currentTime;
+      const o=actx.createOscillator(), g=actx.createGain();
+      o.type='square';
+      o.frequency.setValueAtTime(2200,t);
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.22,t+0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.075);
       o.connect(g); g.connect(actx.destination);
-      o.start(t); o.stop(t + 0.09);
+      o.start(t); o.stop(t+0.09);
     }catch(e){}
   }
-  function feedback(){
-    try{ if(navigator.vibrate) navigator.vibrate(28); }catch(e){}
-    beep();
-  }
-  // 모든 버튼에 공통 적용 (캡처 단계라 각 핸들러보다 먼저 실행)
   document.addEventListener('click', e=>{
-    if(e.target.closest && e.target.closest('button')) feedback();
+    if(e.target.closest && e.target.closest('button')){
+      try{ if(navigator.vibrate) navigator.vibrate(28); }catch(err){}
+      beep();
+    }
   }, true);
-
 
   /* 전화번호 자동 하이픈 */
   function fmtTel(v){
     let d=(v||'').replace(/\D/g,'');
     if(!d) return '';
-    // 0으로 시작하지 않는 8자리 이하 = 010 생략 입력 → 010 자동 부여
-    if(d[0]!=='0' && d.length<=8) d='010'+d;
-    // 휴대폰(010): 010-XXXX-XXXX 로 진행형 표시
+    if(d[0]!=='0' && d.length<=8) d='010'+d;      // 010 생략 입력
     if(d.startsWith('010')){
       const r=d.slice(3,11);
       if(!r) return '010';
@@ -228,321 +183,102 @@
     return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
   }
 
+  function safeSeg(s){
+    return (s||'').replace(/[\\/:*?"<>|.]/g,'').replace(/\s+/g,'').trim();
+  }
+  function stampOf(file){
+    // 사진이 찍힌 날짜를 파일명에 사용 (없으면 오늘)
+    const d=new Date((file && file.lastModified) || Date.now()), p=n=>('0'+n).slice(-2);
+    return ''+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate());
+  }
   function pushRecent(name,tel){
     if(!name&&!tel) return;
     data.recent=(data.recent||[]).filter(r=>!(r.name===name&&r.tel===tel));
     data.recent.unshift({name,tel});
-    data.recent=data.recent.slice(0,8);
+    data.recent=data.recent.slice(0,10);
   }
 
-  /* 화면 꺼짐 방지 (촬영 중 화면 잠김 방지) */
-  let wl=null;
-  async function keepAwake(on){
-    try{
-      if(on && 'wakeLock' in navigator && !wl){
-        wl=await navigator.wakeLock.request('screen');
-        wl.addEventListener('release',()=>{wl=null;});
-      } else if(!on && wl){ await wl.release(); wl=null; }
-    }catch(e){}
-  }
+  /* ───── 사진 편집기 ─────
+     기본 카메라 앱이 찍은 사진을 받아 이름·전화번호를 합성해 저장한다.
+     (웹 카메라를 직접 쓰면 기본 앱의 1x 광각 렌즈에 접근할 수 없어 화각이
+      좁아지는 문제가 있어, 촬영은 전적으로 기본 카메라 앱에 맡긴다.) */
+  const ED = (function(){
+    const photo=$('edPhoto'), nI=$('edName'), tI=$('edTel'), hintEl=$('edHint');
+    const MAXPX=2400;                       // 긴 변 기준 최대 크기 (용량·속도 절충)
+    let baseCanvas=null;                    // 방향까지 바로잡힌 원본
+    let queue=[], qi=0;                     // 여러 장 선택했을 때의 처리 대기열
+    let bright=false;
 
-  function safeSeg(s){
-    return (s||'').replace(/[\\/:*?"<>|.]/g,'').replace(/\s+/g,'').trim();
-  }
-  function todayStamp(){
-    const d=new Date(), p=n=>('0'+n).slice(-2);
-    return ''+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate());
-  }
-
-  /* ───── 원스텝 촬영: 찍기 → 이름/번호 입력 → 자동 저장 ─────
-     피부 보정 + 이름표 합성 + 파일 저장을 한 화면에서 처리.
-     (진짜 AI 피부보정은 웹에서 재현 불가 → 소프트 블러를 겹쳐 매끈한 느낌만 근사) */
-  const CAP = (function(){
-    const video=$('capVideo'), photo=$('capPhoto');
-    const bottom=$('capBottom'), shutterWrap=$('capShutterWrap');
-    const nI=$('capName'), tI=$('capTel'), hintEl=$('capHint');
-    let stream=null, curTrack=null, shotCanvas=null, focusRingT=null, brightBoost=false, lensId=data.lensId||null;
-    let curZoom=1, pinching=false, pinchStartDist=0, pinchStartZoom=1, recentPinch=false, pinchEndT=null;
-
-    /* 미리보기(#capVideo)에 거는 필터와 저장 시 캔버스에 거는 필터가 반드시 같아야
-       "찍을 때 보이던 그대로" 저장된다 (CSS 필터는 화면 표시에만 적용되고
-       canvas drawImage 로는 절대 넘어오지 않음). "🔆 밝게" 를 켜면 두 곳 다 밝아진다. */
-    function liveFilter(){
-      return brightBoost
-        ? 'contrast(1.05) saturate(0.95) brightness(1.35)'
-        : 'contrast(1.05) saturate(0.95) brightness(1.02)';
+    function filterStr(){
+      return bright ? 'brightness(1.32) contrast(1.03)' : 'none';
     }
-    function applyLiveFilter(){ video.style.filter=liveFilter(); }
+    function applyPreviewFilter(){ photo.style.filter=filterStr(); }
 
-    /* 기기가 지원하면 화면 필터뿐 아니라 실제 카메라 노출(exposure)도 올려서
-       진짜로 더 밝게 찍히게 시도한다 (지원 안 해도 화면 밝기 보정은 항상 동작) */
-    function applyExposureBoost(){
-      if(!curTrack) return;
-      try{
-        const caps=curTrack.getCapabilities && curTrack.getCapabilities();
-        if(!caps || !caps.exposureCompensation) return;
-        const {min,max}=caps.exposureCompensation;
-        const val=brightBoost ? max : Math.min(max, Math.max(min, 0));
-        curTrack.applyConstraints({advanced:[{exposureCompensation:val}]}).catch(()=>{});
-      }catch(e){}
-    }
-
-    async function openCam(retry){
-      stopCam();
-      video.classList.add('on'); photo.classList.remove('on');
-      shutterWrap.classList.remove('hide');
-      bottom.classList.remove('on');
-      $('capRotate').style.display='none';
-      $('capZoom').classList.remove('show');
-      $('capLens').classList.remove('show');
-      try{
-        // 다중 렌즈 기기는 "후면 카메라 줘"라고만 하면 기본 카메라 앱의 진짜 1x(메인 렌즈)와
-        // 다른, 더 확대된 렌즈가 잡힐 수 있음 — zoom 값을 아무리 낮춰도 그 렌즈 자체의
-        // 화각을 벗어날 수 없어서, 렌즈를 직접 골라볼 수 있는 선택지를 함께 제공한다.
-        const videoConstraints = lensId
-          ? { deviceId:{exact:lensId}, width:{ideal:1080}, height:{ideal:1920} }
-          : { facingMode:'environment', width:{ideal:1080}, height:{ideal:1920} };
-        stream = await navigator.mediaDevices.getUserMedia({ video:videoConstraints, audio:false });
-        video.srcObject = stream;
-        applyLiveFilter();
-        // 일부 기기는 zoom 이 getUserMedia 제약으로는 안 먹고 트랙에 별도로 걸어야 적용됨
-        const track=stream.getVideoTracks()[0];
-        curTrack=track;
-        try{
-          const caps=track.getCapabilities && track.getCapabilities();
-          if(caps && caps.zoom) await track.applyConstraints({advanced:[{zoom:caps.zoom.min}]});
-        }catch(e2){}
-        applyExposureBoost();
-        setupZoomUI(track);
-        setupLensUI();
-      }catch(e){
-        // 방금 카메라를 껐다가 바로 다시 켤 때 기기가 아직 정리 중이라
-        // 일시적으로 실패하는 경우가 있어, 잠깐 쉬었다가 한 번만 자동 재시도
-        if(!retry){ setTimeout(()=>openCam(true), 500); return; }
-        alert('카메라를 열 수 없습니다 ('+((e&&e.name)||'알 수 없는 오류')+').\n'
-            + '브라우저에 카메라 권한을 허용했는지 확인해주세요.\n'
-            + '다른 앱(카메라 앱 등)이 카메라를 쓰고 있다면 꺼주세요.');
-        close();
+    /* EXIF 방향까지 반영해서 이미지를 읽는다 */
+    async function loadOriented(file){
+      if(window.createImageBitmap){
+        try{ return await createImageBitmap(file,{imageOrientation:'from-image'}); }catch(e){}
+        try{ return await createImageBitmap(file); }catch(e){}
       }
-    }
-    function stopCam(){
-      if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-      curTrack=null;
-    }
-
-    /* 후면 카메라가 여러 개 잡히면 직접 눌러볼 수 있는 버튼을 보여준다.
-       기기가 주는 label 은 "facing back" 처럼 렌즈끼리 서로 구분 안 되는
-       경우가 많아 믿을 수 없다 → 그냥 "카메라 1/2/3" 처럼 번호만 매기고,
-       어떤 게 기본 카메라 앱의 1x와 같은지는 직접 눌러보며 화면으로 확인한다. */
-    async function setupLensUI(){
-      const box=$('capLens');
-      try{
-        const devices=await navigator.mediaDevices.enumerateDevices();
-        const cams=devices.filter(d=>d.kind==='videoinput' && !/front|user|전면|셀피/i.test(d.label||''));
-        if(cams.length<2){ box.classList.remove('show'); return; }
-        box.innerHTML='';
-        cams.forEach((d,i)=>{
-          const b=document.createElement('button');
-          b.textContent='카메라 '+(i+1);
-          b.classList.toggle('sel', d.deviceId===lensId || (!lensId && i===0));
-          b.onclick=()=>{ lensId=d.deviceId; data.lensId=lensId; save(); openCam(); };
-          box.appendChild(b);
-        });
-        box.classList.add('show');
-      }catch(e){ box.classList.remove('show'); }
-    }
-
-    /* 화면 터치 지점에 초점을 맞춘다 (기기가 지원할 때만 실제 초점 이동,
-       지원 안 해도 터치 피드백 사각형은 항상 보여줌).
-       ※ 진짜 얼굴 자동 인식(Shape Detection FaceDetector)은 2026년 현재도
-         크롬 실험 플래그 뒤에 있어 일반 사용자 폰에서 그냥 켜지지 않는다 —
-         그래서 "터치로 초점 맞추기"만 넣고, 얼굴 자동 인식은 넣지 않았다. */
-    function showFocusRing(x,y){
-      const ring=$('capFocusRing');
-      ring.style.left=x+'px'; ring.style.top=y+'px';
-      ring.classList.remove('show'); void ring.offsetWidth; ring.classList.add('show');
-      clearTimeout(focusRingT);
-      focusRingT=setTimeout(()=>ring.classList.remove('show'), 700);
-    }
-    function focusAt(clientX, clientY){
-      const rect=video.getBoundingClientRect();
-      const tapX=clientX-rect.left, tapY=clientY-rect.top;
-      showFocusRing(tapX, tapY);
-      if(!curTrack) return;
-      try{
-        const cw=rect.width, ch=rect.height;
-        const vw=video.videoWidth||cw, vh=video.videoHeight||ch;
-        const scale=Math.max(cw/vw, ch/vh);          // object-fit:cover 와 같은 배율
-        const offX=(vw*scale-cw)/2, offY=(vh*scale-ch)/2;
-        let nx=(tapX+offX)/scale/vw, ny=(tapY+offY)/scale/vh;
-        nx=Math.min(1,Math.max(0,nx)); ny=Math.min(1,Math.max(0,ny));
-
-        const caps=curTrack.getCapabilities && curTrack.getCapabilities();
-        if(!caps || !caps.pointsOfInterest) return;
-        const adv={ pointsOfInterest:[{x:nx,y:ny}] };
-        if(caps.focusMode){
-          if(caps.focusMode.includes('single-shot')) adv.focusMode='single-shot';
-          else if(caps.focusMode.includes('continuous')) adv.focusMode='continuous';
-          else if(caps.focusMode.includes('manual')) adv.focusMode='manual';
-        }
-        curTrack.applyConstraints({advanced:[adv]}).catch(()=>{});
-      }catch(e){}
-    }
-    video.addEventListener('click', e=>{ if(!recentPinch) focusAt(e.clientX, e.clientY); });
-
-    /* 두 손가락으로 좁히고 벌려서 줌아웃/줌인 (핀치 줌) */
-    function touchDist(t1,t2){
-      const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY;
-      return Math.hypot(dx,dy);
-    }
-    function updateZoomSel(z){
-      Array.prototype.forEach.call($('capZoom').children, b=>{
-        b.classList.toggle('sel', Math.abs(parseFloat(b.textContent)-z) < 0.05);
+      return await new Promise((res,rej)=>{
+        const img=new Image();
+        img.onload=()=>res(img);
+        img.onerror=rej;
+        img.src=URL.createObjectURL(file);
       });
     }
-    video.addEventListener('touchstart', e=>{
-      if(e.touches.length===2){
-        pinching=true;
-        pinchStartDist=touchDist(e.touches[0], e.touches[1]);
-        pinchStartZoom=curZoom;
-      }
-    }, {passive:true});
-    video.addEventListener('touchmove', e=>{
-      if(!pinching || e.touches.length!==2 || !curTrack) return;
-      const caps=curTrack.getCapabilities && curTrack.getCapabilities();
-      if(!caps || !caps.zoom) return;
-      const d=touchDist(e.touches[0], e.touches[1]);
-      let z=pinchStartZoom*(d/pinchStartDist);          // 좁히면(거리↓) 줌아웃, 벌리면 줌인
-      z=Math.min(caps.zoom.max, Math.max(caps.zoom.min, z));
-      curZoom=z;
-      curTrack.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});
-      updateZoomSel(z);
-    }, {passive:true});
-    video.addEventListener('touchend', e=>{
-      if(pinching && e.touches.length<2){
-        pinching=false; recentPinch=true;
-        clearTimeout(pinchEndT);
-        pinchEndT=setTimeout(()=>{ recentPinch=false; }, 300);   // 핀치 직후 뜨는 클릭이 초점버튼을 건드리지 않게
-      }
-    }, {passive:true});
 
-    /* zoom 이 지원되는 기기에서만 1x/2x 같은 배율 버튼을 보여주고,
-       탭하면 즉시 그 배율로 전환한다 (자동 1x 고정이 안 먹는 기기를 위한 수동 대안) */
-    function setupZoomUI(track){
-      const box=$('capZoom'); box.innerHTML='';
-      const caps=track.getCapabilities && track.getCapabilities();
-      if(!caps || !caps.zoom || caps.zoom.min===caps.zoom.max){
-        box.classList.remove('show');
-        return;
-      }
-      const min=caps.zoom.min, max=caps.zoom.max;
-      curZoom=min;
-      const levels=[min,1,max].filter(z=>z>=min && z<=max)
-                              .filter((z,i,a)=>a.indexOf(z)===i)
-                              .sort((a,b)=>a-b);
-      levels.forEach(z=>{
-        const b=document.createElement('button');
-        b.textContent=(Math.round(z*10)/10)+'x';
-        b.classList.toggle('sel', z===min);
-        b.onclick=()=>{
-          curZoom=z;
-          track.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});
-          updateZoomSel(z);
-        };
-        box.appendChild(b);
-      });
-      box.classList.add('show');
-    }
-
-    /* 회전 문제가 아니었다 — 미리보기(#capVideo)는 object-fit:cover 로
-       화면 비율에 맞게 "잘라서" 보여주는데, 촬영은 그 자르기 없이 카메라
-       원본 전체(더 넓은 화각)를 그대로 저장해서 "가로로 넓게" 나온 것.
-       화면에 보이던 비율 그대로, 가운데를 기준으로 크롭해서 캡처한다. */
-    function cropGeom(){
-      const vw=video.videoWidth||1080, vh=video.videoHeight||1440;
-      const screenAspect = window.innerWidth / window.innerHeight;   // 세로 화면 비율 (예: 9:19.5)
-      const videoAspect  = vw / vh;
-      let sx=0, sy=0, sw=vw, sh=vh;
-      if(videoAspect > screenAspect){        // 원본이 화면보다 가로로 더 넓음 → 좌우를 자름
-        sw = vh * screenAspect;
-        sx = (vw - sw) / 2;
-      } else if(videoAspect < screenAspect){ // 원본이 화면보다 세로로 더 김 → 위아래를 자름
-        sh = vw / screenAspect;
-        sy = (vh - sh) / 2;
-      }
-      return { sx, sy, sw, sh };
-    }
-
-    /* 촬영: 미리보기와 화각·비율·색감·밝기가 모두 동일하도록 화면에 보이던 부분만 캡처 */
-    function shoot(){
-      const c=cropGeom();
-      const cv=document.createElement('canvas'); cv.width=c.sw; cv.height=c.sh;
-      const ctx=cv.getContext('2d');
-      ctx.filter=liveFilter();
-      ctx.drawImage(video, c.sx, c.sy, c.sw, c.sh, 0, 0, c.sw, c.sh);
-      ctx.filter='none';
-
-      shotCanvas=cv;
+    async function showFile(file){
+      const src=await loadOriented(file);
+      const sw=src.width, sh=src.height;
+      const k=Math.min(1, MAXPX/Math.max(sw,sh));
+      const w=Math.round(sw*k), h=Math.round(sh*k);
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(src,0,0,w,h);
+      if(src.close) src.close();
+      baseCanvas=cv; baseCanvas.__file=file;
       photo.src=cv.toDataURL('image/jpeg',0.92);
-      photo.classList.add('on'); video.classList.remove('on');
-      shutterWrap.classList.add('hide');
-      $('capZoom').classList.remove('show');
-      $('capLens').classList.remove('show');
-      bottom.classList.add('on');
-      $('capRotate').style.display='inline-block';
-      stopCam();
+      applyPreviewFilter();
 
-      nI.value=''; tI.value=''; hintEl.textContent='';
-      renderCapChips();
-      setTimeout(()=>nI.focus(),120);
+      nI.value=''; tI.value='';
+      hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
+      renderChips();
+      $('editor').classList.add('on');
+      setTimeout(()=>nI.focus(),150);
     }
 
-    /* 자동 보정이 반대로 틀어졌을 때 수동으로 90도씩 돌리는 비상 버튼 */
-    function rotateShot(){
-      if(!shotCanvas) return;
-      const w=shotCanvas.width, h=shotCanvas.height;
-      const rc=document.createElement('canvas'); rc.width=h; rc.height=w;
-      const rctx=rc.getContext('2d');
-      rctx.translate(h/2, w/2);
-      rctx.rotate(Math.PI/2);
-      rctx.drawImage(shotCanvas, -w/2, -h/2);
-      shotCanvas=rc;
-      photo.src=shotCanvas.toDataURL('image/jpeg',0.92);
-    }
-
-    function renderCapChips(){
-      const box=$('capChips'); box.innerHTML='';
-      (data.recent||[]).slice(0,8).forEach(r=>{
+    function renderChips(){
+      const box=$('edChips'); box.innerHTML='';
+      (data.recent||[]).slice(0,10).forEach(r=>{
         const b=document.createElement('button');
         b.className='chip'; b.textContent=r.name||r.tel;
-        b.onmousedown=e=>e.preventDefault();
+        b.onmousedown=e=>e.preventDefault();      // 입력 포커스 유지
         b.onclick=()=>{ nI.value=r.name||''; tI.value=r.tel||''; };
         box.appendChild(b);
       });
     }
 
-    function capFileBase(){
+    function fileBase(){
       const nm=safeSeg(nI.value)||'이름없음';
       const tel=fmtTel(tI.value).replace(/[\\/:*?"<>|\s]/g,'');
-      return todayStamp()+'_'+nm+(tel?'_'+tel:'');
+      return stampOf(baseCanvas&&baseCanvas.__file)+'_'+nm+(tel?'_'+tel:'');
     }
 
-    function saveShot(){
-      if(!shotCanvas) return;
-      const nm=nI.value.trim(), tel=fmtTel(tI.value);
-      if(!nm && !tel){ hintEl.textContent='이름 또는 전화번호를 입력해주세요'; return; }
-
-      const cv=document.createElement('canvas');
-      cv.width=shotCanvas.width; cv.height=shotCanvas.height;
+    /* 사진 아래쪽에 이름·전화번호를 같은 크기로 합성 */
+    function compose(){
+      const w=baseCanvas.width, h=baseCanvas.height;
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
       const ctx=cv.getContext('2d');
-      ctx.drawImage(shotCanvas,0,0);
+      ctx.filter=filterStr();               // 미리보기와 똑같은 밝기로 저장
+      ctx.drawImage(baseCanvas,0,0);
+      ctx.filter='none';
 
-      const w=cv.width, h=cv.height;
+      const nm=nI.value.trim(), tel=fmtTel(tI.value);
       const barH=Math.round(h*0.16);
       ctx.fillStyle='rgba(0,0,0,.55)';
       ctx.fillRect(0,h-barH,w,barH);
       ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
-      const fs=Math.round(barH*0.36);          // 이름·전화번호 같은 크기
+      const fs=Math.round(barH*0.36);       // 이름·전화번호 같은 크기
       if(nm){
         ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
         ctx.fillText(nm, w/2, h-barH*0.60);
@@ -551,65 +287,80 @@
         ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
         ctx.fillText(tel, w/2, h-barH*0.24);
       }
+      return cv;
+    }
 
-      cv.toBlob(blob=>{
+    function saveShot(){
+      if(!baseCanvas) return;
+      const nm=nI.value.trim(), tel=fmtTel(tI.value);
+      if(!nm && !tel){ hintEl.textContent='이름 또는 전화번호를 입력해주세요'; return; }
+      const name=fileBase()+'.jpg';
+
+      compose().toBlob(blob=>{
         const url=URL.createObjectURL(blob);
         const a=document.createElement('a');
-        a.href=url; a.download=capFileBase()+'.jpg';
+        a.href=url; a.download=name;
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(()=>URL.revokeObjectURL(url),5000);
 
         pushRecent(nm,tel); save();
-        hintEl.textContent='✅ 저장됨: '+capFileBase()+'.jpg';
-        setTimeout(openCam, 700);           // 바로 다음 사람 촬영으로
+        $('homeLog').innerHTML='✅ 저장됨 · <b>'+name+'</b><br>(다운로드 폴더)';
+
+        // 여러 장을 골랐다면 다음 장으로, 아니면 편집기를 닫는다
+        if(qi+1 < queue.length){ qi++; showFile(queue[qi]); }
+        else{ queue=[]; qi=0; close(); }
       }, 'image/jpeg', 0.92);
     }
 
-    function open(){
-      $('capture').classList.add('on');
-      keepAwake(true);
-      openCam();
-    }
-    function close(){
-      stopCam();
-      keepAwake(false);
-      $('capture').classList.remove('on');
+    function rotate(){
+      if(!baseCanvas) return;
+      const w=baseCanvas.width, h=baseCanvas.height;
+      const rc=document.createElement('canvas'); rc.width=h; rc.height=w;
+      const ctx=rc.getContext('2d');
+      ctx.translate(h/2,w/2); ctx.rotate(Math.PI/2);
+      ctx.drawImage(baseCanvas,-w/2,-h/2);
+      rc.__file=baseCanvas.__file;
+      baseCanvas=rc;
+      photo.src=rc.toDataURL('image/jpeg',0.92);
     }
 
-    $('capShutter').onclick=shoot;
-    $('capRetake').onclick=openCam;
-    $('capSave').onclick=saveShot;
-    $('capRotate').onclick=rotateShot;
-    $('capClose').onclick=close;
-    $('capBright').onclick=()=>{
-      brightBoost=!brightBoost;
-      $('capBright').classList.toggle('sel', brightBoost);
-      applyLiveFilter();
-      applyExposureBoost();
+    function close(){
+      $('editor').classList.remove('on');
+      photo.src=''; baseCanvas=null;
+    }
+
+    async function start(files){
+      const list=Array.prototype.slice.call(files||[]).filter(f=>f && f.type.indexOf('image')===0);
+      if(!list.length) return;
+      queue=list; qi=0;
+      try{ await showFile(list[0]); }
+      catch(e){ alert('사진을 불러오지 못했습니다.'); close(); }
+    }
+
+    $('edSave').onclick=saveShot;
+    $('edRotate').onclick=rotate;
+    $('edClose').onclick=()=>{ queue=[]; qi=0; close(); };
+    $('edAgain').onclick=()=>{ queue=[]; qi=0; close(); $('fCam').click(); };
+    $('edBright').onclick=()=>{
+      bright=!bright;
+      $('edBright').classList.toggle('sel', bright);
+      applyPreviewFilter();
     };
-    nI.addEventListener('input', ()=>{ if(hintEl.textContent) hintEl.textContent=''; });
+    nI.addEventListener('input', ()=>{ if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent=''; });
     nI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); tI.focus(); } });
     tI.addEventListener('input', e=>{ e.target.value=fmtTel(e.target.value); });
     tI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveShot(); } });
 
-    /* 화면을 다른 앱으로 전환했다가 돌아왔을 때 카메라가 "사용 중"으로 계속
-       잡혀있는 문제(NotReadableError) 방지 — 화면이 안 보이게 되면 카메라를
-       바로 놓아주고, 다시 보이면(촬영 중이었을 때만) 새로 연다. */
-    document.addEventListener('visibilitychange', ()=>{
-      if(!$('capture').classList.contains('on')) return;
-      if(document.visibilityState==='hidden'){
-        stopCam();
-      } else if(document.visibilityState==='visible' && !photo.classList.contains('on')){
-        openCam();
-      }
-    });
-
-    return { open };
+    return { start };
   })();
-  $('bCapture').onclick = CAP.open;
+
+  $('bShoot').onclick=()=>$('fCam').click();
+  $('bPick').onclick =()=>$('fPick').click();
+  $('fCam').addEventListener('change', e=>{ ED.start(e.target.files); e.target.value=''; });
+  $('fPick').addEventListener('change', e=>{ ED.start(e.target.files); e.target.value=''; });
 
   /* 서비스워커: 온라인이면 항상 최신본, 오프라인이면 캐시본 */
-  if ('serviceWorker' in navigator) {
+  if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
 })();
