@@ -32,6 +32,8 @@
     padding:18px 22px;border:2px solid #ddd;border-radius:14px;
     background:#fff;color:#666;cursor:pointer;
   }
+  /* 외부 앱 실행용 버튼은 진짜 링크(<a>)여야 브라우저가 앱 실행으로 처리해준다 */
+  a.sub{display:block;text-align:center;text-decoration:none;}
   .chip{
     font-family:inherit;font-size:15px;font-weight:700;
     padding:9px 15px;border-radius:999px;border:1.5px solid #ddd;
@@ -87,9 +89,10 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v62</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v63</span></h1>
   <button class="go" id="bShoot">📷 카메라로 찍기</button>
-  <button class="sub" id="bUlike">🎨 Ulike로 찍기</button>
+  <a class="sub" id="bUlike"
+     href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end">🎨 Ulike로 찍기</a>
   <button class="sub" id="bPick">🖼 갤러리에서 고르기</button>
   <button class="sub" id="bCopyUrl">🔗 주소 복사 (봉사자에게 전달)</button>
   <div id="homeLog" class="hint"></div>
@@ -354,19 +357,11 @@
   $('bShoot').onclick=()=>$('fCam').click();
   $('bPick').onclick =()=>$('fPick').click();
 
-  /* Ulike로 촬영 → 나중에 "갤러리에서 고르기"로 그 사진을 불러와 이름표를 붙인다.
-     예전 버전은 action/category 가 빠진 인텐트라 항상 플레이스토어로 빠졌음 —
-     "앱을 그냥 실행"하는 표준 인텐트(MAIN/LAUNCHER)를 넣어야 설치된 앱이 열린다. */
-  $('bUlike').onclick=()=>{
-    const PKG='com.gorgeous.liteinternational';
-    const fallback='https://play.google.com/store/apps/details?id='+PKG;
-    const intent='intent://#Intent;package='+PKG
-               +';action=android.intent.action.MAIN'
-               +';category=android.intent.category.LAUNCHER'
-               +';S.browser_fallback_url='+encodeURIComponent(fallback)
-               +';end';
-    try{ location.href=intent; }catch(e){ location.href=fallback; }
-  };
+  /* Ulike 실행은 HTML 의 <a href="intent://..."> 가 직접 처리한다.
+     ─ JS 로 location.href 를 바꾸면 브라우저가 "앱 실행"이 아닌 "페이지 이동"으로
+       취급해 막는 경우가 있어 진짜 링크로 둠
+     ─ S.browser_fallback_url(플레이스토어)을 일부러 넣지 않음. 넣어두면 브라우저가
+       앱 실행을 시도하기도 전에 대체주소로 새어나가 항상 스토어가 열렸음 */
 
   /* 봉사자에게 카톡 등으로 전달할 주소 복사 (여러 단계로 안전하게 시도) */
   function legacyCopy(text){
