@@ -87,10 +87,11 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v60</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v61</span></h1>
   <button class="go" id="bShoot">📷 카메라로 찍기</button>
   <button class="sub" id="bUlike">🎨 Ulike로 찍기</button>
   <button class="sub" id="bPick">🖼 갤러리에서 고르기</button>
+  <button class="sub" id="bCopyUrl">🔗 주소 복사 (봉사자에게 전달)</button>
   <div id="homeLog" class="hint"></div>
 </div>
 
@@ -366,6 +367,36 @@
                +';end';
     try{ location.href=intent; }catch(e){ location.href=fallback; }
   };
+
+  /* 봉사자에게 카톡 등으로 전달할 주소 복사 (여러 단계로 안전하게 시도) */
+  function legacyCopy(text){
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    let ok=false;
+    try{ ok=document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    return ok;
+  }
+  $('bCopyUrl').onclick=async ()=>{
+    const url='https://0702080.github.io/';
+    const btn=$('bCopyUrl'); const orig=btn.textContent;
+    const flash=(msg)=>{ btn.textContent=msg; setTimeout(()=>{ btn.textContent=orig; }, 1800); };
+
+    try{
+      await navigator.clipboard.writeText(url);
+      flash('복사됨 ✓ '+url);
+      return;
+    }catch(e){}
+
+    if(legacyCopy(url)){ flash('복사됨 ✓ '+url); return; }
+
+    try{ prompt('아래 주소를 길게 눌러 복사하세요', url); }
+    catch(e){ $('homeLog').textContent='주소: '+url; }
+  };
+
   $('fCam').addEventListener('change', e=>{ ED.start(e.target.files); e.target.value=''; });
   $('fPick').addEventListener('change', e=>{ ED.start(e.target.files); e.target.value=''; });
 
