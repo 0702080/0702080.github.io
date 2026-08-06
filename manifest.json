@@ -1,7 +1,7 @@
 {
-  "name": "명찰",
-  "short_name": "명찰",
-  "description": "이름과 전화번호를 화면 가득 크게 표시하는 명찰",
+  "name": "새가족 사진촬영",
+  "short_name": "새가족촬영",
+  "description": "새가족 사진을 찍고 날짜_이름_전화번호.jpg 로 저장합니다",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
