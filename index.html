@@ -118,7 +118,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v52</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v53</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -274,7 +274,7 @@
       }catch(e){}
     }
 
-    async function openCam(){
+    async function openCam(retry){
       stopCam();
       video.classList.add('on'); photo.classList.remove('on');
       shutterWrap.classList.remove('hide');
@@ -298,7 +298,12 @@
         applyExposureBoost();
         setupZoomUI(track);
       }catch(e){
-        alert('카메라를 열 수 없습니다.\n브라우저에 카메라 권한을 허용해주세요.');
+        // 방금 카메라를 껐다가 바로 다시 켤 때 기기가 아직 정리 중이라
+        // 일시적으로 실패하는 경우가 있어, 잠깐 쉬었다가 한 번만 자동 재시도
+        if(!retry){ setTimeout(()=>openCam(true), 500); return; }
+        alert('카메라를 열 수 없습니다 ('+((e&&e.name)||'알 수 없는 오류')+').\n'
+            + '브라우저에 카메라 권한을 허용했는지 확인해주세요.\n'
+            + '다른 앱(카메라 앱 등)이 카메라를 쓰고 있다면 꺼주세요.');
         close();
       }
     }
