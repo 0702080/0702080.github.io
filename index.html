@@ -88,6 +88,18 @@
     backdrop-filter:blur(4px);
   }
   #capZoom button.sel{background:#fff;color:#111;}
+  #capLens{
+    position:absolute;left:0;right:0;
+    bottom:calc(max(26px,env(safe-area-inset-bottom)) + 134px);
+    display:none;justify-content:center;gap:8px;z-index:2;flex-wrap:wrap;padding:0 10px;
+  }
+  #capLens.show{display:flex;}
+  #capLens button{
+    background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:999px;
+    font-size:12px;font-weight:700;font-family:inherit;padding:7px 12px;cursor:pointer;
+    backdrop-filter:blur(4px);
+  }
+  #capLens button.sel{background:#fff;color:#111;}
   #capFocusRing{
     position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;
     border:2px solid #fff;border-radius:10px;
@@ -118,7 +130,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v54</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v55</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -135,6 +147,7 @@
     <button id="capRotate" style="display:none">↻ 방향 고치기</button>
     <button id="capBright">🔆 밝게</button>
   </div>
+  <div id="capLens"></div>
   <div id="capZoom"></div>
   <div id="capShutterWrap">
     <button id="capShutter" aria-label="촬영"></button>
@@ -248,7 +261,7 @@
     const video=$('capVideo'), photo=$('capPhoto');
     const bottom=$('capBottom'), shutterWrap=$('capShutterWrap');
     const nI=$('capName'), tI=$('capTel'), hintEl=$('capHint');
-    let stream=null, curTrack=null, shotCanvas=null, focusRingT=null, brightBoost=false;
+    let stream=null, curTrack=null, shotCanvas=null, focusRingT=null, brightBoost=false, lensId=null;
     let curZoom=1, pinching=false, pinchStartDist=0, pinchStartZoom=1, recentPinch=false, pinchEndT=null;
 
     /* 미리보기(#capVideo)에 거는 필터와 저장 시 캔버스에 거는 필터가 반드시 같아야
@@ -281,11 +294,15 @@
       bottom.classList.remove('on');
       $('capRotate').style.display='none';
       $('capZoom').classList.remove('show');
+      $('capLens').classList.remove('show');
       try{
-        stream = await navigator.mediaDevices.getUserMedia({
-          video:{ facingMode:'environment', width:{ideal:1080}, height:{ideal:1920} },
-          audio:false
-        });
+        // 다중 렌즈 기기는 "후면 카메라 줘"라고만 하면 기본 카메라 앱의 진짜 1x(메인 렌즈)와
+        // 다른, 더 확대된 렌즈가 잡힐 수 있음 — zoom 값을 아무리 낮춰도 그 렌즈 자체의
+        // 화각을 벗어날 수 없어서, 렌즈를 직접 골라볼 수 있는 선택지를 함께 제공한다.
+        const videoConstraints = lensId
+          ? { deviceId:{exact:lensId}, width:{ideal:1080}, height:{ideal:1920} }
+          : { facingMode:'environment', width:{ideal:1080}, height:{ideal:1920} };
+        stream = await navigator.mediaDevices.getUserMedia({ video:videoConstraints, audio:false });
         video.srcObject = stream;
         applyLiveFilter();
         // 일부 기기는 zoom 이 getUserMedia 제약으로는 안 먹고 트랙에 별도로 걸어야 적용됨
@@ -297,6 +314,7 @@
         }catch(e2){}
         applyExposureBoost();
         setupZoomUI(track);
+        setupLensUI();
       }catch(e){
         // 방금 카메라를 껐다가 바로 다시 켤 때 기기가 아직 정리 중이라
         // 일시적으로 실패하는 경우가 있어, 잠깐 쉬었다가 한 번만 자동 재시도
@@ -310,6 +328,28 @@
     function stopCam(){
       if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
       curTrack=null;
+    }
+
+    /* 후면 카메라가 여러 개 잡히면 직접 눌러볼 수 있는 버튼을 보여준다.
+       기기가 주는 label 은 "facing back" 처럼 렌즈끼리 서로 구분 안 되는
+       경우가 많아 믿을 수 없다 → 그냥 "카메라 1/2/3" 처럼 번호만 매기고,
+       어떤 게 기본 카메라 앱의 1x와 같은지는 직접 눌러보며 화면으로 확인한다. */
+    async function setupLensUI(){
+      const box=$('capLens');
+      try{
+        const devices=await navigator.mediaDevices.enumerateDevices();
+        const cams=devices.filter(d=>d.kind==='videoinput' && !/front|user|전면|셀피/i.test(d.label||''));
+        if(cams.length<2){ box.classList.remove('show'); return; }
+        box.innerHTML='';
+        cams.forEach((d,i)=>{
+          const b=document.createElement('button');
+          b.textContent='카메라 '+(i+1);
+          b.classList.toggle('sel', d.deviceId===lensId || (!lensId && i===0));
+          b.onclick=()=>{ lensId=d.deviceId; openCam(); };
+          box.appendChild(b);
+        });
+        box.classList.add('show');
+      }catch(e){ box.classList.remove('show'); }
     }
 
     /* 화면 터치 지점에 초점을 맞춘다 (기기가 지원할 때만 실제 초점 이동,
@@ -447,6 +487,7 @@
       photo.classList.add('on'); video.classList.remove('on');
       shutterWrap.classList.add('hide');
       $('capZoom').classList.remove('show');
+      $('capLens').classList.remove('show');
       bottom.classList.add('on');
       $('capRotate').style.display='inline-block';
       stopCam();
