@@ -118,7 +118,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v53</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v54</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -550,6 +550,18 @@
     nI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); tI.focus(); } });
     tI.addEventListener('input', e=>{ e.target.value=fmtTel(e.target.value); });
     tI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveShot(); } });
+
+    /* 화면을 다른 앱으로 전환했다가 돌아왔을 때 카메라가 "사용 중"으로 계속
+       잡혀있는 문제(NotReadableError) 방지 — 화면이 안 보이게 되면 카메라를
+       바로 놓아주고, 다시 보이면(촬영 중이었을 때만) 새로 연다. */
+    document.addEventListener('visibilitychange', ()=>{
+      if(!$('capture').classList.contains('on')) return;
+      if(document.visibilityState==='hidden'){
+        stopCam();
+      } else if(document.visibilityState==='visible' && !photo.classList.contains('on')){
+        openCam();
+      }
+    });
 
     return { open };
   })();
