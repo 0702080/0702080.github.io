@@ -130,7 +130,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v55</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v56</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -261,7 +261,7 @@
     const video=$('capVideo'), photo=$('capPhoto');
     const bottom=$('capBottom'), shutterWrap=$('capShutterWrap');
     const nI=$('capName'), tI=$('capTel'), hintEl=$('capHint');
-    let stream=null, curTrack=null, shotCanvas=null, focusRingT=null, brightBoost=false, lensId=null;
+    let stream=null, curTrack=null, shotCanvas=null, focusRingT=null, brightBoost=false, lensId=data.lensId||null;
     let curZoom=1, pinching=false, pinchStartDist=0, pinchStartZoom=1, recentPinch=false, pinchEndT=null;
 
     /* 미리보기(#capVideo)에 거는 필터와 저장 시 캔버스에 거는 필터가 반드시 같아야
@@ -269,8 +269,8 @@
        canvas drawImage 로는 절대 넘어오지 않음). "🔆 밝게" 를 켜면 두 곳 다 밝아진다. */
     function liveFilter(){
       return brightBoost
-        ? 'contrast(1.05) saturate(1.08) brightness(1.35)'
-        : 'contrast(1.05) saturate(1.08) brightness(1.02)';
+        ? 'contrast(1.05) saturate(0.95) brightness(1.35)'
+        : 'contrast(1.05) saturate(0.95) brightness(1.02)';
     }
     function applyLiveFilter(){ video.style.filter=liveFilter(); }
 
@@ -345,7 +345,7 @@
           const b=document.createElement('button');
           b.textContent='카메라 '+(i+1);
           b.classList.toggle('sel', d.deviceId===lensId || (!lensId && i===0));
-          b.onclick=()=>{ lensId=d.deviceId; openCam(); };
+          b.onclick=()=>{ lensId=d.deviceId; data.lensId=lensId; save(); openCam(); };
           box.appendChild(b);
         });
         box.classList.add('show');
