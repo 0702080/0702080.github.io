@@ -95,6 +95,18 @@
     pointer-events:none;opacity:0;transition:opacity .25s;z-index:3;
   }
   #capFocusRing.show{opacity:1;}
+  #capLens{
+    position:absolute;left:0;right:0;
+    bottom:calc(max(26px,env(safe-area-inset-bottom)) + 134px);
+    display:none;justify-content:center;gap:8px;z-index:2;flex-wrap:wrap;padding:0 10px;
+  }
+  #capLens.show{display:flex;}
+  #capLens button{
+    background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:999px;
+    font-size:12px;font-weight:700;font-family:inherit;padding:7px 12px;cursor:pointer;
+    backdrop-filter:blur(4px);
+  }
+  #capLens button.sel{background:#fff;color:#111;}
   #capBottom{
     position:absolute;left:0;right:0;bottom:0;z-index:2;
     display:none;flex-direction:column;gap:10px;
@@ -118,7 +130,7 @@
 
 <!-- 메인 화면 -->
 <div id="edit">
-  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v50</span></h1>
+  <h1>🏷️ 촬영명찰 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v51</span></h1>
   <label>📸 촬영 → 이름표 자동 저장</label>
   <button class="go" id="bCapture" style="padding:18px">📸 촬영하기 (피부보정 · 자동저장)</button>
 </div>
@@ -135,6 +147,7 @@
     <button id="capRotate" style="display:none">↻ 방향 고치기</button>
     <button id="capFlip">🔄 전/후면</button>
   </div>
+  <div id="capLens"></div>
   <div id="capZoom"></div>
   <div id="capShutterWrap">
     <button id="capShutter" aria-label="촬영"></button>
@@ -248,7 +261,8 @@
     const video=$('capVideo'), photo=$('capPhoto');
     const bottom=$('capBottom'), shutterWrap=$('capShutterWrap');
     const nI=$('capName'), tI=$('capTel'), hintEl=$('capHint');
-    let stream=null, curTrack=null, facing='environment', shotCanvas=null, focusRingT=null;
+    let stream=null, curTrack=null, facing='environment', shotCanvas=null, focusRingT=null, lensId=null;
+    let curZoom=1, pinching=false, pinchStartDist=0, pinchStartZoom=1, recentPinch=false, pinchEndT=null;
 
     async function openCam(){
       stopCam();
@@ -257,21 +271,25 @@
       bottom.classList.remove('on');
       $('capRotate').style.display='none';
       $('capZoom').classList.remove('show');
+      $('capLens').classList.remove('show');
       try{
-        stream = await navigator.mediaDevices.getUserMedia({
-          video:{ facingMode:facing, width:{ideal:1080}, height:{ideal:1920}, zoom:{ideal:1} },
-          audio:false
-        });
+        // 다중 렌즈 기기는 "후면 카메라 줘"라고만 하면 기본 카메라 앱의 1x와
+        // 다른 렌즈(더 확대된 렌즈)가 잡힐 수 있음 → 특정 렌즈를 골라둔 상태(lensId)면
+        // 그 렌즈를 그대로 요청 (zoom ideal 은 오히려 다른 렌즈 선택을 유도할 수 있어 뺌)
+        const videoConstraints = (facing==='environment' && lensId)
+          ? { deviceId:{exact:lensId}, width:{ideal:1080}, height:{ideal:1920} }
+          : { facingMode:facing, width:{ideal:1080}, height:{ideal:1920} };
+        stream = await navigator.mediaDevices.getUserMedia({ video:videoConstraints, audio:false });
         video.srcObject = stream;
         // 일부 기기는 zoom 이 getUserMedia 제약으로는 안 먹고 트랙에 별도로 걸어야 적용됨
-        // (기본 카메라 앱의 "1x"와 같은 배율로 맞춰 화각이 더 넓게/좁게 나오는 걸 방지)
         const track=stream.getVideoTracks()[0];
         curTrack=track;
         try{
           const caps=track.getCapabilities && track.getCapabilities();
-          if(caps && caps.zoom) await track.applyConstraints({advanced:[{zoom:1}]});
+          if(caps && caps.zoom) await track.applyConstraints({advanced:[{zoom:caps.zoom.min}]});
         }catch(e2){}
         setupZoomUI(track);
+        setupLensUI();
       }catch(e){
         alert('카메라를 열 수 없습니다.\n브라우저에 카메라 권한을 허용해주세요.');
         close();
@@ -280,6 +298,28 @@
     function stopCam(){
       if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
       curTrack=null;
+    }
+
+    /* 기본 카메라 앱처럼 "1x/0.6x/2x" 가 실은 서로 다른 물리 렌즈인 기기가 많음.
+       zoom 배율만으로는 그 렌즈들을 다 커버 못 하는 경우가 있어, 후면 카메라가
+       여러 개 잡히면 직접 골라볼 수 있는 버튼을 추가로 보여준다. */
+    async function setupLensUI(){
+      const box=$('capLens');
+      if(facing!=='environment'){ box.classList.remove('show'); return; }
+      try{
+        const devices=await navigator.mediaDevices.enumerateDevices();
+        const cams=devices.filter(d=>d.kind==='videoinput' && !/front|user|전면|셀피/i.test(d.label||''));
+        if(cams.length<2){ box.classList.remove('show'); return; }
+        box.innerHTML='';
+        cams.forEach((d,i)=>{
+          const b=document.createElement('button');
+          b.textContent = d.label ? d.label.replace(/camera\s*\d*[,]?\s*/i,'').slice(0,12) : ('카메라'+(i+1));
+          b.classList.toggle('sel', d.deviceId===lensId);
+          b.onclick=()=>{ lensId=d.deviceId; openCam(); };
+          box.appendChild(b);
+        });
+        box.classList.add('show');
+      }catch(e){ box.classList.remove('show'); }
     }
 
     /* 화면 터치 지점에 초점을 맞춘다 (기기가 지원할 때만 실제 초점 이동,
@@ -318,7 +358,43 @@
         curTrack.applyConstraints({advanced:[adv]}).catch(()=>{});
       }catch(e){}
     }
-    video.addEventListener('click', e=>focusAt(e.clientX, e.clientY));
+    video.addEventListener('click', e=>{ if(!recentPinch) focusAt(e.clientX, e.clientY); });
+
+    /* 두 손가락으로 좁히고 벌려서 줌아웃/줌인 (핀치 줌) */
+    function touchDist(t1,t2){
+      const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY;
+      return Math.hypot(dx,dy);
+    }
+    function updateZoomSel(z){
+      Array.prototype.forEach.call($('capZoom').children, b=>{
+        b.classList.toggle('sel', Math.abs(parseFloat(b.textContent)-z) < 0.05);
+      });
+    }
+    video.addEventListener('touchstart', e=>{
+      if(e.touches.length===2){
+        pinching=true;
+        pinchStartDist=touchDist(e.touches[0], e.touches[1]);
+        pinchStartZoom=curZoom;
+      }
+    }, {passive:true});
+    video.addEventListener('touchmove', e=>{
+      if(!pinching || e.touches.length!==2 || !curTrack) return;
+      const caps=curTrack.getCapabilities && curTrack.getCapabilities();
+      if(!caps || !caps.zoom) return;
+      const d=touchDist(e.touches[0], e.touches[1]);
+      let z=pinchStartZoom*(d/pinchStartDist);          // 좁히면(거리↓) 줌아웃, 벌리면 줌인
+      z=Math.min(caps.zoom.max, Math.max(caps.zoom.min, z));
+      curZoom=z;
+      curTrack.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});
+      updateZoomSel(z);
+    }, {passive:true});
+    video.addEventListener('touchend', e=>{
+      if(pinching && e.touches.length<2){
+        pinching=false; recentPinch=true;
+        clearTimeout(pinchEndT);
+        pinchEndT=setTimeout(()=>{ recentPinch=false; }, 300);   // 핀치 직후 뜨는 클릭이 초점버튼을 건드리지 않게
+      }
+    }, {passive:true});
 
     /* zoom 이 지원되는 기기에서만 1x/2x 같은 배율 버튼을 보여주고,
        탭하면 즉시 그 배율로 전환한다 (자동 1x 고정이 안 먹는 기기를 위한 수동 대안) */
@@ -330,17 +406,18 @@
         return;
       }
       const min=caps.zoom.min, max=caps.zoom.max;
+      curZoom=min;
       const levels=[min,1,max].filter(z=>z>=min && z<=max)
                               .filter((z,i,a)=>a.indexOf(z)===i)
                               .sort((a,b)=>a-b);
       levels.forEach(z=>{
         const b=document.createElement('button');
         b.textContent=(Math.round(z*10)/10)+'x';
-        b.classList.toggle('sel', z===1);
+        b.classList.toggle('sel', z===min);
         b.onclick=()=>{
+          curZoom=z;
           track.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});
-          Array.prototype.forEach.call(box.children, c=>c.classList.remove('sel'));
-          b.classList.add('sel');
+          updateZoomSel(z);
         };
         box.appendChild(b);
       });
@@ -385,6 +462,7 @@
       photo.classList.add('on'); video.classList.remove('on');
       shutterWrap.classList.add('hide');
       $('capZoom').classList.remove('show');
+      $('capLens').classList.remove('show');
       bottom.classList.add('on');
       $('capRotate').style.display='inline-block';
       stopCam();
@@ -478,7 +556,11 @@
     $('capSave').onclick=saveShot;
     $('capRotate').onclick=rotateShot;
     $('capClose').onclick=close;
-    $('capFlip').onclick=()=>{ facing = facing==='environment' ? 'user' : 'environment'; openCam(); };
+    $('capFlip').onclick=()=>{
+      facing = facing==='environment' ? 'user' : 'environment';
+      if(facing==='user') lensId=null;
+      openCam();
+    };
     nI.addEventListener('input', ()=>{ if(hintEl.textContent) hintEl.textContent=''; });
     nI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); tI.focus(); } });
     tI.addEventListener('input', e=>{ e.target.value=fmtTel(e.target.value); });
