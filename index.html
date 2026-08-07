@@ -21,8 +21,9 @@
   /* 폰을 가로로 들어도 화면은 항상 세로로 유지 (manifest orientation:portrait
      가 안 먹는 상황 — 설치 안 하고 그냥 브라우저 탭으로 쓰는 경우 등 — 을 대비한
      확실한 방법. 가로 방향이 감지되면 화면 전체를 90도 반대로 돌려서 그대로 세로처럼 보이게 함) */
+  /* 단, 벽걸이 태블릿 확인 화면(html.tvmode)은 가로로 걸 수 있으므로 제외한다 */
   @media screen and (orientation:landscape){
-    html{
+    html:not(.tvmode){
       transform:rotate(-90deg);
       transform-origin:left top;
       width:100vh;height:100vw;
@@ -106,13 +107,37 @@
   #edActions{display:flex;gap:10px;}
   #edActions>button{flex:1;padding:15px;border-radius:12px;font-size:16px;width:auto;}
   #edHint{color:#f0e9da;font-size:12.5px;text-align:center;opacity:.95;min-height:16px;}
+
+  /* ── 벽걸이 태블릿 확인 화면 (주소 뒤에 #tv 를 붙여서 열기) ── */
+  #tv{
+    position:fixed;inset:0;z-index:60;display:none;background:#0d0b10;color:#fff;
+    flex-direction:column;align-items:center;justify-content:center;padding:3vh 3vw;
+  }
+  #tv.on{display:flex;}
+  #tvDot{position:fixed;top:2vh;right:2.5vw;font-size:1.9vh;color:#6b5f75;}
+  #tvIdle{text-align:center;}
+  #tvIdle h2{font-size:4.6vh;font-weight:800;margin-bottom:1vh;}
+  #tvCode{
+    font-size:11vh;font-weight:900;letter-spacing:.1em;color:#BFA7CC;
+    font-family:'Malgun Gothic',monospace;margin:2vh 0 3vh;
+  }
+  #tvIdle p{font-size:2.3vh;color:#9b8fa6;line-height:1.8;}
+  #tvShow{display:none;flex-direction:column;align-items:center;gap:1.5vh;width:100%;height:100%;}
+  #tvShow.on{display:flex;}
+  #tvImg{flex:1;min-height:0;max-width:100%;object-fit:contain;border-radius:2vh;}
+  #tvName{font-size:8vh;font-weight:900;line-height:1;text-align:center;}
+  #tvTel{
+    font-size:6vh;font-weight:800;line-height:1;color:#E4C1D9;
+    font-variant-numeric:tabular-nums;
+  }
+  #tvAsk{font-size:2.5vh;color:#9b8fa6;padding-bottom:1vh;}
 </style>
 </head>
 <body>
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v71</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v72</span></h1>
   <button class="go" id="bShoot">📷 카메라로 찍기</button>
   <a class="sub" id="bUlike"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end">📷 Ulike 열기</a>
@@ -120,6 +145,7 @@
      href="intent://#Intent;package=photo.editor.hd.camera.adfree;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dphoto.editor.hd.camera.adfree;end">📷 HD Camera Pro 열기</a>
   <button class="sub" id="bPick">🖼 갤러리에서 고르기</button>
   <button class="sub" id="bCopyUrl">🔗 주소 복사 (봉사자에게 전달)</button>
+  <button class="sub" id="bTvLink">📺 태블릿 연결</button>
 
   <div id="todayWrap">
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
@@ -151,6 +177,22 @@
       <button class="sub" id="edAgain">다시 찍기</button>
       <button class="go"  id="edSave">저장</button>
     </div>
+  </div>
+</div>
+
+<!-- 벽걸이 태블릿 확인 화면 -->
+<div id="tv">
+  <div id="tvDot">연결 확인 중…</div>
+  <div id="tvIdle">
+    <h2>새가족 사진 확인 화면</h2>
+    <div id="tvCode">------</div>
+    <p>봉사자 폰에서 <b>📺 태블릿 연결</b>을 누르고<br>위 코드를 입력하세요.</p>
+  </div>
+  <div id="tvShow">
+    <img id="tvImg" alt="">
+    <div id="tvName"></div>
+    <div id="tvTel"></div>
+    <div id="tvAsk">사진과 정보가 맞는지 확인해주세요</div>
   </div>
 </div>
 
@@ -237,6 +279,107 @@
     save();
     return String(data.ctrN).padStart(2,'0');
   }
+
+  /* ───── 벽걸이 태블릿으로 즉시 전송 ─────
+     서버가 없으므로 공개 MQTT 중계소를 "우편함"처럼 쓴다.
+     방 코드로 만든 열쇠(AES-GCM)로 잠가서 보내므로 중계소에는 암호문만 지나가고,
+     같은 코드를 가진 태블릿만 열어볼 수 있다. retain 을 끄기 때문에
+     중계소에 데이터가 남지도 않는다. */
+  const TV = (function(){
+    const BROKER='wss://broker.emqx.io:8084/mqtt';
+    const myId=Math.random().toString(36).slice(2,10);
+    const te=new TextEncoder(), td=new TextDecoder();
+    let client=null, key=null, topic=null, connected=false, code='', onPhoto=null;
+    let mqttLoading=null;
+
+    /* 라이브러리(330KB)는 실제로 쓸 때만 불러온다 */
+    function loadMqtt(){
+      if(window.mqtt) return Promise.resolve();
+      if(mqttLoading) return mqttLoading;
+      mqttLoading=new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='mqtt.min.js'; s.onload=res; s.onerror=rej;
+        document.head.appendChild(s);
+      });
+      return mqttLoading;
+    }
+
+    async function sha(s){ return new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode(s))); }
+    async function setup(c){
+      code=c;
+      key=await crypto.subtle.importKey('raw', await sha('nfp-key:'+c), {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+      const h=await sha('nfp-topic:'+c);
+      topic='nfp/'+[...h].slice(0,10).map(x=>x.toString(16).padStart(2,'0')).join('');
+    }
+    async function encrypt(obj){
+      const iv=crypto.getRandomValues(new Uint8Array(12));
+      const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, te.encode(JSON.stringify(obj))));
+      const out=new Uint8Array(12+ct.length); out.set(iv,0); out.set(ct,12);
+      let s=''; for(const b of out) s+=String.fromCharCode(b);
+      return btoa(s);
+    }
+    async function decrypt(b64){
+      const raw=Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+      const pt=await crypto.subtle.decrypt({name:'AES-GCM', iv:raw.slice(0,12)}, key, raw.slice(12));
+      return JSON.parse(td.decode(pt));
+    }
+
+    async function connect(c, opts){
+      opts=opts||{};
+      onPhoto=opts.onPhoto||null;
+      await loadMqtt();
+      if(!window.mqtt || !crypto.subtle) throw new Error('unsupported');
+      await setup(c);
+      if(client){ try{ client.end(true); }catch(e){} client=null; }
+      client=mqtt.connect(BROKER, {
+        clientId:'nfp_'+myId, clean:true,
+        reconnectPeriod:4000, connectTimeout:8000, keepalive:30
+      });
+      client.on('connect', ()=>{
+        connected=true;
+        if(onPhoto) client.subscribe(topic,{qos:0});
+        if(opts.onStatus) opts.onStatus(true);
+      });
+      client.on('close', ()=>{ connected=false; if(opts.onStatus) opts.onStatus(false); });
+      client.on('error', ()=>{ connected=false; if(opts.onStatus) opts.onStatus(false); });
+      client.on('message', async (t,payload)=>{
+        if(!onPhoto) return;
+        try{
+          const o=await decrypt(payload.toString());
+          if(!o || o.from===myId) return;
+          onPhoto(o);
+        }catch(e){}   // 다른 방 메시지거나 복호화 실패 — 조용히 무시
+      });
+    }
+
+    /* 확인용이므로 화면에 보일 만큼만 줄여서 보낸다 (전송 1~2초 안에 끝나도록) */
+    function shrink(cv, maxPx, q){
+      const k=Math.min(1, maxPx/Math.max(cv.width, cv.height));
+      if(k>=1) return cv.toDataURL('image/jpeg', q);
+      const c2=document.createElement('canvas');
+      c2.width=Math.round(cv.width*k); c2.height=Math.round(cv.height*k);
+      c2.getContext('2d').drawImage(cv, 0, 0, c2.width, c2.height);
+      return c2.toDataURL('image/jpeg', q);
+    }
+    async function sendPhoto(canvas, name, tel){
+      if(!client || !connected || !key) return false;
+      let img=shrink(canvas, 900, 0.7);
+      if(img.length > 400000) img=shrink(canvas, 640, 0.6);   // 중계소 부담 줄이기
+      try{
+        const msg=await encrypt({ img, name, tel, from:myId, t:Date.now() });
+        client.publish(topic, msg, {qos:0, retain:false});     // retain:false — 중계소에 안 남김
+        return true;
+      }catch(e){ return false; }
+    }
+
+    function makeCode(){
+      const AB='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // 헷갈리는 O,0,I,1 제외
+      const a=crypto.getRandomValues(new Uint8Array(6));
+      let s=''; for(let i=0;i<6;i++) s+=AB[a[i]%AB.length];
+      return s;
+    }
+    return { connect, sendPhoto, makeCode, isReady:()=>connected };
+  })();
 
   /* ───── 오늘 찍은 사진 모아서 한 번에 공유 ─────
      이 화면을 켜둔 세션 동안만 기억한다(앱을 완전히 껐다 켜면 목록은 비워짐).
@@ -372,8 +515,12 @@
       const nm=nI.value.trim(), tel=fmtTel(tI.value);
       if(!nm && !tel){ hintEl.textContent='이름 또는 전화번호를 입력해주세요'; return; }
       const name=fileBase()+'.jpg';
+      const composed=compose();
 
-      compose().toBlob(blob=>{
+      // 벽걸이 태블릿에도 즉시 띄운다 (연결돼 있을 때만)
+      const tvSend = TV.sendPhoto(composed, nm, tel).catch(()=>false);
+
+      composed.toBlob(blob=>{
         const url=URL.createObjectURL(blob);
         const a=document.createElement('a');
         a.href=url; a.download=name;
@@ -383,6 +530,8 @@
         pushRecent(nm,tel); save();
         addTodayShot(blob, name, nm, tel);
         $('homeLog').innerHTML='✅ 저장됨 · <b>'+name+'</b><br>(다운로드 폴더)';
+        // 전송 결과는 위 문구가 찍힌 뒤에 덧붙여야 지워지지 않는다
+        tvSend.then(ok=>{ if(ok) $('homeLog').innerHTML+='<br>📺 태블릿에 표시됨'; });
 
         // 여러 장을 골랐다면 다음 장으로, 아니면 편집기를 닫는다
         if(qi+1 < queue.length){ qi++; showFile(queue[qi]); }
@@ -473,16 +622,89 @@
   $('fCam').addEventListener('change', e=>{ ED.start(e.target.files); e.target.value=''; });
   $('fPick').addEventListener('change', e=>{ ED.start(e.target.files); e.target.value=''; });
 
+  /* ───── 폰: 태블릿과 짝 맺기 (최초 1회) ───── */
+  const isTvMode = location.hash.toLowerCase().indexOf('tv')>=0;
+
+  function tvStatus(){
+    const btn=$('bTvLink');
+    if(!data.tvCode){ btn.textContent='📺 태블릿 연결'; return; }
+    btn.textContent=(TV.isReady()?'📺 태블릿 연결됨 ✓ ':'📺 태블릿 연결 중… ')+data.tvCode;
+  }
+  async function tvConnectPhone(){
+    if(!data.tvCode) return;
+    try{
+      await TV.connect(data.tvCode, { onStatus:tvStatus });   // 폰은 받지 않고 보내기만
+    }catch(e){}
+    tvStatus();
+  }
+  $('bTvLink').onclick=()=>{
+    let v;
+    try{
+      v=prompt('태블릿 화면에 떠 있는 6자리 코드를 입력하세요.\n(연결을 끊으려면 비워두고 확인)', data.tvCode||'');
+    }catch(e){ return; }
+    if(v===null) return;
+    const c=(v||'').trim().toUpperCase();
+    data.tvCode=c||''; save();
+    if(!c){ $('bTvLink').textContent='📺 태블릿 연결'; return; }
+    tvConnectPhone();
+  };
+  // 태블릿 모드에서는 아래 startTvMode() 가 따로 연결하므로 여기서 연결하지 않는다
+  // (둘 다 연결하면 서로 상대의 연결을 끊어버려 사진이 안 넘어감)
+  if(!isTvMode){ if(data.tvCode) tvConnectPhone(); else tvStatus(); }
+
+  /* ───── 태블릿 모드 (#tv 로 열었을 때) ───── */
+  async function startTvMode(){
+    document.documentElement.classList.add('tvmode');   // 가로 강제회전 CSS 예외
+    document.getElementById('home').style.display='none';
+    $('tv').classList.add('on');
+    try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
+
+    // 방 코드는 이 태블릿에 계속 저장해 둔다 (매번 바뀌면 폰을 다시 연결해야 하므로)
+    if(!data.tvCode){ data.tvCode=TV.makeCode(); save(); }
+    $('tvCode').textContent=data.tvCode;
+
+    let clearT=null;
+    function showPhoto(o){
+      clearTimeout(clearT);
+      $('tvImg').src=o.img;
+      $('tvName').textContent=o.name||'';
+      $('tvTel').textContent=o.tel||'';
+      $('tvIdle').style.display='none';
+      $('tvShow').classList.add('on');
+      // 다음 사람 차례에 앞사람 정보가 남지 않도록 자동으로 비운다
+      clearT=setTimeout(()=>{
+        $('tvShow').classList.remove('on');
+        $('tvIdle').style.display='';
+        $('tvImg').src='';
+        $('tvName').textContent=''; $('tvTel').textContent='';
+      }, 15000);
+    }
+    try{
+      await TV.connect(data.tvCode, {
+        onPhoto: showPhoto,
+        onStatus: ok=>{ $('tvDot').textContent = ok ? '● 연결됨' : '○ 연결 중…'; }
+      });
+    }catch(e){
+      $('tvDot').textContent='연결할 수 없음 (인터넷 확인)';
+    }
+    // 화면 꺼짐 방지
+    try{ if('wakeLock' in navigator) await navigator.wakeLock.request('screen'); }catch(e){}
+  }
+  if(isTvMode) startTvMode();
+
   /* 서비스워커: 온라인이면 항상 최신본, 오프라인이면 캐시본 */
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
 
   /* 세로 고정: 앱(홈 화면 아이콘)으로 실행 중이면 manifest 의 orientation:"portrait"
-     로 자동 고정된다. 혹시 지원 안 되는 상황을 대비해 API로도 한 번 더 시도. */
-  try{
-    if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{});
-  }catch(e){}
+     로 자동 고정된다. 혹시 지원 안 되는 상황을 대비해 API로도 한 번 더 시도.
+     (태블릿 확인 화면은 가로로 걸 수 있으므로 고정하지 않는다) */
+  if(!isTvMode){
+    try{
+      if(screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{});
+    }catch(e){}
+  }
 })();
 </script>
 </body>
