@@ -41,32 +41,46 @@
      위쪽 절반은 밝게 빛나고 아래쪽은 진한, 유리알 같은 입체 버튼.
      가짜 요소(::before) 대신 배경을 두 겹으로 깔아 글자가 항상 위에 오게 한다.
      (첫 겹 = 하이라이트 광택, 둘째 겹 = 실제 색) */
+  /* 광택 덩어리는 테두리 안쪽에 떠 있는 별도의 둥근 판으로 만든다.
+     isolation:isolate 로 쌓임 맥락을 만들고 광택을 z-index:-1 로 두면
+     "버튼 배경 위 · 글자 아래"에 정확히 놓인다. */
+  .go, .sub{ position:relative; isolation:isolate; }
+  .go::before, .sub::before{
+    content:'';position:absolute;z-index:-1;pointer-events:none;
+    left:5px;right:5px;top:4px;height:46%;
+    border-radius:20px 20px 50% 50% / 16px 16px 18px 18px;
+    transition:opacity .12s ease;
+  }
+
   .go{
     font-family:inherit;font-size:20px;font-weight:800;width:100%;
-    padding:20px;border-radius:22px;cursor:pointer;color:#fff;
-    border:1px solid #5f4573;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.24) 46%,
-                              rgba(255,255,255,.02) 47%, rgba(255,255,255,.20) 100%),
-      linear-gradient(180deg, #b695c9 0%, #8B6E9E 46%, #6d5280 47%, #9c7fae 100%);
+    padding:20px;border-radius:26px;cursor:pointer;color:#fff;
+    border:3px solid #614878;
+    background:linear-gradient(180deg,#8e6ea6 0%,#7a5b90 52%,#9a78b0 84%,#c2a4d3 100%);
     box-shadow:
-      0 6px 16px rgba(74,59,87,.34),
-      inset 0 1px 1px rgba(255,255,255,.75),
-      inset 0 -2px 6px rgba(0,0,0,.18);
-    text-shadow:0 1px 2px rgba(0,0,0,.32);
+      0 6px 14px rgba(60,45,72,.42),
+      inset 0 -3px 9px rgba(255,255,255,.30),
+      inset 0 2px 4px rgba(0,0,0,.22);
+    text-shadow:0 1px 2px rgba(0,0,0,.42);
   }
+  .go::before{
+    background:linear-gradient(180deg,
+      rgba(255,255,255,.94) 0%, rgba(255,255,255,.58) 55%, rgba(255,255,255,.16) 100%);
+  }
+
   .sub{
     font-family:inherit;font-size:17px;font-weight:700;width:100%;
-    padding:18px 22px;border-radius:22px;cursor:pointer;color:#4a3b57;
-    border:1px solid #cbb9d6;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.95) 0%, rgba(255,255,255,.5) 46%,
-                              rgba(255,255,255,.06) 47%, rgba(255,255,255,.55) 100%),
-      linear-gradient(180deg, #ffffff 0%, #f4eef8 46%, #e7dcef 47%, #faf7fc 100%);
+    padding:18px 22px;border-radius:26px;cursor:pointer;color:#463a52;
+    border:3px solid #cdbbd9;
+    background:linear-gradient(180deg,#ece3f3 0%,#e2d6ec 52%,#f0e9f6 84%,#ffffff 100%);
     box-shadow:
-      0 4px 11px rgba(74,59,87,.16),
-      inset 0 1px 1px rgba(255,255,255,.95),
-      inset 0 -2px 5px rgba(139,110,158,.12);
+      0 5px 12px rgba(74,59,87,.20),
+      inset 0 -3px 8px rgba(255,255,255,.85),
+      inset 0 2px 3px rgba(139,110,158,.14);
+  }
+  .sub::before{
+    background:linear-gradient(180deg,
+      rgba(255,255,255,1) 0%, rgba(255,255,255,.78) 55%, rgba(255,255,255,.28) 100%);
   }
   /* 외부 앱 실행은 진짜 링크(<a>)여야 브라우저가 앱 실행으로 처리한다 */
   a.sub{display:block;text-align:center;text-decoration:none;}
@@ -79,13 +93,18 @@
   .chip{
     font-family:inherit;font-size:15px;font-weight:700;
     padding:9px 15px;border-radius:999px;cursor:pointer;color:#3e3348;
-    border:1px solid #d3c4dc;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.95) 0%, rgba(255,255,255,.45) 48%,
-                              rgba(255,255,255,.05) 49%, rgba(255,255,255,.5) 100%),
-      linear-gradient(180deg, #ffffff 0%, #f3edf7 48%, #e8dff0 49%, #fbf8fc 100%);
-    box-shadow:0 2px 5px rgba(74,59,87,.14), inset 0 1px 1px rgba(255,255,255,.9);
+    border:2px solid #d0bfdb;position:relative;isolation:isolate;
+    background:linear-gradient(180deg,#eae0f2 0%,#e1d5ec 55%,#f4eff8 100%);
+    box-shadow:0 2px 6px rgba(74,59,87,.16), inset 0 -2px 5px rgba(255,255,255,.8);
   }
+  .chip::before{
+    content:'';position:absolute;z-index:-1;pointer-events:none;
+    left:4px;right:4px;top:2px;height:45%;
+    border-radius:999px;
+    background:linear-gradient(180deg, rgba(255,255,255,1), rgba(255,255,255,.35));
+    transition:opacity .12s ease;
+  }
+  .chip:active::before, .chip.pressing::before{ opacity:.35; }
 
   /* ── 버튼 눌림 효과 ──
      맨 위에서 -webkit-tap-highlight-color 를 껐기 때문에 폰에서 눌러도
@@ -101,22 +120,20 @@
     transform:scale(.965);
   }
   /* 눌리면 광택이 죽고 안쪽으로 쑥 들어간 느낌 */
+  .go:active::before, .go.pressing::before,
+  .sub:active::before, .sub.pressing::before{ opacity:.35; }
   .go:active, .go.pressing{
-    filter:brightness(.86) saturate(1.1);
+    filter:brightness(.88) saturate(1.08);
     box-shadow:
-      0 1px 3px rgba(74,59,87,.3),
-      inset 0 4px 12px rgba(0,0,0,.34),
-      inset 0 -1px 0 rgba(255,255,255,.25);
+      0 1px 3px rgba(60,45,72,.34),
+      inset 0 5px 13px rgba(0,0,0,.36);
   }
   .sub:active, .sub.pressing{
     border-color:var(--plum);
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.5) 0%, rgba(255,255,255,.15) 46%,
-                              rgba(255,255,255,0) 47%, rgba(255,255,255,.25) 100%),
-      linear-gradient(180deg, #e6dbf0 0%, #ded0ea 46%, #d3c2e2 47%, #eae1f2 100%);
+    background:linear-gradient(180deg,#ddd0e9 0%,#d5c6e3 55%,#e5dbf0 100%);
     box-shadow:
-      0 1px 3px rgba(74,59,87,.16),
-      inset 0 4px 10px rgba(139,110,158,.28);
+      0 1px 3px rgba(74,59,87,.18),
+      inset 0 5px 11px rgba(139,110,158,.30);
   }
   .chip:active, .chip.pressing{
     border-color:var(--plum);
@@ -234,7 +251,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v77</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v78</span></h1>
   <button class="go" id="bShoot"><span class="ico">📷</span>카메라로 찍기</button>
   <a class="sub" id="bUlike"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
