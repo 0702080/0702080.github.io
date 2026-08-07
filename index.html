@@ -61,6 +61,15 @@
   }
   #home h1{font-size:22px;font-weight:800;margin-bottom:2px;}
   #home .hint{font-size:13.5px;color:#9b8fa6;line-height:1.65;}
+  #todayWrap{display:none;flex-direction:column;gap:8px;}
+  #todayWrap.show{display:flex;}
+  #todayWrap label{font-size:14px;font-weight:700;color:#8B6E9E;}
+  #todayThumbs{display:flex;gap:6px;overflow-x:auto;padding:2px 0;scrollbar-width:none;}
+  #todayThumbs::-webkit-scrollbar{display:none;}
+  #todayThumbs img{
+    width:52px;height:52px;object-fit:cover;border-radius:8px;
+    flex:0 0 auto;border:1px solid #e3d8c8;
+  }
 
   /* ── 사진 + 이름 입력 화면 ── */
   #editor{
@@ -103,7 +112,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v70</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v71</span></h1>
   <button class="go" id="bShoot">📷 카메라로 찍기</button>
   <a class="sub" id="bUlike"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end">📷 Ulike 열기</a>
@@ -111,6 +120,13 @@
      href="intent://#Intent;package=photo.editor.hd.camera.adfree;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dphoto.editor.hd.camera.adfree;end">📷 HD Camera Pro 열기</a>
   <button class="sub" id="bPick">🖼 갤러리에서 고르기</button>
   <button class="sub" id="bCopyUrl">🔗 주소 복사 (봉사자에게 전달)</button>
+
+  <div id="todayWrap">
+    <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
+    <div id="todayThumbs"></div>
+    <button class="go" id="bShareAll">📤 전체 카톡으로 공유</button>
+  </div>
+
   <div id="homeLog" class="hint"></div>
 </div>
 
@@ -222,6 +238,41 @@
     return String(data.ctrN).padStart(2,'0');
   }
 
+  /* ───── 오늘 찍은 사진 모아서 한 번에 공유 ─────
+     이 화면을 켜둔 세션 동안만 기억한다(앱을 완전히 껐다 켜면 목록은 비워짐).
+     사진 파일 자체는 이미 저장할 때마다 다운로드 폴더에 들어가 있으니,
+     여기 있는 목록은 "한꺼번에 공유하기용" 임시 모음일 뿐이다. */
+  const todaysShots=[];
+  function refreshTodayUI(){
+    const wrap=$('todayWrap');
+    if(!todaysShots.length){ wrap.classList.remove('show'); return; }
+    wrap.classList.add('show');
+    $('todayCount').textContent=todaysShots.length;
+    const box=$('todayThumbs'); box.innerHTML='';
+    todaysShots.forEach(s=>{
+      const img=document.createElement('img');
+      img.src=URL.createObjectURL(s.blob);
+      img.alt=s.name||s.tel||'';
+      box.appendChild(img);
+    });
+  }
+  function addTodayShot(blob, filename, name, tel){
+    todaysShots.push({blob, filename, name, tel});
+    refreshTodayUI();
+  }
+  $('bShareAll').onclick=async ()=>{
+    if(!todaysShots.length) return;
+    const files=todaysShots.map(s=>new File([s.blob], s.filename, {type:'image/jpeg'}));
+    const shareData={ files, title:'새가족 사진', text:todaysShots.length+'장' };
+    try{
+      if(navigator.canShare && navigator.canShare(shareData)){
+        await navigator.share(shareData);
+      }else{
+        alert('이 브라우저에서는 여러 장을 한 번에 공유할 수 없습니다.\n사진은 이미 다운로드 폴더에 저장되어 있으니, 갤러리(사진) 앱에서 직접 선택해 카톡으로 보내주세요.');
+      }
+    }catch(e){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
+  };
+
   /* ───── 사진 편집기 ─────
      기본 카메라 앱이 찍은 사진을 받아 이름·전화번호를 합성해 저장한다.
      (웹 카메라를 직접 쓰면 기본 앱의 1x 광각 렌즈에 접근할 수 없어 화각이
@@ -330,6 +381,7 @@
         setTimeout(()=>URL.revokeObjectURL(url),5000);
 
         pushRecent(nm,tel); save();
+        addTodayShot(blob, name, nm, tel);
         $('homeLog').innerHTML='✅ 저장됨 · <b>'+name+'</b><br>(다운로드 폴더)';
 
         // 여러 장을 골랐다면 다음 장으로, 아니면 편집기를 닫는다
