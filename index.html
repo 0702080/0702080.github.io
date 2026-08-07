@@ -37,15 +37,36 @@
     background:#FFF9F1;color:#3E3348;
     -webkit-user-select:none;user-select:none;
   }
+  /* ── 아쿠아 버튼 ──
+     위쪽 절반은 밝게 빛나고 아래쪽은 진한, 유리알 같은 입체 버튼.
+     가짜 요소(::before) 대신 배경을 두 겹으로 깔아 글자가 항상 위에 오게 한다.
+     (첫 겹 = 하이라이트 광택, 둘째 겹 = 실제 색) */
   .go{
     font-family:inherit;font-size:20px;font-weight:800;width:100%;
-    padding:20px;border:none;border-radius:14px;cursor:pointer;
-    background:var(--plum);color:#fff;
+    padding:20px;border-radius:22px;cursor:pointer;color:#fff;
+    border:1px solid #5f4573;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.24) 46%,
+                              rgba(255,255,255,.02) 47%, rgba(255,255,255,.20) 100%),
+      linear-gradient(180deg, #b695c9 0%, #8B6E9E 46%, #6d5280 47%, #9c7fae 100%);
+    box-shadow:
+      0 6px 16px rgba(74,59,87,.34),
+      inset 0 1px 1px rgba(255,255,255,.75),
+      inset 0 -2px 6px rgba(0,0,0,.18);
+    text-shadow:0 1px 2px rgba(0,0,0,.32);
   }
   .sub{
     font-family:inherit;font-size:17px;font-weight:700;width:100%;
-    padding:18px 22px;border:2px solid #ddd;border-radius:14px;
-    background:#fff;color:#666;cursor:pointer;
+    padding:18px 22px;border-radius:22px;cursor:pointer;color:#4a3b57;
+    border:1px solid #cbb9d6;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.95) 0%, rgba(255,255,255,.5) 46%,
+                              rgba(255,255,255,.06) 47%, rgba(255,255,255,.55) 100%),
+      linear-gradient(180deg, #ffffff 0%, #f4eef8 46%, #e7dcef 47%, #faf7fc 100%);
+    box-shadow:
+      0 4px 11px rgba(74,59,87,.16),
+      inset 0 1px 1px rgba(255,255,255,.95),
+      inset 0 -2px 5px rgba(139,110,158,.12);
   }
   /* 외부 앱 실행은 진짜 링크(<a>)여야 브라우저가 앱 실행으로 처리한다 */
   a.sub{display:block;text-align:center;text-decoration:none;}
@@ -57,8 +78,13 @@
   }
   .chip{
     font-family:inherit;font-size:15px;font-weight:700;
-    padding:9px 15px;border-radius:999px;border:1.5px solid #ddd;
-    background:#f5f5f5;color:#333;cursor:pointer;
+    padding:9px 15px;border-radius:999px;cursor:pointer;color:#3e3348;
+    border:1px solid #d3c4dc;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.95) 0%, rgba(255,255,255,.45) 48%,
+                              rgba(255,255,255,.05) 49%, rgba(255,255,255,.5) 100%),
+      linear-gradient(180deg, #ffffff 0%, #f3edf7 48%, #e8dff0 49%, #fbf8fc 100%);
+    box-shadow:0 2px 5px rgba(74,59,87,.14), inset 0 1px 1px rgba(255,255,255,.9);
   }
 
   /* ── 버튼 눌림 효과 ──
@@ -74,16 +100,28 @@
   button.pressing, a.sub.pressing, .chip.pressing{
     transform:scale(.965);
   }
+  /* 눌리면 광택이 죽고 안쪽으로 쑥 들어간 느낌 */
   .go:active, .go.pressing{
-    filter:brightness(.82);
-    box-shadow:inset 0 3px 10px rgba(0,0,0,.28);
+    filter:brightness(.86) saturate(1.1);
+    box-shadow:
+      0 1px 3px rgba(74,59,87,.3),
+      inset 0 4px 12px rgba(0,0,0,.34),
+      inset 0 -1px 0 rgba(255,255,255,.25);
   }
   .sub:active, .sub.pressing{
-    background:#f0e8f5;border-color:var(--plum);color:#4a3b57;
-    box-shadow:inset 0 3px 9px rgba(139,110,158,.18);
+    border-color:var(--plum);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.5) 0%, rgba(255,255,255,.15) 46%,
+                              rgba(255,255,255,0) 47%, rgba(255,255,255,.25) 100%),
+      linear-gradient(180deg, #e6dbf0 0%, #ded0ea 46%, #d3c2e2 47%, #eae1f2 100%);
+    box-shadow:
+      0 1px 3px rgba(74,59,87,.16),
+      inset 0 4px 10px rgba(139,110,158,.28);
   }
   .chip:active, .chip.pressing{
-    background:#e3d6ec;border-color:var(--plum);
+    border-color:var(--plum);
+    background:linear-gradient(180deg, #ded0ea 0%, #e9e0f2 100%);
+    box-shadow:inset 0 3px 7px rgba(139,110,158,.26);
   }
   /* 어두운 배경 위의 버튼들(촬영 화면 상단·태블릿 확대 막대) */
   #edTop button:active, #edTop button.pressing,
@@ -196,7 +234,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v76</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v77</span></h1>
   <button class="go" id="bShoot"><span class="ico">📷</span>카메라로 찍기</button>
   <a class="sub" id="bUlike"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
