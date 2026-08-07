@@ -133,9 +133,32 @@
   #tvCode:hover{background:rgba(191,167,204,.12);}
   #tvCopied{font-size:2.1vh;color:#9CC7A8;height:2.6vh;margin-bottom:1vh;}
   #tvIdle p{font-size:2.3vh;color:#9b8fa6;line-height:1.8;}
-  #tvShow{display:none;flex-direction:column;align-items:center;gap:1.5vh;width:100%;height:100%;}
+  #tvShow{display:none;flex-direction:column;align-items:center;gap:1vh;width:100%;height:100%;}
   #tvShow.on{display:flex;}
-  #tvImg{flex:1;min-height:0;max-width:100%;object-fit:contain;border-radius:2vh;}
+  /* 확대·이동을 위해 사진을 담는 틀 (넘치는 부분은 잘라냄) */
+  #tvStage{
+    flex:1;min-height:0;width:100%;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    touch-action:none;                 /* 핀치·드래그를 직접 처리 */
+  }
+  #tvImg{
+    max-width:100%;max-height:100%;object-fit:contain;border-radius:2vh;
+    transform-origin:center center;cursor:zoom-in;
+    -webkit-user-select:none;user-select:none;-webkit-user-drag:none;
+  }
+  #tvImg.zoomed{cursor:grab;}
+  #tvImg.dragging{cursor:grabbing;}
+  #tvZoom{
+    display:flex;align-items:center;gap:1.2vh;
+    font-size:2.2vh;color:#cfc3d8;
+  }
+  #tvZoom button{
+    font-family:inherit;font-size:2.4vh;font-weight:800;
+    min-width:6vh;padding:.6vh 1.6vh;border-radius:1.2vh;cursor:pointer;
+    background:rgba(255,255,255,.12);color:#fff;border:none;
+  }
+  #tvZoom button:hover{background:rgba(255,255,255,.22);}
+  #tvPct{min-width:7vh;text-align:center;font-variant-numeric:tabular-nums;}
   #tvAsk{font-size:2.5vh;color:#9b8fa6;padding-bottom:1vh;}
 </style>
 </head>
@@ -143,7 +166,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v74</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v75</span></h1>
   <button class="go" id="bShoot"><span class="ico">📷</span>카메라로 찍기</button>
   <a class="sub" id="bUlike"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
@@ -197,7 +220,13 @@
        <span style="font-size:.85em">(코드를 눌러 복사할 수 있습니다)</span></p>
   </div>
   <div id="tvShow">
-    <img id="tvImg" alt="">
+    <div id="tvStage"><img id="tvImg" alt=""></div>
+    <div id="tvZoom">
+      <button id="tvOut" aria-label="축소">－</button>
+      <span id="tvPct">100%</span>
+      <button id="tvIn" aria-label="확대">＋</button>
+      <button id="tvFit">원래대로</button>
+    </div>
     <div id="tvAsk">사진과 정보가 맞는지 확인해주세요</div>
   </div>
 </div>
@@ -696,18 +725,113 @@
       }catch(e2){}
     };
 
+    /* ───── 사진 확대·이동 (마우스 휠 / 손가락 핀치 / 드래그) ───── */
+    const stage=$('tvStage'), img=$('tvImg');
+    let sc=1, tx=0, ty=0;
+    const MIN=1, MAX=6;
+
+    function applyTf(){
+      img.style.transform='translate('+tx+'px,'+ty+'px) scale('+sc+')';
+      img.classList.toggle('zoomed', sc>1.01);
+      $('tvPct').textContent=Math.round(sc*100)+'%';
+      // 확대해서 보는 동안에는 자동으로 사라지지 않게 멈춘다
+      if(sc>1.01) holdClear(); else armClear();
+    }
+    function clampPan(){
+      const st=stage.getBoundingClientRect();
+      const w=img.clientWidth*sc, h=img.clientHeight*sc;
+      const mx=Math.max(0,(w-st.width)/2), my=Math.max(0,(h-st.height)/2);
+      tx=Math.min(mx,Math.max(-mx,tx));
+      ty=Math.min(my,Math.max(-my,ty));
+    }
+    /* 화면상의 한 점을 기준으로 확대 (그 점이 제자리에 머물도록) */
+    function zoomAt(px,py,next){
+      const st=stage.getBoundingClientRect();
+      const ox=px-st.left-st.width/2, oy=py-st.top-st.height/2;
+      const s2=Math.min(MAX,Math.max(MIN,next));
+      const u=(ox-tx)/sc, v=(oy-ty)/sc;
+      tx=ox-u*s2; ty=oy-v*s2; sc=s2;
+      if(sc<=1.001){ sc=1; tx=0; ty=0; }
+      clampPan(); applyTf();
+    }
+    function resetZoom(){ sc=1; tx=0; ty=0; applyTf(); }
+
+    const shown=()=>$('tvShow').classList.contains('on');
+
+    stage.addEventListener('wheel', e=>{
+      if(!shown()) return;
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, sc*(e.deltaY<0 ? 1.15 : 1/1.15));
+    }, {passive:false});
+
+    // 두 번 누르면 확대 ↔ 원래대로
+    stage.addEventListener('dblclick', e=>{
+      if(!shown()) return;
+      if(sc>1.01) resetZoom(); else zoomAt(e.clientX,e.clientY,2.5);
+    });
+
+    // 포인터로 끌어서 이동 + 손가락 두 개로 핀치 확대
+    const pts=new Map();
+    let panning=false, lastX=0, lastY=0, pinchD=0, pinchS=1;
+    stage.addEventListener('pointerdown', e=>{
+      if(!shown()) return;
+      try{ stage.setPointerCapture(e.pointerId); }catch(err){}   // 캡처 실패해도 계속 진행
+      pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(pts.size===1){ panning=true; lastX=e.clientX; lastY=e.clientY; img.classList.add('dragging'); }
+      else if(pts.size===2){
+        panning=false; img.classList.remove('dragging');
+        const [a,b]=[...pts.values()];
+        pinchD=Math.hypot(a.x-b.x,a.y-b.y); pinchS=sc;
+      }
+    });
+    stage.addEventListener('pointermove', e=>{
+      if(!pts.has(e.pointerId)) return;
+      pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(pts.size===2 && pinchD>0){
+        const [a,b]=[...pts.values()];
+        const d=Math.hypot(a.x-b.x,a.y-b.y);
+        zoomAt((a.x+b.x)/2,(a.y+b.y)/2, pinchS*(d/pinchD));
+      }else if(panning && sc>1.01){
+        tx+=e.clientX-lastX; ty+=e.clientY-lastY;
+        lastX=e.clientX; lastY=e.clientY;
+        clampPan(); applyTf();
+      }
+    });
+    function endPt(e){
+      pts.delete(e.pointerId);
+      if(pts.size<2) pinchD=0;
+      if(pts.size===0){ panning=false; img.classList.remove('dragging'); }
+    }
+    stage.addEventListener('pointerup', endPt);
+    stage.addEventListener('pointercancel', endPt);
+
+    $('tvIn').onclick =()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, sc*1.4); };
+    $('tvOut').onclick=()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, sc/1.4); };
+    $('tvFit').onclick=resetZoom;
+
+    /* ───── 표시 / 자동 비우기 ───── */
     let clearT=null;
-    function showPhoto(o){
+    function armClear(){
       clearTimeout(clearT);
-      $('tvImg').src=o.img;
-      $('tvIdle').style.display='none';
-      $('tvShow').classList.add('on');
-      // 다음 사람 차례에 앞사람 정보가 남지 않도록 자동으로 비운다
+      if(!$('tvShow').classList.contains('on')) return;
       clearT=setTimeout(()=>{
         $('tvShow').classList.remove('on');
         $('tvIdle').style.display='';
-        $('tvImg').src='';
+        img.src='';
+        sc=1; tx=0; ty=0;
+        img.style.transform=''; img.classList.remove('zoomed');
+        $('tvPct').textContent='100%';
       }, 15000);
+    }
+    function holdClear(){ clearTimeout(clearT); }
+
+    function showPhoto(o){
+      clearTimeout(clearT);
+      img.src=o.img;
+      sc=1; tx=0; ty=0; applyTf();      // 새 사진은 항상 원래 크기부터
+      $('tvIdle').style.display='none';
+      $('tvShow').classList.add('on');
+      armClear();
     }
     try{
       await TV.connect(data.tvCode, {
