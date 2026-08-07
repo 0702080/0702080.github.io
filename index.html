@@ -61,6 +61,36 @@
     background:#f5f5f5;color:#333;cursor:pointer;
   }
 
+  /* ── 버튼 눌림 효과 ──
+     맨 위에서 -webkit-tap-highlight-color 를 껐기 때문에 폰에서 눌러도
+     아무 반응이 없었다. 눌린 느낌을 직접 만들어 준다.
+     .pressing 은 자바스크립트가 붙여 주는 것(짧게 탭해도 확실히 보이게),
+     :active 는 마우스로 누르고 있는 동안의 상태. */
+  button, a.sub, .chip{
+    transition:transform .07s ease, background-color .12s ease,
+               border-color .12s ease, box-shadow .12s ease, filter .12s ease;
+  }
+  button:active, a.sub:active, .chip:active,
+  button.pressing, a.sub.pressing, .chip.pressing{
+    transform:scale(.965);
+  }
+  .go:active, .go.pressing{
+    filter:brightness(.82);
+    box-shadow:inset 0 3px 10px rgba(0,0,0,.28);
+  }
+  .sub:active, .sub.pressing{
+    background:#f0e8f5;border-color:var(--plum);color:#4a3b57;
+    box-shadow:inset 0 3px 9px rgba(139,110,158,.18);
+  }
+  .chip:active, .chip.pressing{
+    background:#e3d6ec;border-color:var(--plum);
+  }
+  /* 어두운 배경 위의 버튼들(촬영 화면 상단·태블릿 확대 막대) */
+  #edTop button:active, #edTop button.pressing,
+  #tvZoom button:active, #tvZoom button.pressing{
+    background:rgba(255,255,255,.42);color:#111;
+  }
+
   /* ── 첫 화면 ── */
   #home{
     height:100%;display:flex;flex-direction:column;justify-content:center;gap:14px;
@@ -166,7 +196,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v75</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v76</span></h1>
   <button class="go" id="bShoot"><span class="ico">📷</span>카메라로 찍기</button>
   <a class="sub" id="bUlike"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
@@ -268,6 +298,15 @@
       try{ if(navigator.vibrate) navigator.vibrate(28); }catch(err){}
       beep();
     }
+  }, true);
+
+  /* 눌린 순간 바로 보이게 (짧게 톡 눌러도 확실히 보이도록 잠깐 유지)
+     :active 만으로는 폰에서 스치듯 눌렀을 때 거의 안 보인다. */
+  document.addEventListener('pointerdown', e=>{
+    const b=e.target.closest && e.target.closest('button, a.sub, .chip');
+    if(!b) return;
+    b.classList.add('pressing');
+    setTimeout(()=>b.classList.remove('pressing'), 200);
   }, true);
 
   /* 전화번호 자동 하이픈 */
