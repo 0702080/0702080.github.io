@@ -49,6 +49,12 @@
   }
   /* 외부 앱 실행은 진짜 링크(<a>)여야 브라우저가 앱 실행으로 처리한다 */
   a.sub{display:block;text-align:center;text-decoration:none;}
+  /* 버튼 아이콘은 글자 크기와 무관하게 항상 같은 크기·같은 폭으로 (줄 맞춤) */
+  .ico{
+    display:inline-block;width:1.5em;margin-right:.15em;
+    font-size:20px;line-height:1;text-align:center;vertical-align:-.13em;
+    font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;
+  }
   .chip{
     font-family:inherit;font-size:15px;font-weight:700;
     padding:9px 15px;border-radius:999px;border:1.5px solid #ddd;
@@ -137,20 +143,20 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v72</span></h1>
-  <button class="go" id="bShoot">📷 카메라로 찍기</button>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v73</span></h1>
+  <button class="go" id="bShoot"><span class="ico">📷</span>카메라로 찍기</button>
   <a class="sub" id="bUlike"
-     href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end">📷 Ulike 열기</a>
+     href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
   <a class="sub" id="bHdCam"
-     href="intent://#Intent;package=photo.editor.hd.camera.adfree;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dphoto.editor.hd.camera.adfree;end">📷 HD Camera Pro 열기</a>
-  <button class="sub" id="bPick">🖼 갤러리에서 고르기</button>
-  <button class="sub" id="bCopyUrl">🔗 주소 복사 (봉사자에게 전달)</button>
-  <button class="sub" id="bTvLink">📺 태블릿 연결</button>
+     href="intent://#Intent;package=photo.editor.hd.camera.adfree;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dphoto.editor.hd.camera.adfree;end"><span class="ico">📷</span>HD Camera Pro 열기</a>
+  <button class="sub" id="bPick"><span class="ico">🖼️</span>갤러리에서 고르기</button>
+  <button class="sub" id="bCopyUrl"><span class="ico">🔗</span>주소 복사 (봉사자에게 전달)</button>
+  <button class="sub" id="bTvLink"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="todayWrap">
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
     <div id="todayThumbs"></div>
-    <button class="go" id="bShareAll">📤 전체 카톡으로 공유</button>
+    <button class="go" id="bShareAll"><span class="ico">📤</span>전체 카톡으로 공유</button>
   </div>
 
   <div id="homeLog" class="hint"></div>
@@ -602,10 +608,19 @@
     document.body.removeChild(ta);
     return ok;
   }
+  /* 버튼 글자를 바꿀 때도 아이콘 칸(.ico)은 그대로 유지한다 */
+  function setBtn(btn, icon, label){
+    btn.innerHTML='<span class="ico">'+icon+'</span>';
+    btn.appendChild(document.createTextNode(label));
+  }
+
   $('bCopyUrl').onclick=async ()=>{
     const url='https://0702080.github.io/';
-    const btn=$('bCopyUrl'); const orig=btn.textContent;
-    const flash=(msg)=>{ btn.textContent=msg; setTimeout(()=>{ btn.textContent=orig; }, 1800); };
+    const btn=$('bCopyUrl'); const orig=btn.lastChild ? btn.lastChild.nodeValue : '';
+    const flash=(msg)=>{
+      setBtn(btn,'🔗',msg);
+      setTimeout(()=>setBtn(btn,'🔗',orig), 1800);
+    };
 
     try{
       await navigator.clipboard.writeText(url);
@@ -627,8 +642,8 @@
 
   function tvStatus(){
     const btn=$('bTvLink');
-    if(!data.tvCode){ btn.textContent='📺 태블릿 연결'; return; }
-    btn.textContent=(TV.isReady()?'📺 태블릿 연결됨 ✓ ':'📺 태블릿 연결 중… ')+data.tvCode;
+    if(!data.tvCode){ setBtn(btn,'📺','태블릿 연결'); return; }
+    setBtn(btn,'📺',(TV.isReady()?'태블릿 연결됨 ✓ ':'태블릿 연결 중… ')+data.tvCode);
   }
   async function tvConnectPhone(){
     if(!data.tvCode) return;
@@ -645,7 +660,7 @@
     if(v===null) return;
     const c=(v||'').trim().toUpperCase();
     data.tvCode=c||''; save();
-    if(!c){ $('bTvLink').textContent='📺 태블릿 연결'; return; }
+    if(!c){ setBtn($('bTvLink'),'📺','태블릿 연결'); return; }
     tvConnectPhone();
   };
   // 태블릿 모드에서는 아래 startTvMode() 가 따로 연결하므로 여기서 연결하지 않는다
