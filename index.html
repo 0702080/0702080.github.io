@@ -125,17 +125,17 @@
   #tvIdle h2{font-size:4.6vh;font-weight:800;margin-bottom:1vh;}
   #tvCode{
     font-size:11vh;font-weight:900;letter-spacing:.1em;color:#BFA7CC;
-    font-family:'Malgun Gothic',monospace;margin:2vh 0 3vh;
+    font-family:'Malgun Gothic',monospace;margin:2vh 0 1vh;
+    /* PC 에서 드래그로 선택·복사할 수 있게 (body 의 선택 금지를 여기서만 해제) */
+    -webkit-user-select:text;user-select:text;cursor:pointer;
+    border-radius:2vh;padding:0 2vw;transition:background .15s;
   }
+  #tvCode:hover{background:rgba(191,167,204,.12);}
+  #tvCopied{font-size:2.1vh;color:#9CC7A8;height:2.6vh;margin-bottom:1vh;}
   #tvIdle p{font-size:2.3vh;color:#9b8fa6;line-height:1.8;}
   #tvShow{display:none;flex-direction:column;align-items:center;gap:1.5vh;width:100%;height:100%;}
   #tvShow.on{display:flex;}
   #tvImg{flex:1;min-height:0;max-width:100%;object-fit:contain;border-radius:2vh;}
-  #tvName{font-size:8vh;font-weight:900;line-height:1;text-align:center;}
-  #tvTel{
-    font-size:6vh;font-weight:800;line-height:1;color:#E4C1D9;
-    font-variant-numeric:tabular-nums;
-  }
   #tvAsk{font-size:2.5vh;color:#9b8fa6;padding-bottom:1vh;}
 </style>
 </head>
@@ -143,7 +143,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v73</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v74</span></h1>
   <button class="go" id="bShoot"><span class="ico">📷</span>카메라로 찍기</button>
   <a class="sub" id="bUlike"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
@@ -191,13 +191,13 @@
   <div id="tvDot">연결 확인 중…</div>
   <div id="tvIdle">
     <h2>새가족 사진 확인 화면</h2>
-    <div id="tvCode">------</div>
-    <p>봉사자 폰에서 <b>📺 태블릿 연결</b>을 누르고<br>위 코드를 입력하세요.</p>
+    <div id="tvCode" title="눌러서 복사">------</div>
+    <div id="tvCopied"></div>
+    <p>봉사자 폰에서 <b>📺 태블릿 연결</b>을 누르고<br>위 코드를 입력하세요.<br>
+       <span style="font-size:.85em">(코드를 눌러 복사할 수 있습니다)</span></p>
   </div>
   <div id="tvShow">
     <img id="tvImg" alt="">
-    <div id="tvName"></div>
-    <div id="tvTel"></div>
     <div id="tvAsk">사진과 정보가 맞는지 확인해주세요</div>
   </div>
 </div>
@@ -678,12 +678,28 @@
     if(!data.tvCode){ data.tvCode=TV.makeCode(); save(); }
     $('tvCode').textContent=data.tvCode;
 
+    /* 코드를 눌러 복사 — PC에서 복사해 폰으로 붙여넣기 쉽게 */
+    $('tvCode').onclick=async ()=>{
+      const note=$('tvCopied');
+      const flash=m=>{ note.textContent=m; setTimeout(()=>{ note.textContent=''; }, 2000); };
+      try{
+        await navigator.clipboard.writeText(data.tvCode);
+        flash('복사됨 ✓');
+        return;
+      }catch(e){}
+      if(legacyCopy(data.tvCode)){ flash('복사됨 ✓'); return; }
+      // 복사가 막힌 환경 — 드래그로 직접 선택할 수 있게 통째로 선택해 준다
+      try{
+        const r=document.createRange(); r.selectNodeContents($('tvCode'));
+        const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+        flash('길게 눌러 복사하세요');
+      }catch(e2){}
+    };
+
     let clearT=null;
     function showPhoto(o){
       clearTimeout(clearT);
       $('tvImg').src=o.img;
-      $('tvName').textContent=o.name||'';
-      $('tvTel').textContent=o.tel||'';
       $('tvIdle').style.display='none';
       $('tvShow').classList.add('on');
       // 다음 사람 차례에 앞사람 정보가 남지 않도록 자동으로 비운다
@@ -691,7 +707,6 @@
         $('tvShow').classList.remove('on');
         $('tvIdle').style.display='';
         $('tvImg').src='';
-        $('tvName').textContent=''; $('tvTel').textContent='';
       }, 15000);
     }
     try{
