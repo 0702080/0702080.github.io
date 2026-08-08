@@ -266,13 +266,37 @@
   #tvZoom button:hover{background:rgba(255,255,255,.22);}
   #tvPct{min-width:7vh;text-align:center;font-variant-numeric:tabular-nums;}
   #tvAsk{font-size:2.5vh;color:#9b8fa6;padding-bottom:1vh;}
+
+  /* ── 폰에서 썸네일을 눌러 "크게 보기"로 보낸 사진 ──
+     확인용 안내문·여백을 걷어내고 화면 전체를 사진으로 채운다.
+     확대 버튼은 없애지 않고 사진 위에 옅게 띄워서 자리를 뺏지 않게 한다. */
+  #tv.full{padding:0;}
+  #tv.full #tvDot, #tv.full #tvAsk{display:none;}
+  #tv.full #tvShow{gap:0;}
+  #tv.full #tvImg{border-radius:0;}
+  #tv.full #tvZoom{
+    /* 사진 하단 16%에는 이름·전화번호가 이미 찍혀 있으므로(compose() 참고)
+       확대 버튼을 아래에 두면 그 글자를 가린다 — 위쪽에 띄운다 */
+    position:fixed;left:50%;top:2vh;transform:translateX(-50%);
+    background:rgba(0,0,0,.6);padding:1vh 1.8vh;border-radius:1.4vh;
+    opacity:.28;transition:opacity .2s;
+  }
+  #tv.full #tvZoom:hover{opacity:1;}
+  #tvEsc{
+    display:none;position:fixed;top:2vh;right:2.5vw;z-index:2;
+    font-size:2.2vh;color:#cfc3d8;background:rgba(0,0,0,.6);
+    padding:.8vh 1.6vh;border-radius:1.2vh;cursor:pointer;
+    opacity:.28;transition:opacity .2s;
+  }
+  #tvEsc:hover{opacity:1;}
+  #tv.full #tvEsc{display:block;}
 </style>
 </head>
 <body>
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v81</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v83</span></h1>
   <button class="go enter" id="bShoot" style="animation-delay:.04s"><span class="ico">📷</span>카메라로 찍기</button>
   <a class="sub enter" id="bUlike" style="animation-delay:.10s"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
@@ -325,6 +349,7 @@
     <p>봉사자 폰에서 <b>📺 태블릿 연결</b>을 누르고<br>위 코드를 입력하세요.<br>
        <span style="font-size:.85em">(코드를 눌러 복사할 수 있습니다)</span></p>
   </div>
+  <div id="tvEsc" title="원래 화면으로">✕ 크게 보기 끄기</div>
   <div id="tvShow">
     <div id="tvStage"><img id="tvImg" alt=""></div>
     <div id="tvZoom">
@@ -525,12 +550,23 @@
       c2.getContext('2d').drawImage(cv, 0, 0, c2.width, c2.height);
       return c2.toDataURL('image/jpeg', q);
     }
-    async function sendPhoto(canvas, name, tel){
+    async function sendPhoto(canvas, name, tel, opts){
+      opts=opts||{};
       if(!live() || !key) return false;
-      let img=shrink(canvas, 900, 0.7);
-      if(img.length > 400000) img=shrink(canvas, 640, 0.6);   // 중계소 부담 줄이기
+      /* 크게 보기(full)는 화면을 가득 채우므로 더 큰 사진을 보낸다.
+         다만 공용 중계소는 한 번에 1MB 까지만 받아준다. 사진은
+         데이터URL(base64) → 암호화 → 다시 base64 를 거치면서 데이터URL
+         길이의 1.33배로 부푸므로, 데이터URL 자체를 아래 한도 밑으로
+         눌러두지 않으면 큰 사진이 조용히 거부된다.
+         (한도 60만 자 ≈ 실제 전송 약 800KB) */
+      const big=!!opts.full;
+      const CAP=big?600000:400000;
+      const steps=big ? [[1400,.72],[1150,.66],[900,.6],[700,.55]]
+                      : [[900,.7],[640,.6],[480,.5]];
+      let img='';
+      for(const [px,q] of steps){ img=shrink(canvas,px,q); if(img.length<=CAP) break; }
       try{
-        const msg=await encrypt({ img, name, tel, from:myId, t:Date.now() });
+        const msg=await encrypt({ img, name, tel, full:big, from:myId, t:Date.now() });
         // qos:1 로 중계소가 받았다는 응답(또는 실패)을 실제로 확인한 뒤 결과를 돌려준다.
         // 응답이 없으면 6초 뒤 실패로 처리해 "보냈다"고 잘못 알리지 않는다.
         return await new Promise(res=>{
@@ -585,10 +621,10 @@
     if(bmp.close) bmp.close();
 
     thumbEl.classList.add('sending');
-    const ok=await sendToTvSmart(cv, shot.name, shot.tel);
+    const ok=await sendToTvSmart(cv, shot.name, shot.tel, {full:true});
     thumbEl.classList.remove('sending');
     $('homeLog').innerHTML = ok
-      ? '📺 태블릿에 다시 표시됨'
+      ? '📺 태블릿에 크게 표시됨'
       : '⚠ 태블릿이 연결되어 있지 않습니다 (📺 태블릿 연결 확인)';
   }
   function addTodayShot(blob, filename, name, tel){
@@ -848,11 +884,11 @@
   });
   /* 전송 시점에 연결이 이미 끊겨 있으면(버튼 표시가 실제와 어긋난 경우 포함)
      한 번 재연결을 시도한 뒤 다시 보낸다 — 그래도 안 되면 그때 실패로 알린다 */
-  async function sendToTvSmart(canvas, nm, tel){
-    let ok = await TV.sendPhoto(canvas, nm, tel).catch(()=>false);
+  async function sendToTvSmart(canvas, nm, tel, opts){
+    let ok = await TV.sendPhoto(canvas, nm, tel, opts).catch(()=>false);
     if(!ok && data.tvCode){
       await tvConnectPhone();
-      if(TV.isReady()) ok = await TV.sendPhoto(canvas, nm, tel).catch(()=>false);
+      if(TV.isReady()) ok = await TV.sendPhoto(canvas, nm, tel, opts).catch(()=>false);
     }
     return ok;
   }
@@ -991,6 +1027,7 @@
       if(!$('tvShow').classList.contains('on')) return;
       clearT=setTimeout(()=>{
         $('tvShow').classList.remove('on');
+        $('tv').classList.remove('full');
         $('tvIdle').style.display='';
         img.src='';
         sc=1; tx=0; ty=0;
@@ -1002,12 +1039,18 @@
 
     function showPhoto(o){
       clearTimeout(clearT);
+      // 폰에서 썸네일을 눌러 보낸 사진(full)은 화면 전체를 채워서 보여준다
+      $('tv').classList.toggle('full', !!o.full);
       img.src=o.img;
       sc=1; tx=0; ty=0; applyTf();      // 새 사진은 항상 원래 크기부터
       $('tvIdle').style.display='none';
       $('tvShow').classList.add('on');
       armClear();
     }
+    /* 크게 보기에서 빠져나오기 — 버튼 또는 Esc */
+    function exitFull(){ $('tv').classList.remove('full'); resetZoom(); armClear(); }
+    $('tvEsc').onclick=exitFull;
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape') exitFull(); });
     try{
       await TV.connect(data.tvCode, {
         onPhoto: showPhoto,
