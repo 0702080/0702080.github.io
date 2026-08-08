@@ -296,7 +296,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v84</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v85</span></h1>
   <button class="go enter" id="bShoot" style="animation-delay:.04s"><span class="ico">📷</span>카메라로 찍기</button>
   <a class="sub enter" id="bUlike" style="animation-delay:.10s"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
@@ -447,12 +447,21 @@
     data.recent=data.recent.slice(0,10);
   }
   /* 같은 날짜(사진 찍힌 날 기준) 안에서 몇 번째 사람인지 01,02,03... 매긴다.
-     날짜가 바뀌면 자동으로 다시 01부터 시작한다. */
+     날짜별로 따로 세어둔다 — 갤러리에서 며칠 전 사진이 섞여 들어와도
+     오늘 번호가 리셋되지 않도록(예전엔 날짜 하나만 기억해서 01이 중복됐다). */
   function nextCounter(dateStr){
-    if(data.ctrDate !== dateStr){ data.ctrDate=dateStr; data.ctrN=0; }
-    data.ctrN=(data.ctrN||0)+1;
+    if(!data.ctr){
+      data.ctr={};
+      // 옛 방식(날짜 1개만 저장)에서 넘어오는 값 살리기
+      if(data.ctrDate && data.ctrN) data.ctr[data.ctrDate]=data.ctrN;
+    }
+    delete data.ctrDate; delete data.ctrN;
+    data.ctr[dateStr]=(data.ctr[dateStr]||0)+1;
+    // 날짜가 무한정 쌓이지 않게 최근 60일치만 남긴다
+    const days=Object.keys(data.ctr).sort();
+    if(days.length>60) days.slice(0, days.length-60).forEach(d=>delete data.ctr[d]);
     save();
-    return String(data.ctrN).padStart(2,'0');
+    return String(data.ctr[dateStr]).padStart(2,'0');
   }
 
   /* ───── 벽걸이 태블릿으로 즉시 전송 ─────
@@ -586,7 +595,13 @@
       let s=''; for(let i=0;i<6;i++) s+=AB[a[i]%AB.length];
       return s;
     }
-    return { connect, sendPhoto, makeCode, isReady:live };
+    /* 연결을 진짜로 끊는다. 소켓만 닫는 게 아니라 암호열쇠·토픽까지 버려야
+       "연결 끊음"이라고 표시해놓고 예전 태블릿으로 사진이 계속 가는 일이 없다. */
+    function disconnect(){
+      if(client){ try{ client.end(true); }catch(e){} }
+      client=null; key=null; topic=null; connected=false; code=''; onPhoto=null;
+    }
+    return { connect, disconnect, sendPhoto, makeCode, isReady:live };
   })();
 
   /* ───── 오늘 찍은 사진 모아서 한 번에 공유 ─────
@@ -684,6 +699,9 @@
       if(src.close) src.close();
       baseCanvas=cv; baseCanvas.__file=file;
       photo.src=cv.toDataURL('image/jpeg',0.92);
+      /* 사람마다 조명이 다르므로 '밝게'는 새 사진마다 꺼둔 상태로 시작한다.
+         (예전엔 한 번 켜면 그 뒤 모든 사람 사진이 계속 보정된 채 저장됐다) */
+      bright=false; $('edBright').classList.remove('sel');
       applyPreviewFilter();
 
       nI.value=''; tI.value='';
@@ -738,10 +756,18 @@
       return cv;
     }
 
+    /* 저장이 끝나기 전에 저장 버튼을 또 누르면(급할 때 흔한 연타) 같은 사진이
+       두 번 저장되고 번호가 밀리며, 여러 장 처리 중이었다면 그 사이 한 장이
+       통째로 건너뛰어진다. 저장이 끝날 때까지 잠가둔다. */
+    let saving=false;
     function saveShot(){
+      if(saving) return;
       if(!baseCanvas) return;
       const nm=nI.value.trim(), tel=fmtTel(tI.value);
       if(!nm && !tel){ hintEl.textContent='이름 또는 전화번호를 입력해주세요'; return; }
+      saving=true; $('edSave').disabled=true;
+      const done=()=>{ saving=false; $('edSave').disabled=false; };
+
       const name=fileBase()+'.jpg';
       const composed=compose();
 
@@ -749,6 +775,7 @@
       const tvSend = sendToTvSmart(composed, nm, tel);
 
       composed.toBlob(blob=>{
+        if(!blob){ done(); hintEl.textContent='저장에 실패했습니다. 다시 시도해주세요'; return; }
         const url=URL.createObjectURL(blob);
         const a=document.createElement('a');
         a.href=url; a.download=name;
@@ -761,6 +788,8 @@
         // 전송 결과는 위 문구가 찍힌 뒤에 덧붙여야 지워지지 않는다
         tvSend.then(ok=>{ if(ok) $('homeLog').innerHTML+='<br>📺 태블릿에 표시됨'; });
 
+        // 잠금은 다음 장을 띄우기 "전에" 풀어야 그 장을 바로 저장할 수 있다
+        done();
         // 여러 장을 골랐다면 다음 장으로, 아니면 편집기를 닫는다
         if(qi+1 < queue.length){ qi++; showFile(queue[qi]); }
         else{ queue=[]; qi=0; close(); }
@@ -782,6 +811,7 @@
     function close(){
       $('editor').classList.remove('on');
       photo.src=''; baseCanvas=null;
+      saving=false; $('edSave').disabled=false;   // 어떤 경로로 닫히든 잠금은 반드시 푼다
     }
 
     async function start(files){
@@ -885,6 +915,7 @@
   /* 전송 시점에 연결이 이미 끊겨 있으면(버튼 표시가 실제와 어긋난 경우 포함)
      한 번 재연결을 시도한 뒤 다시 보낸다 — 그래도 안 되면 그때 실패로 알린다 */
   async function sendToTvSmart(canvas, nm, tel, opts){
+    if(!data.tvCode) return false;      // 짝을 끊어놨으면 절대 보내지 않는다
     let ok = await TV.sendPhoto(canvas, nm, tel, opts).catch(()=>false);
     if(!ok && data.tvCode){
       await tvConnectPhone();
@@ -900,7 +931,7 @@
     if(v===null) return;
     const c=(v||'').trim().toUpperCase();
     data.tvCode=c||''; save();
-    if(!c){ setBtn($('bTvLink'),'📺','태블릿 연결'); return; }
+    if(!c){ TV.disconnect(); setBtn($('bTvLink'),'📺','태블릿 연결'); return; }
     tvConnectPhone();
   };
   // 태블릿 모드에서는 아래 startTvMode() 가 따로 연결하므로 여기서 연결하지 않는다
@@ -1011,6 +1042,14 @@
     function endPt(e){
       pts.delete(e.pointerId);
       if(pts.size<2) pinchD=0;
+      /* 두 손가락으로 확대한 뒤 한 손가락만 떼는 건 아주 흔한 동작이다.
+         남은 손가락 위치를 기준점으로 삼아 이동을 이어받지 않으면
+         화면이 먹통이 된 것처럼 느껴진다. */
+      if(pts.size===1){
+        const p=[...pts.values()][0];
+        panning=true; lastX=p.x; lastY=p.y;
+        img.classList.add('dragging');
+      }
       if(pts.size===0){ panning=false; img.classList.remove('dragging'); }
     }
     stage.addEventListener('pointerup', endPt);
@@ -1059,8 +1098,21 @@
     }catch(e){
       $('tvDot').textContent='연결할 수 없음 (인터넷 확인)';
     }
-    // 화면 꺼짐 방지
-    try{ if('wakeLock' in navigator) await navigator.wakeLock.request('screen'); }catch(e){}
+    /* 화면 꺼짐 방지 — 브라우저는 화면이 한 번 가려지면(잠금·다른 화면 전환)
+       이 잠금을 스스로 풀어버리고, 돌아와도 자동으로 복구해주지 않는다.
+       그래서 화면이 다시 보일 때마다 직접 다시 걸어줘야 한다. */
+    let wakeSentinel=null;
+    async function keepAwake(){
+      try{
+        if(!('wakeLock' in navigator)) return;
+        if(wakeSentinel && !wakeSentinel.released) return;
+        wakeSentinel=await navigator.wakeLock.request('screen');
+      }catch(e){}
+    }
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState==='visible') keepAwake();
+    });
+    keepAwake();
   }
   if(isTvMode) startTvMode();
 
