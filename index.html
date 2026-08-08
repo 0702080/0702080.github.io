@@ -272,7 +272,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v80</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v81</span></h1>
   <button class="go enter" id="bShoot" style="animation-delay:.04s"><span class="ico">📷</span>카메라로 찍기</button>
   <a class="sub enter" id="bUlike" style="animation-delay:.10s"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
@@ -454,6 +454,11 @@
       return mqttLoading;
     }
 
+    /* 실제 소켓 상태를 본다. 폰이 다른 앱에 다녀오는 사이 연결이 죽어도
+       close/error 가 안 불려 connected 가 true 로 남아있는 경우가 있어서,
+       "연결됨"이라고 표시해놓고 전송은 실패하는 일이 생겼다. */
+    function live(){ return !!(client && (client.connected===undefined ? connected : client.connected)); }
+
     async function sha(s){ return new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode(s))); }
     async function setup(c){
       code=c;
@@ -487,7 +492,7 @@
       });
       client.on('connect', ()=>{
         connected=true;
-        if(onPhoto) client.subscribe(topic,{qos:0});
+        if(onPhoto) client.subscribe(topic,{qos:1});
         if(opts.onStatus) opts.onStatus(true);
       });
       client.on('close', ()=>{ connected=false; if(opts.onStatus) opts.onStatus(false); });
@@ -499,6 +504,15 @@
           if(!o || o.from===myId) return;
           onPhoto(o);
         }catch(e){}   // 다른 방 메시지거나 복호화 실패 — 조용히 무시
+      });
+      /* 실제로 붙을 때까지 기다린다(최대 8초). 여기서 바로 돌려주면
+         아직 연결도 안 됐는데 "연결됨"으로 보고 곧장 사진을 보내다 실패한다. */
+      await new Promise(res=>{
+        if(live()) return res();
+        let done=false;
+        const fin=()=>{ if(done) return; done=true; clearTimeout(t); res(); };
+        const t=setTimeout(fin, 8000);
+        client.once('connect', fin);
       });
     }
 
@@ -512,13 +526,21 @@
       return c2.toDataURL('image/jpeg', q);
     }
     async function sendPhoto(canvas, name, tel){
-      if(!client || !connected || !key) return false;
+      if(!live() || !key) return false;
       let img=shrink(canvas, 900, 0.7);
       if(img.length > 400000) img=shrink(canvas, 640, 0.6);   // 중계소 부담 줄이기
       try{
         const msg=await encrypt({ img, name, tel, from:myId, t:Date.now() });
-        client.publish(topic, msg, {qos:0, retain:false});     // retain:false — 중계소에 안 남김
-        return true;
+        // qos:1 로 중계소가 받았다는 응답(또는 실패)을 실제로 확인한 뒤 결과를 돌려준다.
+        // 응답이 없으면 6초 뒤 실패로 처리해 "보냈다"고 잘못 알리지 않는다.
+        return await new Promise(res=>{
+          let done=false;
+          const t=setTimeout(()=>{ if(!done){ done=true; res(false); } }, 6000);
+          client.publish(topic, msg, {qos:1, retain:false}, err=>{
+            if(done) return;
+            done=true; clearTimeout(t); res(!err);
+          });
+        });
       }catch(e){ return false; }
     }
 
@@ -528,7 +550,7 @@
       let s=''; for(let i=0;i<6;i++) s+=AB[a[i]%AB.length];
       return s;
     }
-    return { connect, sendPhoto, makeCode, isReady:()=>connected };
+    return { connect, sendPhoto, makeCode, isReady:live };
   })();
 
   /* ───── 오늘 찍은 사진 모아서 한 번에 공유 ─────
@@ -563,7 +585,7 @@
     if(bmp.close) bmp.close();
 
     thumbEl.classList.add('sending');
-    const ok=await TV.sendPhoto(cv, shot.name, shot.tel).catch(()=>false);
+    const ok=await sendToTvSmart(cv, shot.name, shot.tel);
     thumbEl.classList.remove('sending');
     $('homeLog').innerHTML = ok
       ? '📺 태블릿에 다시 표시됨'
@@ -688,7 +710,7 @@
       const composed=compose();
 
       // 벽걸이 태블릿에도 즉시 띄운다 (연결돼 있을 때만)
-      const tvSend = TV.sendPhoto(composed, nm, tel).catch(()=>false);
+      const tvSend = sendToTvSmart(composed, nm, tel);
 
       composed.toBlob(blob=>{
         const url=URL.createObjectURL(blob);
@@ -815,6 +837,24 @@
       await TV.connect(data.tvCode, { onStatus:tvStatus });   // 폰은 받지 않고 보내기만
     }catch(e){}
     tvStatus();
+  }
+  /* 화면이 꺼졌다 켜지거나(잠금), 다른 앱(카메라 등)에 다녀오면
+     와이파이/모바일 연결이 끊겼다가 이벤트 없이 죽어있는 경우가 있어
+     화면이 다시 보일 때마다 연결을 한 번 더 확인/재연결한다 */
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState!=='visible' || isTvMode || !data.tvCode) return;
+    if(TV.isReady()) return;      // 멀쩡한 연결을 끊고 다시 붙으면 그 사이 전송이 실패한다
+    tvConnectPhone();
+  });
+  /* 전송 시점에 연결이 이미 끊겨 있으면(버튼 표시가 실제와 어긋난 경우 포함)
+     한 번 재연결을 시도한 뒤 다시 보낸다 — 그래도 안 되면 그때 실패로 알린다 */
+  async function sendToTvSmart(canvas, nm, tel){
+    let ok = await TV.sendPhoto(canvas, nm, tel).catch(()=>false);
+    if(!ok && data.tvCode){
+      await tvConnectPhone();
+      if(TV.isReady()) ok = await TV.sendPhoto(canvas, nm, tel).catch(()=>false);
+    }
+    return ok;
   }
   $('bTvLink').onclick=()=>{
     let v;
