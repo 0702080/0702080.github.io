@@ -153,6 +153,17 @@
   }
   #home h1{font-size:22px;font-weight:800;margin-bottom:2px;}
   #home .hint{font-size:13.5px;color:#9b8fa6;line-height:1.65;}
+
+  /* 첫 화면 진입 애니메이션 — 버튼이 아래서 위로 톡톡 튀듯 순서대로 나타난다.
+     .enter 는 처음 여섯 개 버튼에만 붙어 있어서(HTML 참고), 나중에 사진 찍고
+     나서 나타나는 "전체 카톡 공유" 버튼 등은 영향받지 않는다. */
+  @keyframes popIn{
+    0%{ opacity:0; transform:translateY(20px) scale(.92); }
+    65%{ opacity:1; transform:translateY(-3px) scale(1.015); }
+    100%{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  .enter{ animation:popIn .46s cubic-bezier(.22,1,.36,1) both; }
+  #home h1{ animation:popIn .4s cubic-bezier(.22,1,.36,1) both; }
   #todayWrap{display:none;flex-direction:column;gap:8px;}
   #todayWrap.show{display:flex;}
   #todayWrap label{font-size:14px;font-weight:700;color:#8B6E9E;}
@@ -160,7 +171,17 @@
   #todayThumbs::-webkit-scrollbar{display:none;}
   #todayThumbs img{
     width:52px;height:52px;object-fit:cover;border-radius:8px;
-    flex:0 0 auto;border:1px solid #e3d8c8;
+    flex:0 0 auto;border:1px solid #e3d8c8;cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  #todayThumbs img:active{ transform:scale(.9); }
+  #todayThumbs img.sending{
+    animation:tvPulse .7s ease-in-out infinite;
+    border-color:#8B6E9E;
+  }
+  @keyframes tvPulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(139,110,158,.55); }
+    50%{ box-shadow:0 0 0 5px rgba(139,110,158,0); }
   }
 
   /* ── 사진 + 이름 입력 화면 ── */
@@ -251,15 +272,15 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v79</span></h1>
-  <button class="go" id="bShoot"><span class="ico">📷</span>카메라로 찍기</button>
-  <a class="sub" id="bUlike"
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v80</span></h1>
+  <button class="go enter" id="bShoot" style="animation-delay:.04s"><span class="ico">📷</span>카메라로 찍기</button>
+  <a class="sub enter" id="bUlike" style="animation-delay:.10s"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
-  <a class="sub" id="bHdCam"
+  <a class="sub enter" id="bHdCam" style="animation-delay:.16s"
      href="intent://#Intent;package=photo.editor.hd.camera.adfree;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dphoto.editor.hd.camera.adfree;end"><span class="ico">📷</span>HD Camera Pro 열기</a>
-  <button class="sub" id="bPick"><span class="ico">🖼️</span>갤러리에서 고르기</button>
-  <button class="sub" id="bCopyUrl"><span class="ico">🔗</span>주소 복사 (봉사자에게 전달)</button>
-  <button class="sub" id="bTvLink"><span class="ico">📺</span>태블릿 연결</button>
+  <button class="sub enter" id="bPick" style="animation-delay:.22s"><span class="ico">🖼️</span>갤러리에서 고르기</button>
+  <button class="sub enter" id="bCopyUrl" style="animation-delay:.28s"><span class="ico">🔗</span>주소 복사 (봉사자에게 전달)</button>
+  <button class="sub enter" id="bTvLink" style="animation-delay:.34s"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="todayWrap">
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
@@ -525,8 +546,28 @@
       const img=document.createElement('img');
       img.src=URL.createObjectURL(s.blob);
       img.alt=s.name||s.tel||'';
+      img.title='탭하면 태블릿 화면에 다시 크게 띄웁니다';
+      img.onclick=()=>resendToTv(s, img);
       box.appendChild(img);
     });
+  }
+  /* 썸네일을 탭하면 그 사진(이미 이름표가 합성된 최종본)을 다시 태블릿/PC 확인
+     화면으로 보낸다 — 방금 찍은 사진을 화면에 크게 다시 띄우고 싶을 때 사용 */
+  async function resendToTv(shot, thumbEl){
+    const bmp = await (window.createImageBitmap
+      ? createImageBitmap(shot.blob)
+      : new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=URL.createObjectURL(shot.blob); }));
+    const cv=document.createElement('canvas');
+    cv.width=bmp.width||bmp.naturalWidth; cv.height=bmp.height||bmp.naturalHeight;
+    cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+    if(bmp.close) bmp.close();
+
+    thumbEl.classList.add('sending');
+    const ok=await TV.sendPhoto(cv, shot.name, shot.tel).catch(()=>false);
+    thumbEl.classList.remove('sending');
+    $('homeLog').innerHTML = ok
+      ? '📺 태블릿에 다시 표시됨'
+      : '⚠ 태블릿이 연결되어 있지 않습니다 (📺 태블릿 연결 확인)';
   }
   function addTodayShot(blob, filename, name, tel){
     todaysShots.push({blob, filename, name, tel});
@@ -939,6 +980,17 @@
     try{ if('wakeLock' in navigator) await navigator.wakeLock.request('screen'); }catch(e){}
   }
   if(isTvMode) startTvMode();
+
+  /* 진입 애니메이션이 끝나면 클래스를 떼어낸다 — animation-fill-mode:both 를
+     그대로 두면 그 뒤로 버튼을 눌러도(:active/.pressing) transform 이 계속
+     애니메이션 값에 눌려서 눌림 효과가 하나도 안 보이게 된다.
+     animationend 가 못 불릴 수도 있어(탭이 백그라운드였다가 돌아온 경우 등)
+     타임아웃으로도 한 번 더 확실히 떼어낸다. */
+  document.querySelectorAll('#home .enter').forEach(el=>{
+    const clear=()=>{ el.classList.remove('enter'); el.style.animationDelay=''; };
+    el.addEventListener('animationend', clear, {once:true});
+    setTimeout(clear, 900);
+  });
 
   /* 서비스워커: 온라인이면 항상 최신본, 오프라인이면 캐시본 */
   if('serviceWorker' in navigator){
