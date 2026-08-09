@@ -2,7 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!-- interactive-widget: 키보드가 올라오면 화면 영역 자체를 줄여서,
+     가운데 놓인 입력·저장 패널이 키보드에 가리지 않고 위로 올라오게 한다 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -201,11 +203,19 @@
     backdrop-filter:blur(4px);
   }
   #edTop button.sel{background:#fff;color:#111;}
+  /* 입력·저장 패널을 화면 한가운데에 둔다.
+     아래쪽에 있으면 폰을 한 손으로 들고 섬기는 현장에서 엄지가 닿지 않고,
+     키보드가 올라오면 가려져버렸다. 사진이 비치도록 반투명으로 띄운다. */
   #edBottom{
-    position:absolute;left:0;right:0;bottom:0;z-index:2;
-    display:flex;flex-direction:column;gap:10px;
-    padding:14px 16px max(16px,env(safe-area-inset-bottom));
-    background:linear-gradient(transparent,rgba(0,0,0,.8) 40%);
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:min(94%,440px);z-index:2;
+    display:flex;flex-direction:column;gap:9px;
+    padding:14px;border-radius:20px;
+    /* 입력칸·버튼은 각자 불투명하므로, 판 자체는 옅게 해서
+       뒤의 얼굴이 최대한 비쳐 보이게 한다 */
+    background:rgba(0,0,0,.38);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+    box-shadow:0 10px 34px rgba(0,0,0,.45);
   }
   #edBottom .row{display:flex;gap:8px;}
   #edBottom input{
@@ -218,7 +228,9 @@
   #edChips .chip{flex:0 0 auto;font-size:14px;padding:8px 13px;}
   #edActions{display:flex;gap:10px;}
   #edActions>button{flex:1;padding:15px;border-radius:12px;font-size:16px;width:auto;}
-  #edHint{color:#f0e9da;font-size:12.5px;text-align:center;opacity:.95;min-height:16px;}
+  /* 판이 옅어졌으므로 이 글자만 그림자로 대비를 확보한다 */
+  #edHint{color:#fff;font-size:12.5px;text-align:center;opacity:.95;min-height:16px;
+          text-shadow:0 1px 3px rgba(0,0,0,.9);}
 
   /* ── 벽걸이 태블릿 확인 화면 (주소 뒤에 #tv 를 붙여서 열기) ── */
   #tv{
@@ -296,7 +308,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v85</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v86</span></h1>
   <button class="go enter" id="bShoot" style="animation-delay:.04s"><span class="ico">📷</span>카메라로 찍기</button>
   <a class="sub enter" id="bUlike" style="animation-delay:.10s"
      href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
