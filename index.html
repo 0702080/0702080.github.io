@@ -137,33 +137,17 @@
   }
   .tile:active::before, .tile.pressing::before{ opacity:.35; }
 
-  .chip{
-    font-family:inherit;font-size:15px;font-weight:700;
-    padding:9px 15px;border-radius:999px;cursor:pointer;color:#3e3348;
-    border:2px solid #d0bfdb;position:relative;isolation:isolate;
-    background:linear-gradient(180deg,#eae0f2 0%,#e1d5ec 55%,#f4eff8 100%);
-    box-shadow:0 2px 6px rgba(74,59,87,.16), inset 0 -2px 5px rgba(255,255,255,.8);
-  }
-  .chip::before{
-    content:'';position:absolute;z-index:-1;pointer-events:none;
-    left:4px;right:4px;top:2px;height:45%;
-    border-radius:999px;
-    background:linear-gradient(180deg, rgba(255,255,255,1), rgba(255,255,255,.35));
-    transition:opacity .12s ease;
-  }
-  .chip:active::before, .chip.pressing::before{ opacity:.35; }
-
   /* ── 버튼 눌림 효과 ──
      맨 위에서 -webkit-tap-highlight-color 를 껐기 때문에 폰에서 눌러도
      아무 반응이 없었다. 눌린 느낌을 직접 만들어 준다.
      .pressing 은 자바스크립트가 붙여 주는 것(짧게 탭해도 확실히 보이게),
      :active 는 마우스로 누르고 있는 동안의 상태. */
-  button, a.sub, .chip{
+  button, a.sub{
     transition:transform .07s ease, background-color .12s ease,
                border-color .12s ease, box-shadow .12s ease, filter .12s ease;
   }
-  button:active, a.sub:active, .chip:active,
-  button.pressing, a.sub.pressing, .chip.pressing{
+  button:active, a.sub:active,
+  button.pressing, a.sub.pressing{
     transform:scale(.965);
   }
   /* 눌리면 광택이 죽고 안쪽으로 쑥 들어간 느낌 */
@@ -181,11 +165,6 @@
     box-shadow:
       0 1px 3px rgba(74,59,87,.18),
       inset 0 5px 11px rgba(139,110,158,.30);
-  }
-  .chip:active, .chip.pressing{
-    border-color:var(--plum);
-    background:linear-gradient(180deg, #ded0ea 0%, #e9e0f2 100%);
-    box-shadow:inset 0 3px 7px rgba(139,110,158,.26);
   }
   /* 어두운 배경 위의 버튼들(촬영 화면 상단·태블릿 확대 막대) */
   #edTop button:active, #edTop button.pressing,
@@ -268,9 +247,10 @@
     background:rgba(255,255,255,.95);color:#111;font-weight:800;
     width:100%;font-family:inherit;
   }
-  #edChips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
-  #edChips::-webkit-scrollbar{display:none;}
-  #edChips .chip{flex:0 0 auto;font-size:14px;padding:8px 13px;}
+  /* 전화번호 칸은 "010-1234-5678"까지 들어가야 해서 좀 더 넓게,
+     이름 칸은 그만큼 살짝 좁게 — 안 그러면 맨 앞자리(0)가 잘려 보였다 */
+  #edName{flex:0.85;}
+  #edTel{flex:1.15;}
   #edActions{display:flex;gap:10px;}
   #edActions>button{flex:1;padding:15px;border-radius:12px;font-size:16px;width:auto;}
   /* 판이 옅어졌으므로 이 글자만 그림자로 대비를 확보한다 */
@@ -353,7 +333,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v89</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v90</span></h1>
   <button class="go enter" id="bShoot" style="animation-delay:.04s"><span class="ico">📷</span>카메라로 찍기</button>
 
   <div id="quickGrid">
@@ -366,7 +346,6 @@
   </div>
 
   <button class="sub enter" id="bTvLink" style="animation-delay:.32s"><span class="ico">📺</span>태블릿 연결</button>
-  <button class="sub enter" id="bClearToday" style="animation-delay:.38s"><span class="ico">🗑</span>오늘 사진 삭제</button>
 
   <div id="todayWrap">
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
@@ -392,7 +371,6 @@
       <input id="edName" type="text" placeholder="이름" autocomplete="off" enterkeyhint="next">
       <input id="edTel"  type="tel" inputmode="numeric" placeholder="전화번호(8자리)" autocomplete="off" enterkeyhint="done">
     </div>
-    <div id="edChips"></div>
     <div id="edHint"></div>
     <div id="edActions">
       <button class="sub" id="edAgain">다시 찍기</button>
@@ -433,7 +411,7 @@
   const $ = id => document.getElementById(id);
   const LS='nametag_v1';
 
-  let data={recent:[]};
+  let data={};
   try{ Object.assign(data, JSON.parse(localStorage.getItem(LS)||'{}')); }catch(e){}
   const save=()=>{ try{ localStorage.setItem(LS, JSON.stringify(data)); }catch(e){} };
 
@@ -483,7 +461,7 @@
   /* 눌린 순간 바로 보이게 (짧게 톡 눌러도 확실히 보이도록 잠깐 유지)
      :active 만으로는 폰에서 스치듯 눌렀을 때 거의 안 보인다. */
   document.addEventListener('pointerdown', e=>{
-    const b=e.target.closest && e.target.closest('button, a.sub, .chip, .tile');
+    const b=e.target.closest && e.target.closest('button, a.sub, .tile');
     if(!b) return;
     b.classList.add('pressing');
     setTimeout(()=>b.classList.remove('pressing'), 200);
@@ -518,12 +496,6 @@
     // 사진이 찍힌 날짜를 파일명에 사용 (없으면 오늘)
     const d=new Date((file && file.lastModified) || Date.now()), p=n=>('0'+n).slice(-2);
     return ''+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate());
-  }
-  function pushRecent(name,tel){
-    if(!name&&!tel) return;
-    data.recent=(data.recent||[]).filter(r=>!(r.name===name&&r.tel===tel));
-    data.recent.unshift({name,tel});
-    data.recent=data.recent.slice(0,10);
   }
   /* 같은 날짜(사진 찍힌 날 기준) 안에서 몇 번째 사람인지 01,02,03... 매긴다.
      날짜별로 따로 세어둔다 — 갤러리에서 며칠 전 사진이 섞여 들어와도
@@ -725,30 +697,6 @@
     todaysShots.push({blob, filename, name, tel});
     refreshTodayUI();
   }
-  /* "오늘 찍은 사진" 목록만 비운다. 폰에 이미 저장된 사진 파일은 저장하는
-     순간 다운로드 폴더로 들어가버려서, 웹 앱은 그 파일을 지울 권한이
-     전혀 없다(브라우저 보안 제한 — 이 앱만의 한계가 아니다). 여기서 지우는 건
-     "한꺼번에 공유하기용" 화면 안 임시 목록일 뿐이다. */
-  $('bClearToday').onclick=()=>{
-    if(!todaysShots.length){
-      $('homeLog').textContent='오늘 찍은 사진이 없습니다.';
-      return;
-    }
-    const n=todaysShots.length;
-    let ok;
-    try{
-      ok=confirm('오늘 찍은 새가족 사진 '+n+'장을 목록에서 지울까요?\n\n(폰에 이미 저장된 사진 파일은 지워지지 않습니다.\n다운로드 폴더/갤러리에는 그대로 남아있습니다.)');
-    }catch(e){ ok=true; }
-    if(!ok) return;
-
-    // 썸네일에 쓰인 임시 URL 정리
-    $('todayThumbs').querySelectorAll('img').forEach(img=>{
-      if(img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
-    });
-    todaysShots.length=0;
-    refreshTodayUI();
-    $('homeLog').textContent='🗑 오늘 찍은 사진 '+n+'장을 목록에서 지웠습니다 (저장된 파일은 그대로 있습니다)';
-  };
   $('bShareAll').onclick=async ()=>{
     if(!todaysShots.length) return;
     const files=todaysShots.map(s=>new File([s.blob], s.filename, {type:'image/jpeg'}));
@@ -809,21 +757,8 @@
 
       nI.value=''; tI.value='';
       hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
-      renderChips();
       $('editor').classList.add('on');
       setTimeout(()=>nI.focus(),150);
-    }
-
-    function renderChips(){
-      const box=$('edChips'); box.innerHTML='';
-      // 가운데 배치(v86)로 판이 작아져서 4개가 넘으면 줄바꿈되며 지저분해진다
-      (data.recent||[]).slice(0,4).forEach(r=>{
-        const b=document.createElement('button');
-        b.className='chip'; b.textContent=r.name||r.tel;
-        b.onmousedown=e=>e.preventDefault();      // 입력 포커스 유지
-        b.onclick=()=>{ nI.value=r.name||''; tI.value=r.tel||''; };
-        box.appendChild(b);
-      });
     }
 
     function fileBase(){
@@ -886,7 +821,6 @@
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(()=>URL.revokeObjectURL(url),5000);
 
-        pushRecent(nm,tel); save();
         addTodayShot(blob, name, nm, tel);
         $('homeLog').innerHTML='✅ 저장됨 · <b>'+name+'</b><br>(다운로드 폴더)';
         // 전송 결과는 위 문구가 찍힌 뒤에 덧붙여야 지워지지 않는다
