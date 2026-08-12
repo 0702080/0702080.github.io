@@ -118,6 +118,10 @@
     display:flex;flex-direction:row;align-items:center;justify-content:center;
     /* .go/.sub 와 높이·글자 크기를 맞춘다(패딩은 좁은 타일 폭에 맞춰 그대로 둠) */
     gap:8px;padding:18px 10px;min-height:64px;text-align:center;text-decoration:none;
+    /* 그리드 칸(min-width:auto 기본값)은 white-space:nowrap 글자가 길어지면
+       줄이 안 꺾이니 그 길이만큼 억지로 늘어나 버린다(예: 복사 확인 문구).
+       min-width:0 으로 그 자동 최소폭을 꺼서 칸 너비 안에서만 움직이게 한다 */
+    min-width:0;
     transition:transform .07s ease, background-color .12s ease,
                border-color .12s ease, box-shadow .12s ease, filter .12s ease;
   }
@@ -134,6 +138,7 @@
   .tile .tlabel{
     font-size:18px;font-weight:800;line-height:1;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    min-width:0;   /* flex 자식도 같은 이유로 필요 — 없으면 글자 길이만큼 밀어낸다 */
   }
   .tile:active, .tile.pressing{
     border-color:#2f8f6d;transform:scale(.965);
@@ -337,7 +342,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v102</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v103</span></h1>
   <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="quickGrid">
@@ -890,11 +895,11 @@
 
     try{
       await navigator.clipboard.writeText(url);
-      flash('복사됨 ✓ '+url);
+      flash('복사됨 ✓');
       return;
     }catch(e){}
 
-    if(legacyCopy(url)){ flash('복사됨 ✓ '+url); return; }
+    if(legacyCopy(url)){ flash('복사됨 ✓'); return; }
 
     try{ prompt('아래 주소를 길게 눌러 복사하세요', url); }
     catch(e){ $('homeLog').textContent='주소: '+url; }
