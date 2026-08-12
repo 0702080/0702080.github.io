@@ -333,7 +333,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v91</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v92</span></h1>
   <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="quickGrid">
@@ -689,9 +689,8 @@
     thumbEl.classList.add('sending');
     const ok=await sendToTvSmart(cv, shot.name, shot.tel, {full:true});
     thumbEl.classList.remove('sending');
-    $('homeLog').innerHTML = ok
-      ? '📺 태블릿에 크게 표시됨'
-      : '⚠ 태블릿이 연결되어 있지 않습니다 (📺 태블릿 연결 확인)';
+    // 성공했을 때는 문구를 따로 띄우지 않는다 (태블릿 화면에 뜨는 것 자체가 확인이 됨)
+    if(!ok) $('homeLog').innerHTML='⚠ 태블릿이 연결되어 있지 않습니다 (📺 태블릿 연결 확인)';
   }
   function addTodayShot(blob, filename, name, tel){
     todaysShots.push({blob, filename, name, tel});
