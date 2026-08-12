@@ -61,7 +61,11 @@
   .go{
     font-family:inherit;font-size:18px;font-weight:800;width:100%;
     padding:18px;border-radius:26px;cursor:pointer;color:#fff;
-    border:3px solid #614878;
+    /* 아이콘·글자를 flex로 가운데 정렬(.tile 과 같은 방식) —
+       예전엔 vertical-align 으로 눈대중 맞췄는데 아이콘·글자 크기가
+       달라 높이가 살짝 어긋나 보였다 */
+    display:flex;align-items:center;justify-content:center;
+    border:2px solid #614878;
     background:linear-gradient(180deg,#8e6ea6 0%,#7a5b90 52%,#9a78b0 84%,#c2a4d3 100%);
     box-shadow:
       0 6px 14px rgba(60,45,72,.42),
@@ -77,7 +81,8 @@
   .sub{
     font-family:inherit;font-size:18px;font-weight:700;width:100%;
     padding:18px;border-radius:26px;cursor:pointer;color:#463a52;
-    border:3px solid #4fb890;
+    display:flex;align-items:center;justify-content:center;
+    border:2px solid #4fb890;
     background:linear-gradient(180deg,#a0e8cc 0%,#7dd8b0 52%,#a8ecd0 84%,#dbf7e8 100%);
     box-shadow:
       0 5px 12px rgba(74,59,87,.20),
@@ -88,12 +93,10 @@
     background:linear-gradient(180deg,
       rgba(255,255,255,1) 0%, rgba(255,255,255,.78) 55%, rgba(255,255,255,.28) 100%);
   }
-  /* 외부 앱 실행은 진짜 링크(<a>)여야 브라우저가 앱 실행으로 처리한다 */
-  a.sub{display:block;text-align:center;text-decoration:none;}
   /* 버튼 아이콘은 글자 크기와 무관하게 항상 같은 크기·같은 폭으로 (줄 맞춤) */
   .ico{
     display:inline-block;width:1.5em;margin-right:.15em;
-    font-size:20px;line-height:1;text-align:center;vertical-align:-.13em;
+    font-size:20px;line-height:1;text-align:center;
     font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;
   }
   /* ── 자주 안 쓰는 보조 버튼들을 아이콘 타일로 묶는다 ──
@@ -105,7 +108,7 @@
   #quickGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .tile{
     font-family:inherit;font-weight:700;color:#463a52;cursor:pointer;
-    border:3px solid #4fb890;border-radius:22px;
+    border:2px solid #4fb890;border-radius:22px;
     background:linear-gradient(180deg,#a0e8cc 0%,#7dd8b0 52%,#a8ecd0 84%,#dbf7e8 100%);
     box-shadow:
       0 5px 12px rgba(74,59,87,.20),
@@ -114,7 +117,7 @@
     position:relative;isolation:isolate;
     display:flex;flex-direction:row;align-items:center;justify-content:center;
     /* .go/.sub 와 높이·글자 크기를 맞춘다(패딩은 좁은 타일 폭에 맞춰 그대로 둠) */
-    gap:8px;padding:18px 10px;min-height:67px;text-align:center;text-decoration:none;
+    gap:8px;padding:18px 10px;min-height:64px;text-align:center;text-decoration:none;
     transition:transform .07s ease, background-color .12s ease,
                border-color .12s ease, box-shadow .12s ease, filter .12s ease;
   }
@@ -144,12 +147,11 @@
      아무 반응이 없었다. 눌린 느낌을 직접 만들어 준다.
      .pressing 은 자바스크립트가 붙여 주는 것(짧게 탭해도 확실히 보이게),
      :active 는 마우스로 누르고 있는 동안의 상태. */
-  button, a.sub{
+  button{
     transition:transform .07s ease, background-color .12s ease,
                border-color .12s ease, box-shadow .12s ease, filter .12s ease;
   }
-  button:active, a.sub:active,
-  button.pressing, a.sub.pressing{
+  button:active, button.pressing{
     transform:scale(.965);
   }
   /* 눌리면 광택이 죽고 안쪽으로 쑥 들어간 느낌 */
@@ -335,7 +337,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v100</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v101</span></h1>
   <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="quickGrid">
@@ -462,7 +464,7 @@
   /* 눌린 순간 바로 보이게 (짧게 톡 눌러도 확실히 보이도록 잠깐 유지)
      :active 만으로는 폰에서 스치듯 눌렀을 때 거의 안 보인다. */
   document.addEventListener('pointerdown', e=>{
-    const b=e.target.closest && e.target.closest('button, a.sub, .tile');
+    const b=e.target.closest && e.target.closest('button, .tile');
     if(!b) return;
     b.classList.add('pressing');
     setTimeout(()=>b.classList.remove('pressing'), 200);
