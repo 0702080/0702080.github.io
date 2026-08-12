@@ -22,17 +22,20 @@
 
   /* 폰을 가로로 들어도 화면은 항상 세로로 유지 (manifest orientation:portrait
      가 안 먹는 상황 — 설치 안 하고 그냥 브라우저 탭으로 쓰는 경우 등 — 을 대비한
-     확실한 방법. 가로 방향이 감지되면 화면 전체를 90도 반대로 돌려서 그대로 세로처럼 보이게 함) */
-  /* 단, 벽걸이 태블릿 확인 화면(html.tvmode)은 가로로 걸 수 있으므로 제외한다 */
-  @media screen and (orientation:landscape){
-    html:not(.tvmode){
-      transform:rotate(-90deg);
-      transform-origin:left top;
-      width:100vh;height:100vw;
-      overflow-x:hidden;
-      position:absolute;
-      top:100%;left:0;
-    }
+     확실한 방법. 실제로 가로로 들었을 때만 화면 전체를 90도 반대로 돌려서
+     그대로 세로처럼 보이게 함).
+     주의: 예전엔 CSS @media(orientation:landscape)로만 판단했는데, 이건
+     화면(뷰포트) 가로세로 "비율"만 보기 때문에 키보드가 올라와 보이는 영역이
+     좁아지기만 해도(실제 폰은 그대로 세로인데) 잘못 landscape로 인식해
+     화면 전체가 돌아가 버리는 문제가 있었다. 그래서 실제 기기 방향을 아는
+     JS(screen.orientation 등, 키보드에 영향받지 않음)로 이 클래스를 직접 켜고 끈다. */
+  html.rot90:not(.tvmode){
+    transform:rotate(-90deg);
+    transform-origin:left top;
+    width:100vh;height:100vw;
+    overflow-x:hidden;
+    position:absolute;
+    top:100%;left:0;
   }
   body{
     font-family:'Malgun Gothic','맑은 고딕','Noto Sans KR',-apple-system,sans-serif;
@@ -92,6 +95,44 @@
     font-size:20px;line-height:1;text-align:center;vertical-align:-.13em;
     font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;
   }
+  /* ── 자주 안 쓰는 보조 버튼들을 아이콘 타일로 묶는다 ──
+     "카메라로 찍기"처럼 짧은 글자와 "주소 복사 (봉사자에게 전달)"처럼 긴 글자가
+     같은 폭의 알약 버튼에 나란히 있으면 아이콘 시작 위치가 버튼마다 들쭉날쭉해
+     보인다. 정사각형에 가까운 타일 4개를 2x2로 묶으면 글자 길이와 무관하게
+     항상 가지런하다. (자주 쓰는 "카메라로 찍기"와, 상태 글자가 길어지는
+     "태블릿 연결"은 그대로 위아래에 넓은 버튼으로 둔다) */
+  #quickGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .tile{
+    font-family:inherit;font-weight:700;color:#463a52;cursor:pointer;
+    border:3px solid #cdbbd9;border-radius:22px;
+    background:linear-gradient(180deg,#ece3f3 0%,#e2d6ec 52%,#f0e9f6 84%,#ffffff 100%);
+    box-shadow:
+      0 5px 12px rgba(74,59,87,.20),
+      inset 0 -3px 8px rgba(255,255,255,.85),
+      inset 0 2px 3px rgba(139,110,158,.14);
+    position:relative;isolation:isolate;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;padding:16px 6px;min-height:88px;text-align:center;text-decoration:none;
+    transition:transform .07s ease, background-color .12s ease,
+               border-color .12s ease, box-shadow .12s ease, filter .12s ease;
+  }
+  .tile::before{
+    content:'';position:absolute;z-index:-1;pointer-events:none;
+    left:5px;right:5px;top:4px;height:46%;
+    border-radius:18px 18px 50% 50% / 14px 14px 16px 16px;
+    transition:opacity .12s ease;
+    background:linear-gradient(180deg,
+      rgba(255,255,255,1) 0%, rgba(255,255,255,.78) 55%, rgba(255,255,255,.28) 100%);
+  }
+  .tile .ico{font-size:26px;width:auto;margin-right:0;}
+  .tile .tlabel{font-size:14.5px;font-weight:800;line-height:1.25;}
+  .tile:active, .tile.pressing{
+    border-color:var(--plum);transform:scale(.965);
+    background:linear-gradient(180deg,#ddd0e9 0%,#d5c6e3 55%,#e5dbf0 100%);
+    box-shadow:0 1px 3px rgba(74,59,87,.18), inset 0 5px 11px rgba(139,110,158,.30);
+  }
+  .tile:active::before, .tile.pressing::before{ opacity:.35; }
+
   .chip{
     font-family:inherit;font-size:15px;font-weight:700;
     padding:9px 15px;border-radius:999px;cursor:pointer;color:#3e3348;
@@ -308,15 +349,19 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v86</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v87</span></h1>
   <button class="go enter" id="bShoot" style="animation-delay:.04s"><span class="ico">📷</span>카메라로 찍기</button>
-  <a class="sub enter" id="bUlike" style="animation-delay:.10s"
-     href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span>Ulike 열기</a>
-  <a class="sub enter" id="bHdCam" style="animation-delay:.16s"
-     href="intent://#Intent;package=photo.editor.hd.camera.adfree;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dphoto.editor.hd.camera.adfree;end"><span class="ico">📷</span>HD Camera Pro 열기</a>
-  <button class="sub enter" id="bPick" style="animation-delay:.22s"><span class="ico">🖼️</span>갤러리에서 고르기</button>
-  <button class="sub enter" id="bCopyUrl" style="animation-delay:.28s"><span class="ico">🔗</span>주소 복사 (봉사자에게 전달)</button>
-  <button class="sub enter" id="bTvLink" style="animation-delay:.34s"><span class="ico">📺</span>태블릿 연결</button>
+
+  <div id="quickGrid">
+    <a class="tile enter" id="bUlike" style="animation-delay:.10s"
+       href="intent://#Intent;package=com.gorgeous.liteinternational;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.gorgeous.liteinternational;end"><span class="ico">📷</span><span class="tlabel">Ulike</span></a>
+    <a class="tile enter" id="bHdCam" style="animation-delay:.15s"
+       href="intent://#Intent;package=photo.editor.hd.camera.adfree;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dphoto.editor.hd.camera.adfree;end"><span class="ico">📷</span><span class="tlabel">HD캠</span></a>
+    <button class="tile enter" id="bPick" style="animation-delay:.20s"><span class="ico">🖼️</span><span class="tlabel">갤러리</span></button>
+    <button class="tile enter" id="bCopyUrl" style="animation-delay:.25s" title="봉사자에게 전달할 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">주소 복사</span></button>
+  </div>
+
+  <button class="sub enter" id="bTvLink" style="animation-delay:.32s"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="todayWrap">
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
@@ -387,6 +432,23 @@
   try{ Object.assign(data, JSON.parse(localStorage.getItem(LS)||'{}')); }catch(e){}
   const save=()=>{ try{ localStorage.setItem(LS, JSON.stringify(data)); }catch(e){} };
 
+  /* 위 CSS(html.rot90)와 짝: 실제 기기가 가로로 돌아갔을 때만 켠다.
+     screen.orientation.type / screen.width·height 는 화면(뷰포트) 크기가 아니라
+     실제 기기 방향을 나타내므로, 키보드가 올라와 보이는 영역이 줄어드는 것과
+     무관하게 정확히 판단된다. */
+  function updateRotateLock(){
+    // screen.width/height 를 우선 신뢰한다 — 화면 실측 크기라 가장 단순하고
+    // 확실하다. screen.orientation.type 은 일부 환경(에뮬레이터 등)에서
+    // 실제 화면 크기와 어긋나는 경우가 있어 값이 있을 때만 보조로만 쓴다.
+    let landscape = (screen.width||0) > (screen.height||0);
+    document.documentElement.classList.toggle('rot90', landscape);
+  }
+  updateRotateLock();
+  window.addEventListener('orientationchange', updateRotateLock);
+  if(screen.orientation && screen.orientation.addEventListener){
+    screen.orientation.addEventListener('change', updateRotateLock);
+  }
+
   /* 버튼 누를 때 진동 + "띡" 소리 */
   let actx=null;
   function beep(){
@@ -416,7 +478,7 @@
   /* 눌린 순간 바로 보이게 (짧게 톡 눌러도 확실히 보이도록 잠깐 유지)
      :active 만으로는 폰에서 스치듯 눌렀을 때 거의 안 보인다. */
   document.addEventListener('pointerdown', e=>{
-    const b=e.target.closest && e.target.closest('button, a.sub, .chip');
+    const b=e.target.closest && e.target.closest('button, a.sub, .chip, .tile');
     if(!b) return;
     b.classList.add('pressing');
     setTimeout(()=>b.classList.remove('pressing'), 200);
@@ -725,7 +787,8 @@
 
     function renderChips(){
       const box=$('edChips'); box.innerHTML='';
-      (data.recent||[]).slice(0,10).forEach(r=>{
+      // 가운데 배치(v86)로 판이 작아져서 4개가 넘으면 줄바꿈되며 지저분해진다
+      (data.recent||[]).slice(0,4).forEach(r=>{
         const b=document.createElement('button');
         b.className='chip'; b.textContent=r.name||r.tel;
         b.onmousedown=e=>e.preventDefault();      // 입력 포커스 유지
@@ -872,15 +935,19 @@
     document.body.removeChild(ta);
     return ok;
   }
-  /* 버튼 글자를 바꿀 때도 아이콘 칸(.ico)은 그대로 유지한다 */
+  /* 버튼 글자를 바꿀 때도 아이콘 칸(.ico)은 그대로 유지한다.
+     타일 버튼은 라벨을 .tlabel 로 감싸야 타일 전용 글자 크기가 그대로 적용된다
+     (.tile .tlabel 로만 스코프돼 있어 일반 버튼 글자 크기(18px)에는 영향 없음). */
   function setBtn(btn, icon, label){
-    btn.innerHTML='<span class="ico">'+icon+'</span>';
-    btn.appendChild(document.createTextNode(label));
+    btn.innerHTML='<span class="ico">'+icon+'</span><span class="tlabel"></span>';
+    btn.querySelector('.tlabel').textContent=label;
   }
 
   $('bCopyUrl').onclick=async ()=>{
     const url='https://0702080.github.io/';
-    const btn=$('bCopyUrl'); const orig=btn.lastChild ? btn.lastChild.nodeValue : '';
+    const btn=$('bCopyUrl');
+    const origEl=btn.querySelector('.tlabel');
+    const orig=origEl ? origEl.textContent : (btn.lastChild ? btn.lastChild.nodeValue : '');
     const flash=(msg)=>{
       setBtn(btn,'🔗',msg);
       setTimeout(()=>setBtn(btn,'🔗',orig), 1800);
