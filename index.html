@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#FBEEDC">
+<meta name="theme-color" content="#1f1729">
 
 <title>새가족 사진촬영</title>
 <link rel="manifest" href="manifest.json">
@@ -39,7 +39,8 @@
   }
   body{
     font-family:'Malgun Gothic','맑은 고딕','Noto Sans KR',-apple-system,sans-serif;
-    background:#FFF9F1;color:#3E3348;
+    /* 배경을 진하게 해서 버튼(밝은 아쿠아 톤)이 또렷하게 도드라지게 한다 */
+    background:#1f1729;color:#EDE4F5;
     -webkit-user-select:none;user-select:none;
   }
   /* ── 아쿠아 버튼 ──
@@ -176,8 +177,8 @@
     height:100%;display:flex;flex-direction:column;justify-content:center;gap:14px;
     padding:max(24px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));
   }
-  #home h1{font-size:22px;font-weight:800;margin-bottom:2px;}
-  #home .hint{font-size:13.5px;color:#9b8fa6;line-height:1.65;}
+  #home h1{font-size:22px;font-weight:800;margin-bottom:2px;color:#fff;}
+  #home .hint{font-size:13.5px;color:#c6b7d4;line-height:1.65;}
 
   /* 첫 화면 진입 애니메이션 — 버튼이 아래서 위로 톡톡 튀듯 순서대로 나타난다.
      .enter 는 처음 여섯 개 버튼에만 붙어 있어서(HTML 참고), 나중에 사진 찍고
@@ -191,7 +192,7 @@
   #home h1{ animation:popIn .4s cubic-bezier(.22,1,.36,1) both; }
   #todayWrap{display:none;flex-direction:column;gap:8px;}
   #todayWrap.show{display:flex;}
-  #todayWrap label{font-size:14px;font-weight:700;color:#8B6E9E;}
+  #todayWrap label{font-size:14px;font-weight:700;color:#d5bfe8;}
   #todayThumbs{display:flex;gap:6px;overflow-x:auto;padding:2px 0;scrollbar-width:none;}
   #todayThumbs::-webkit-scrollbar{display:none;}
   #todayThumbs img{
@@ -241,11 +242,18 @@
     width:100%;font-family:inherit;
   }
   /* 전화번호 칸은 "010-1234-5678"까지 들어가야 해서 좀 더 넓게,
-     이름 칸은 그만큼 살짝 좁게 — 안 그러면 맨 앞자리(0)가 잘려 보였다 */
+     이름 칸은 그만큼 살짝 좁게 — 안 그러면 맨 앞자리(0)가 잘려 보였다.
+     전화번호는 글자를 살짝 줄이고 가운데 정렬해서 항상 다 보이게 한다. */
   #edName{flex:0.85;}
   #edTel{flex:1.15;}
-  #edActions{display:flex;gap:10px;}
-  #edActions>button{flex:1;padding:15px;border-radius:12px;font-size:16px;width:auto;}
+  /* #edBottom input 규칙(20px)보다 확실히 우선하도록 특정도를 높인다 */
+  #edBottom #edTel{font-size:17px;text-align:center;}
+  /* 아래 저장/다시찍기 버튼도 위 입력칸과 같은 비율·간격으로 나눠서
+     세로 경계선이 서로 정확히 맞춰 정렬되게 한다 */
+  #edActions{display:flex;gap:8px;}
+  #edActions>button{padding:15px;border-radius:12px;font-size:16px;width:auto;}
+  #edAgain{flex:0.85;}
+  #edSave{flex:1.15;}
   /* 판이 옅어졌으므로 이 글자만 그림자로 대비를 확보한다 */
   #edHint{color:#fff;font-size:12.5px;text-align:center;opacity:.95;min-height:16px;
           text-shadow:0 1px 3px rgba(0,0,0,.9);}
@@ -326,7 +334,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v94</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#a996b8;font-weight:400">v95</span></h1>
   <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="quickGrid">
