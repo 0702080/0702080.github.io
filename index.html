@@ -60,7 +60,7 @@
 
   .go{
     font-family:inherit;font-size:18px;font-weight:800;width:100%;
-    padding:20px 18px;border-radius:26px;cursor:pointer;color:#fff;
+    padding:18px;border-radius:26px;cursor:pointer;color:#fff;
     border:3px solid #614878;
     background:linear-gradient(180deg,#8e6ea6 0%,#7a5b90 52%,#9a78b0 84%,#c2a4d3 100%);
     box-shadow:
@@ -113,7 +113,8 @@
       inset 0 2px 3px rgba(139,110,158,.14);
     position:relative;isolation:isolate;
     display:flex;flex-direction:row;align-items:center;justify-content:center;
-    gap:8px;padding:18px 10px;min-height:60px;text-align:center;text-decoration:none;
+    /* .go/.sub 와 높이·글자 크기를 맞춘다(패딩은 좁은 타일 폭에 맞춰 그대로 둠) */
+    gap:8px;padding:18px 10px;min-height:67px;text-align:center;text-decoration:none;
     transition:transform .07s ease, background-color .12s ease,
                border-color .12s ease, box-shadow .12s ease, filter .12s ease;
   }
@@ -128,7 +129,7 @@
   .tile .ico{font-size:20px;width:auto;margin-right:0;}
   /* 한 줄로 고정 — 타일이 좁아도 줄바꿈되지 않고 필요하면 말줄임표로 잘린다 */
   .tile .tlabel{
-    font-size:15px;font-weight:800;line-height:1;
+    font-size:18px;font-weight:800;line-height:1;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .tile:active, .tile.pressing{
@@ -334,7 +335,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v97</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v98</span></h1>
   <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="quickGrid">
