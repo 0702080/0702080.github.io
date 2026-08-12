@@ -111,8 +111,8 @@
       inset 0 -3px 8px rgba(255,255,255,.85),
       inset 0 2px 3px rgba(139,110,158,.14);
     position:relative;isolation:isolate;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:6px;padding:16px 6px;min-height:88px;text-align:center;text-decoration:none;
+    display:flex;flex-direction:row;align-items:center;justify-content:center;
+    gap:8px;padding:18px 10px;min-height:60px;text-align:center;text-decoration:none;
     transition:transform .07s ease, background-color .12s ease,
                border-color .12s ease, box-shadow .12s ease, filter .12s ease;
   }
@@ -124,8 +124,12 @@
     background:linear-gradient(180deg,
       rgba(255,255,255,1) 0%, rgba(255,255,255,.78) 55%, rgba(255,255,255,.28) 100%);
   }
-  .tile .ico{font-size:26px;width:auto;margin-right:0;}
-  .tile .tlabel{font-size:14.5px;font-weight:800;line-height:1.25;}
+  .tile .ico{font-size:20px;width:auto;margin-right:0;}
+  /* 한 줄로 고정 — 타일이 좁아도 줄바꿈되지 않고 필요하면 말줄임표로 잘린다 */
+  .tile .tlabel{
+    font-size:15px;font-weight:800;line-height:1;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
   .tile:active, .tile.pressing{
     border-color:var(--plum);transform:scale(.965);
     background:linear-gradient(180deg,#ddd0e9 0%,#d5c6e3 55%,#e5dbf0 100%);
@@ -349,7 +353,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v87</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v88</span></h1>
   <button class="go enter" id="bShoot" style="animation-delay:.04s"><span class="ico">📷</span>카메라로 찍기</button>
 
   <div id="quickGrid">
@@ -358,7 +362,7 @@
     <a class="tile enter" id="bHdCam" style="animation-delay:.15s"
        href="intent://#Intent;package=photo.editor.hd.camera.adfree;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dphoto.editor.hd.camera.adfree;end"><span class="ico">📷</span><span class="tlabel">HD캠</span></a>
     <button class="tile enter" id="bPick" style="animation-delay:.20s"><span class="ico">🖼️</span><span class="tlabel">갤러리</span></button>
-    <button class="tile enter" id="bCopyUrl" style="animation-delay:.25s" title="봉사자에게 전달할 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">주소 복사</span></button>
+    <button class="tile enter" id="bCopyUrl" style="animation-delay:.25s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
   </div>
 
   <button class="sub enter" id="bTvLink" style="animation-delay:.32s"><span class="ico">📺</span>태블릿 연결</button>
