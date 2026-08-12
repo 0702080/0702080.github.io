@@ -353,7 +353,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v88</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v89</span></h1>
   <button class="go enter" id="bShoot" style="animation-delay:.04s"><span class="ico">📷</span>카메라로 찍기</button>
 
   <div id="quickGrid">
@@ -366,6 +366,7 @@
   </div>
 
   <button class="sub enter" id="bTvLink" style="animation-delay:.32s"><span class="ico">📺</span>태블릿 연결</button>
+  <button class="sub enter" id="bClearToday" style="animation-delay:.38s"><span class="ico">🗑</span>오늘 사진 삭제</button>
 
   <div id="todayWrap">
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
@@ -689,7 +690,7 @@
   const todaysShots=[];
   function refreshTodayUI(){
     const wrap=$('todayWrap');
-    if(!todaysShots.length){ wrap.classList.remove('show'); return; }
+    if(!todaysShots.length){ wrap.classList.remove('show'); $('todayThumbs').innerHTML=''; return; }
     wrap.classList.add('show');
     $('todayCount').textContent=todaysShots.length;
     const box=$('todayThumbs'); box.innerHTML='';
@@ -724,6 +725,30 @@
     todaysShots.push({blob, filename, name, tel});
     refreshTodayUI();
   }
+  /* "오늘 찍은 사진" 목록만 비운다. 폰에 이미 저장된 사진 파일은 저장하는
+     순간 다운로드 폴더로 들어가버려서, 웹 앱은 그 파일을 지울 권한이
+     전혀 없다(브라우저 보안 제한 — 이 앱만의 한계가 아니다). 여기서 지우는 건
+     "한꺼번에 공유하기용" 화면 안 임시 목록일 뿐이다. */
+  $('bClearToday').onclick=()=>{
+    if(!todaysShots.length){
+      $('homeLog').textContent='오늘 찍은 사진이 없습니다.';
+      return;
+    }
+    const n=todaysShots.length;
+    let ok;
+    try{
+      ok=confirm('오늘 찍은 새가족 사진 '+n+'장을 목록에서 지울까요?\n\n(폰에 이미 저장된 사진 파일은 지워지지 않습니다.\n다운로드 폴더/갤러리에는 그대로 남아있습니다.)');
+    }catch(e){ ok=true; }
+    if(!ok) return;
+
+    // 썸네일에 쓰인 임시 URL 정리
+    $('todayThumbs').querySelectorAll('img').forEach(img=>{
+      if(img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
+    });
+    todaysShots.length=0;
+    refreshTodayUI();
+    $('homeLog').textContent='🗑 오늘 찍은 사진 '+n+'장을 목록에서 지웠습니다 (저장된 파일은 그대로 있습니다)';
+  };
   $('bShareAll').onclick=async ()=>{
     if(!todaysShots.length) return;
     const files=todaysShots.map(s=>new File([s.blob], s.filename, {type:'image/jpeg'}));
