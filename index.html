@@ -333,7 +333,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v92</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v93</span></h1>
   <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="quickGrid">
@@ -415,15 +415,21 @@
   try{ Object.assign(data, JSON.parse(localStorage.getItem(LS)||'{}')); }catch(e){}
   const save=()=>{ try{ localStorage.setItem(LS, JSON.stringify(data)); }catch(e){} };
 
-  /* 위 CSS(html.rot90)와 짝: 실제 기기가 가로로 돌아갔을 때만 켠다.
-     screen.orientation.type / screen.width·height 는 화면(뷰포트) 크기가 아니라
-     실제 기기 방향을 나타내므로, 키보드가 올라와 보이는 영역이 줄어드는 것과
-     무관하게 정확히 판단된다. */
+  /* "폰을 가로로 들어도 세로 유지"는 폰에서만 의미가 있다. PC 모니터는
+     거의 항상 가로가 더 길어서(1920x1080 등), screen.width>height 만으로
+     판단하면 PC에서 창을 아무리 세로로 만들어도 항상 "가로"로 오인해
+     화면이 계속 90도 돌아가버렸다 — 실제로 PC 브라우저에서 발생한 문제.
+     그래서 먼저 "이게 폰인가"부터 확인하고, 폰일 때만 screen.width·height
+     로 실제 방향을 본다(이 값은 키보드가 올라와도 바뀌지 않아 안전하다). */
+  function isPhoneLike(){
+    if(navigator.userAgentData && typeof navigator.userAgentData.mobile==='boolean'){
+      return navigator.userAgentData.mobile;
+    }
+    return /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent);
+  }
+  const PHONE = isPhoneLike();
   function updateRotateLock(){
-    // screen.width/height 를 우선 신뢰한다 — 화면 실측 크기라 가장 단순하고
-    // 확실하다. screen.orientation.type 은 일부 환경(에뮬레이터 등)에서
-    // 실제 화면 크기와 어긋나는 경우가 있어 값이 있을 때만 보조로만 쓴다.
-    let landscape = (screen.width||0) > (screen.height||0);
+    const landscape = PHONE && (screen.width||0) > (screen.height||0);
     document.documentElement.classList.toggle('rot90', landscape);
   }
   updateRotateLock();
