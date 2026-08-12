@@ -166,8 +166,7 @@
       0 1px 3px rgba(74,59,87,.18),
       inset 0 5px 11px rgba(139,110,158,.30);
   }
-  /* 어두운 배경 위의 버튼들(촬영 화면 상단·태블릿 확대 막대) */
-  #edTop button:active, #edTop button.pressing,
+  /* 어두운 배경 위의 버튼들(태블릿 확대 막대) */
   #tvZoom button:active, #tvZoom button.pressing{
     background:rgba(255,255,255,.42);color:#111;
   }
@@ -215,18 +214,12 @@
     position:fixed;inset:0;z-index:50;display:none;background:#000;flex-direction:column;
   }
   #editor.on{display:flex;}
-  #edStage{position:relative;flex:1;overflow:hidden;background:#000;}
-  #edPhoto{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
-  #edTop{
-    position:absolute;top:max(12px,env(safe-area-inset-top));left:0;right:0;
-    display:flex;justify-content:space-between;gap:8px;padding:0 14px;z-index:2;
+  /* 사진은 보여주지 않는다 — 화면을 앱 색감의 은은한 배경으로 채운다.
+     이 배경(입력판 바깥 영역)을 탭하면 저장하지 않고 닫힌다. */
+  #edStage{
+    position:relative;flex:1;overflow:hidden;cursor:pointer;
+    background:linear-gradient(160deg,#3a2c47 0%,#241a2e 60%,#160f1c 100%);
   }
-  #edTop button{
-    background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:999px;
-    font-size:14px;font-weight:700;font-family:inherit;padding:10px 16px;cursor:pointer;
-    backdrop-filter:blur(4px);
-  }
-  #edTop button.sel{background:#fff;color:#111;}
   /* 입력·저장 패널을 화면 한가운데에 둔다.
      아래쪽에 있으면 폰을 한 손으로 들고 섬기는 현장에서 엄지가 닿지 않고,
      키보드가 올라오면 가려져버렸다. 사진이 비치도록 반투명으로 띄운다. */
@@ -333,7 +326,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v93</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v94</span></h1>
   <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="quickGrid">
@@ -358,14 +351,7 @@
 
 <!-- 사진에 이름표 붙이기 -->
 <div id="editor">
-  <div id="edStage">
-    <img id="edPhoto" alt="">
-  </div>
-  <div id="edTop">
-    <button id="edClose">✕ 닫기</button>
-    <button id="edRotate">↻ 방향</button>
-    <button id="edBright">🔆 밝게</button>
-  </div>
+  <div id="edStage"></div>
   <div id="edBottom">
     <div class="row">
       <input id="edName" type="text" placeholder="이름" autocomplete="off" enterkeyhint="next">
@@ -720,16 +706,10 @@
      (웹 카메라를 직접 쓰면 기본 앱의 1x 광각 렌즈에 접근할 수 없어 화각이
       좁아지는 문제가 있어, 촬영은 전적으로 기본 카메라 앱에 맡긴다.) */
   const ED = (function(){
-    const photo=$('edPhoto'), nI=$('edName'), tI=$('edTel'), hintEl=$('edHint');
+    const nI=$('edName'), tI=$('edTel'), hintEl=$('edHint');
     const MAXPX=2400;                       // 긴 변 기준 최대 크기 (용량·속도 절충)
     let baseCanvas=null;                    // 방향까지 바로잡힌 원본
     let queue=[], qi=0;                     // 여러 장 선택했을 때의 처리 대기열
-    let bright=false;
-
-    function filterStr(){
-      return bright ? 'brightness(1.32) contrast(1.03)' : 'none';
-    }
-    function applyPreviewFilter(){ photo.style.filter=filterStr(); }
 
     /* EXIF 방향까지 반영해서 이미지를 읽는다 */
     async function loadOriented(file){
@@ -754,11 +734,6 @@
       cv.getContext('2d').drawImage(src,0,0,w,h);
       if(src.close) src.close();
       baseCanvas=cv; baseCanvas.__file=file;
-      photo.src=cv.toDataURL('image/jpeg',0.92);
-      /* 사람마다 조명이 다르므로 '밝게'는 새 사진마다 꺼둔 상태로 시작한다.
-         (예전엔 한 번 켜면 그 뒤 모든 사람 사진이 계속 보정된 채 저장됐다) */
-      bright=false; $('edBright').classList.remove('sel');
-      applyPreviewFilter();
 
       nI.value=''; tI.value='';
       hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
@@ -779,9 +754,7 @@
       const w=baseCanvas.width, h=baseCanvas.height;
       const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
       const ctx=cv.getContext('2d');
-      ctx.filter=filterStr();               // 미리보기와 똑같은 밝기로 저장
       ctx.drawImage(baseCanvas,0,0);
-      ctx.filter='none';
 
       const nm=nI.value.trim(), tel=fmtTel(tI.value);
       const barH=Math.round(h*0.16);
@@ -839,21 +812,9 @@
       }, 'image/jpeg', 0.92);
     }
 
-    function rotate(){
-      if(!baseCanvas) return;
-      const w=baseCanvas.width, h=baseCanvas.height;
-      const rc=document.createElement('canvas'); rc.width=h; rc.height=w;
-      const ctx=rc.getContext('2d');
-      ctx.translate(h/2,w/2); ctx.rotate(Math.PI/2);
-      ctx.drawImage(baseCanvas,-w/2,-h/2);
-      rc.__file=baseCanvas.__file;
-      baseCanvas=rc;
-      photo.src=rc.toDataURL('image/jpeg',0.92);
-    }
-
     function close(){
       $('editor').classList.remove('on');
-      photo.src=''; baseCanvas=null;
+      baseCanvas=null;
       saving=false; $('edSave').disabled=false;   // 어떤 경로로 닫히든 잠금은 반드시 푼다
     }
 
@@ -866,14 +827,9 @@
     }
 
     $('edSave').onclick=saveShot;
-    $('edRotate').onclick=rotate;
-    $('edClose').onclick=()=>{ queue=[]; qi=0; close(); };
     $('edAgain').onclick=()=>{ queue=[]; qi=0; close(); $('fCam').click(); };
-    $('edBright').onclick=()=>{
-      bright=!bright;
-      $('edBright').classList.toggle('sel', bright);
-      applyPreviewFilter();
-    };
+    // 사진을 안 보여주는 대신, 그 배경(입력판 바깥)을 탭하면 저장하지 않고 닫힌다
+    $('edStage').onclick=()=>{ queue=[]; qi=0; close(); };
     nI.addEventListener('input', ()=>{ if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent=''; });
     nI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); tI.focus(); } });
     tI.addEventListener('input', e=>{ e.target.value=fmtTel(e.target.value); });
