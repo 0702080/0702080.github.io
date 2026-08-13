@@ -93,6 +93,11 @@
     background:linear-gradient(180deg,
       rgba(255,255,255,1) 0%, rgba(255,255,255,.78) 55%, rgba(255,255,255,.28) 100%);
   }
+  /* "태블릿 연결됨 ✓ ABCDEF"처럼 상태에 따라 길어지는 글자가, 시스템 글자 크게
+     설정에서 줄바꿈되며 버튼이 여러 줄로 깨지는 것을 막는다(.tile 과 같은 처리) */
+  .sub .tlabel{
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+  }
   /* 버튼 아이콘은 글자 크기와 무관하게 항상 같은 크기·같은 폭으로 (줄 맞춤) */
   .ico{
     display:inline-block;width:1.5em;margin-right:.15em;
@@ -342,7 +347,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v103</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#c8c8c8;font-weight:400">v104</span></h1>
   <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿 연결</button>
 
   <div id="quickGrid">
@@ -534,6 +539,13 @@
     const te=new TextEncoder(), td=new TextDecoder();
     let client=null, key=null, topic=null, connected=false, code='', onPhoto=null;
     let mqttLoading=null;
+    /* connect()를 부르는 곳이 여러 곳이다(자동 재연결, 실패 시 재시도, 버튼으로
+       새 코드 입력 등). 이 호출들이 겹치면, 먼저 시작했지만 늦게 끝나는 시도가
+       나중에 시작해 먼저 끝난 시도의 상태(코드·열쇠·토픽·소켓)를 덮어써 버려서
+       "화면엔 새 태블릿에 연결됐다고 뜨는데 실제로는 옛 태블릿으로 계속 전송되는"
+       문제가 생겼다. 세대 번호를 매겨서, 자기 세대가 이미 낡았으면(더 최신 시도가
+       있었으면) 공유 상태를 건드리지 않고 조용히 정리만 하고 빠진다. */
+    let gen=0;
 
     /* 라이브러리(330KB)는 실제로 쓸 때만 불러온다 */
     function loadMqtt(){
@@ -553,11 +565,13 @@
     function live(){ return !!(client && (client.connected===undefined ? connected : client.connected)); }
 
     async function sha(s){ return new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode(s))); }
+    /* 공유 상태(code/key/topic)를 직접 건드리지 않고 계산만 해서 돌려준다 —
+       실제 반영은 connect() 가 자기 세대가 아직 최신일 때만 한 번에 커밋한다. */
     async function setup(c){
-      code=c;
-      key=await crypto.subtle.importKey('raw', await sha('nfp-key:'+c), {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+      const k=await crypto.subtle.importKey('raw', await sha('nfp-key:'+c), {name:'AES-GCM'}, false, ['encrypt','decrypt']);
       const h=await sha('nfp-topic:'+c);
-      topic='nfp/'+[...h].slice(0,10).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const t='nfp/'+[...h].slice(0,10).map(x=>x.toString(16).padStart(2,'0')).join('');
+      return {key:k, topic:t};
     }
     async function encrypt(obj){
       const iv=crypto.getRandomValues(new Uint8Array(12));
@@ -574,24 +588,41 @@
 
     async function connect(c, opts){
       opts=opts||{};
+      const myGen=++gen;   // 이 시도의 번호. 진행 중에 gen 이 바뀌면 더 최신 시도가 있었다는 뜻
       onPhoto=opts.onPhoto||null;
       await loadMqtt();
+      if(myGen!==gen) return;             // 기다리는 사이 낡아졌다 — 아무 것도 건드리지 않고 끝
       if(!window.mqtt || !crypto.subtle) throw new Error('unsupported');
-      await setup(c);
+      const computed=await setup(c);
+      if(myGen!==gen) return;             // setup() 은 공유 상태를 안 건드렸으니 그냥 버리면 끝
+
+      // 여기서부터 다음 await 전까지는 동기적으로 한 번에 커밋한다
+      code=c; key=computed.key; topic=computed.topic;
       if(client){ try{ client.end(true); }catch(e){} client=null; }
-      client=mqtt.connect(BROKER, {
+      const newClient=mqtt.connect(BROKER, {
         clientId:'nfp_'+myId, clean:true,
         reconnectPeriod:4000, connectTimeout:8000, keepalive:30
       });
-      client.on('connect', ()=>{
+      client=newClient;
+      /* 아래 이벤트들은 소켓이 살아있는 동안(자동 재연결 포함) 여러 번 다시 불릴 수
+         있다 — 이 시도가 나중에 낡아진 뒤에도 계속 불려서 최신 상태를 덮어쓰지
+         않도록 매번 자기 세대가 아직 최신인지 확인한다. */
+      newClient.on('connect', ()=>{
+        if(myGen!==gen){ try{ newClient.end(true); }catch(e){} return; }
         connected=true;
-        if(onPhoto) client.subscribe(topic,{qos:1});
+        if(onPhoto) newClient.subscribe(topic,{qos:1});
         if(opts.onStatus) opts.onStatus(true);
       });
-      client.on('close', ()=>{ connected=false; if(opts.onStatus) opts.onStatus(false); });
-      client.on('error', ()=>{ connected=false; if(opts.onStatus) opts.onStatus(false); });
-      client.on('message', async (t,payload)=>{
-        if(!onPhoto) return;
+      newClient.on('close', ()=>{
+        if(myGen!==gen) return;
+        connected=false; if(opts.onStatus) opts.onStatus(false);
+      });
+      newClient.on('error', ()=>{
+        if(myGen!==gen) return;
+        connected=false; if(opts.onStatus) opts.onStatus(false);
+      });
+      newClient.on('message', async (t,payload)=>{
+        if(myGen!==gen || !onPhoto) return;
         try{
           const o=await decrypt(payload.toString());
           if(!o || o.from===myId) return;
@@ -605,8 +636,9 @@
         let done=false;
         const fin=()=>{ if(done) return; done=true; clearTimeout(t); res(); };
         const t=setTimeout(fin, 8000);
-        client.once('connect', fin);
+        newClient.once('connect', fin);
       });
+      if(myGen!==gen){ try{ newClient.end(true); }catch(e){} }  // 기다리는 사이 낡아졌으면 정리
     }
 
     /* 확인용이므로 화면에 보일 만큼만 줄여서 보낸다 (전송 1~2초 안에 끝나도록) */
@@ -655,8 +687,11 @@
       return s;
     }
     /* 연결을 진짜로 끊는다. 소켓만 닫는 게 아니라 암호열쇠·토픽까지 버려야
-       "연결 끊음"이라고 표시해놓고 예전 태블릿으로 사진이 계속 가는 일이 없다. */
+       "연결 끊음"이라고 표시해놓고 예전 태블릿으로 사진이 계속 가는 일이 없다.
+       gen 도 올려서, 이 시점에 진행 중이던 connect() 시도가 있었다면 그것도
+       낡은 것으로 만들어 뒤늦게 되살아나지 않게 한다. */
     function disconnect(){
+      gen++;
       if(client){ try{ client.end(true); }catch(e){} }
       client=null; key=null; topic=null; connected=false; code=''; onPhoto=null;
     }
@@ -668,27 +703,28 @@
      사진 파일 자체는 이미 저장할 때마다 다운로드 폴더에 들어가 있으니,
      여기 있는 목록은 "한꺼번에 공유하기용" 임시 모음일 뿐이다. */
   const todaysShots=[];
-  function refreshTodayUI(){
-    const wrap=$('todayWrap');
-    if(!todaysShots.length){ wrap.classList.remove('show'); $('todayThumbs').innerHTML=''; return; }
-    wrap.classList.add('show');
-    $('todayCount').textContent=todaysShots.length;
-    const box=$('todayThumbs'); box.innerHTML='';
-    todaysShots.forEach(s=>{
-      const img=document.createElement('img');
-      img.src=URL.createObjectURL(s.blob);
-      img.alt=s.name||s.tel||'';
-      img.title='탭하면 태블릿 화면에 다시 크게 띄웁니다';
-      img.onclick=()=>resendToTv(s, img);
-      box.appendChild(img);
-    });
+  /* 사진마다 objectURL을 딱 한 번만 만들어 재사용한다. 예전엔 사진을 찍을 때마다
+     그동안 찍은 것 전체를 처음부터 다시 그리면서 이미 만들어둔 URL까지 매번
+     새로 만들어(회수도 안 됨) N장이면 URL이 N²/2개씩 쌓이는 누수가 있었다. */
+  function appendTodayThumb(s){
+    const img=document.createElement('img');
+    img.src=s.url;
+    img.alt=s.name||s.tel||'';
+    img.title='탭하면 태블릿 화면에 다시 크게 띄웁니다';
+    img.onclick=()=>resendToTv(s, img);
+    $('todayThumbs').appendChild(img);
   }
   /* 썸네일을 탭하면 그 사진(이미 이름표가 합성된 최종본)을 다시 태블릿/PC 확인
      화면으로 보낸다 — 방금 찍은 사진을 화면에 크게 다시 띄우고 싶을 때 사용 */
   async function resendToTv(shot, thumbEl){
     const bmp = await (window.createImageBitmap
       ? createImageBitmap(shot.blob)
-      : new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=URL.createObjectURL(shot.blob); }));
+      : new Promise((res,rej)=>{
+          const im=new Image(); const u=URL.createObjectURL(shot.blob);
+          im.onload=()=>{ URL.revokeObjectURL(u); res(im); };
+          im.onerror=()=>{ URL.revokeObjectURL(u); rej(); };
+          im.src=u;
+        }));
     const cv=document.createElement('canvas');
     cv.width=bmp.width||bmp.naturalWidth; cv.height=bmp.height||bmp.naturalHeight;
     cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
@@ -701,8 +737,12 @@
     if(!ok) $('homeLog').innerHTML='⚠ 태블릿이 연결되어 있지 않습니다 (📺 태블릿 연결 확인)';
   }
   function addTodayShot(blob, filename, name, tel){
-    todaysShots.push({blob, filename, name, tel});
-    refreshTodayUI();
+    const url=URL.createObjectURL(blob);
+    const shot={blob, filename, name, tel, url};
+    todaysShots.push(shot);
+    appendTodayThumb(shot);
+    $('todayWrap').classList.add('show');
+    $('todayCount').textContent=todaysShots.length;
   }
   $('bShareAll').onclick=async ()=>{
     if(!todaysShots.length) return;
@@ -754,7 +794,7 @@
       nI.value=''; tI.value='';
       hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
       $('editor').classList.add('on');
-      setTimeout(()=>nI.focus(),150);
+      setTimeout(()=>{ if($('editor').classList.contains('on')) nI.focus(); },150);
     }
 
     function fileBase(){
@@ -791,15 +831,22 @@
 
     /* 저장이 끝나기 전에 저장 버튼을 또 누르면(급할 때 흔한 연타) 같은 사진이
        두 번 저장되고 번호가 밀리며, 여러 장 처리 중이었다면 그 사이 한 장이
-       통째로 건너뛰어진다. 저장이 끝날 때까지 잠가둔다. */
+       통째로 건너뛰어진다. 저장이 끝날 때까지 잠가둔다 — 그리고 다음 장이
+       실제로 화면에 뜰 때까지도 잠금을 유지해서(예전엔 저장 직후 바로 풀었다),
+       그 짧은 전환 구간에 배경 탭·다시 찍기·재입력이 끼어들어 큐가 망가지거나
+       화면이 엉뚱하게 다시 열리는 일이 없게 한다. */
     let saving=false;
+    /* 저장마다 하나씩 늘어나는 번호. 앞선 저장의 태블릿 전송 결과가 늦게
+       도착했을 때, 그 사이 더 최근 저장이 이미 로그를 넘겨받았다면
+       엉뚱한(다음) 사진 쪽 로그에 잘못 붙는 일을 막는다. */
+    let saveSeq=0;
     function saveShot(){
       if(saving) return;
       if(!baseCanvas) return;
       const nm=nI.value.trim(), tel=fmtTel(tI.value);
       if(!nm && !tel){ hintEl.textContent='이름 또는 전화번호를 입력해주세요'; return; }
       saving=true; $('edSave').disabled=true;
-      const done=()=>{ saving=false; $('edSave').disabled=false; };
+      const mySeq=++saveSeq;
 
       const name=fileBase()+'.jpg';
       const composed=compose();
@@ -807,24 +854,42 @@
       // 벽걸이 태블릿에도 즉시 띄운다 (연결돼 있을 때만)
       const tvSend = sendToTvSmart(composed, nm, tel);
 
-      composed.toBlob(blob=>{
-        if(!blob){ done(); hintEl.textContent='저장에 실패했습니다. 다시 시도해주세요'; return; }
+      composed.toBlob(async blob=>{
+        if(!blob){
+          hintEl.textContent='저장에 실패했습니다. 다시 시도해주세요';
+          saving=false; $('edSave').disabled=false;
+          return;
+        }
         const url=URL.createObjectURL(blob);
         const a=document.createElement('a');
         a.href=url; a.download=name;
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(()=>URL.revokeObjectURL(url),5000);
 
+        // 실제 저장·전송은 화면 상태와 무관하게 항상 한다 — 입력한 이름·전화가
+        // 담긴 사진을 화면 전환 타이밍 때문에 버리면 안 된다.
         addTodayShot(blob, name, nm, tel);
-        $('homeLog').innerHTML='✅ 저장됨 · <b>'+name+'</b><br>(다운로드 폴더)';
-        // 전송 결과는 위 문구가 찍힌 뒤에 덧붙여야 지워지지 않는다
-        tvSend.then(ok=>{ if(ok) $('homeLog').innerHTML+='<br>📺 태블릿에 표시됨'; });
 
-        // 잠금은 다음 장을 띄우기 "전에" 풀어야 그 장을 바로 저장할 수 있다
-        done();
-        // 여러 장을 골랐다면 다음 장으로, 아니면 편집기를 닫는다
-        if(qi+1 < queue.length){ qi++; showFile(queue[qi]); }
-        else{ queue=[]; qi=0; close(); }
+        if(mySeq===saveSeq){
+          $('homeLog').innerHTML='✅ 저장됨 · <b>'+name+'</b><br>(다운로드 폴더)';
+        }
+        // 전송 결과는 위 문구가 찍힌 뒤에 덧붙여야 지워지지 않는다
+        tvSend.then(ok=>{
+          if(mySeq!==saveSeq) return;   // 그 사이 더 최근 저장이 로그를 넘겨받았다
+          $('homeLog').innerHTML += ok ? '<br>📺 태블릿에 표시됨' : '<br>⚠ 태블릿 전송 실패 (📺 태블릿 연결 확인)';
+        });
+
+        // 여러 장을 골랐다면 다음 장으로, 아니면 편집기를 닫는다.
+        // 다음 장이 실제로 뜬 뒤에야 잠금을 풀어서(await), 그 사이 배경 탭·연타로
+        // 큐가 어긋나거나 같은 사진이 중복 저장되는 일을 막는다.
+        if(qi+1 < queue.length){
+          qi++;
+          try{ await showFile(queue[qi]); }
+          catch(e){ alert('다음 사진을 불러오지 못했습니다.'); queue=[]; qi=0; close(); return; }
+          saving=false; $('edSave').disabled=false;
+        }else{
+          queue=[]; qi=0; close();
+        }
       }, 'image/jpeg', 0.92);
     }
 
@@ -843,9 +908,22 @@
     }
 
     $('edSave').onclick=saveShot;
-    $('edAgain').onclick=()=>{ queue=[]; qi=0; close(); $('fCam').click(); };
-    // 사진을 안 보여주는 대신, 그 배경(입력판 바깥)을 탭하면 저장하지 않고 닫힌다
-    $('edStage').onclick=()=>{ queue=[]; qi=0; close(); };
+    $('edAgain').onclick=()=>{
+      if(saving) return;   // 저장 처리 중엔 무시 — 끝나면 다시 눌러도 늦지 않다
+      queue=[]; qi=0; close(); $('fCam').click();
+    };
+    /* 사진을 안 보여주는 대신, 그 배경(입력판 바깥)을 탭하면 저장하지 않고 닫힌다.
+       여러 장을 고른 경우엔 "전부 취소"가 아니라 "이 한 장만 건너뛰기"로 동작해서
+       나머지 대기 중인 사진까지 같이 사라지지 않게 한다. */
+    $('edStage').onclick=()=>{
+      if(saving) return;   // 저장 처리 중엔 무시
+      if(qi+1 < queue.length){
+        qi++;
+        showFile(queue[qi]).catch(()=>{ alert('다음 사진을 불러오지 못했습니다.'); queue=[]; qi=0; close(); });
+      }else{
+        queue=[]; qi=0; close();
+      }
+    };
     nI.addEventListener('input', ()=>{ if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent=''; });
     nI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); tI.focus(); } });
     tI.addEventListener('input', e=>{ e.target.value=fmtTel(e.target.value); });
