@@ -96,10 +96,10 @@
 
   .sub{
     font-family:inherit;font-size:18px;font-weight:700;width:100%;
-    padding:18px;border-radius:26px;cursor:pointer;color:#141414;
+    padding:18px;border-radius:26px;cursor:pointer;color:#212121;
     display:flex;align-items:center;justify-content:center;
-    border:2px solid #266587;
-    background:linear-gradient(180deg,#75c3ea 0%,#47aee1 52%,#7ecdec 84%,#b3def4 100%);
+    border:2px solid #225977;
+    background:linear-gradient(180deg,#63bbe8 0%,#35a6de 52%,#6dc6e9 84%,#a1d7f2 100%);
     box-shadow:
       0 5px 12px rgba(74,59,87,.20),
       inset 0 -3px 8px rgba(255,255,255,.85),
@@ -128,7 +128,7 @@
      "태블릿 연결"은 그대로 위아래에 넓은 버튼으로 둔다) */
   #quickGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .tile{
-    font-family:inherit;font-weight:700;color:#141414;cursor:pointer;
+    font-family:inherit;font-weight:700;color:#212121;cursor:pointer;
     border:2px solid #419776;border-radius:22px;
     background:linear-gradient(180deg,#a0e8cc 0%,#7dd8b0 52%,#a8ecd0 84%,#dbf7e8 100%);
     box-shadow:
@@ -194,13 +194,14 @@
      중에서 유독 짙어서(민트/하늘/핑크처럼 파스텔이 아님) 어두운 글자 대신
      .go(카메라 버튼)와 같은 방식(흰 글자 + brightness 필터로 눌림 표현)을 쓴다 */
   .tile.link{
-    border-color:#2b85ac;
-    background:linear-gradient(180deg,#4aa9d2 0%,#329bc8 52%,#58b0d5 84%,#a3d3e8 100%);
-    color:#141414;
+    border-color:#225977;
+    background:linear-gradient(180deg,#63bbe8 0%,#35a6de 52%,#6dc6e9 84%,#a1d7f2 100%);
+    color:#212121;
   }
   .tile.link:active, .tile.link.pressing{
-    filter:brightness(.88) saturate(1.08);
-    box-shadow:0 1px 3px rgba(60,45,72,.34), inset 0 5px 13px rgba(0,0,0,.36);
+    border-color:#15415a;
+    background:linear-gradient(180deg,#4fb4e2 0%,#309bd5 55%,#5bbce5 100%);
+    box-shadow:0 1px 3px rgba(74,59,87,.18), inset 0 5px 11px rgba(21,65,90,.30);
   }
 
   /* 태블릿 연결 + 멘트 버튼을 나란히, 아래 2x2 타일과 정확히 같은 폭으로.
@@ -242,11 +243,11 @@
       inset 0 5px 13px rgba(0,0,0,.36);
   }
   .sub:active, .sub.pressing{
-    border-color:#194d6b;
-    background:linear-gradient(180deg,#61bbe5 0%,#41a3d8 55%,#6dc3e8 100%);
+    border-color:#15415a;
+    background:linear-gradient(180deg,#4fb4e2 0%,#309bd5 55%,#5bbce5 100%);
     box-shadow:
       0 1px 3px rgba(74,59,87,.18),
-      inset 0 5px 11px rgba(25,77,107,.30);
+      inset 0 5px 11px rgba(21,65,90,.30);
   }
   /* 어두운 배경 위의 버튼들(태블릿 확대 막대) */
   #tvZoom button:active, #tvZoom button.pressing{
@@ -439,7 +440,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v132</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v133</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
