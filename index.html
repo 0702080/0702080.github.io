@@ -294,11 +294,14 @@
     width:min(92%,480px);max-height:82vh;overflow-y:auto;
     background:#FFF9F1;border-radius:20px;padding:22px 20px;color:#3E3348;
     box-shadow:0 12px 30px rgba(0,0,0,.4);
+    scrollbar-width:none;-ms-overflow-style:none;   /* 스크롤은 되지만 막대는 숨김(파이어폭스/구형엣지) */
   }
+  #mentModalInner::-webkit-scrollbar{display:none;}  /* 크롬·사파리·안드로이드 */
   #mentModalInner h2{font-size:18px;margin:0 0 12px;text-align:center;}
   #mentModalInner h3{font-size:14px;color:#614878;margin:18px 0 6px;}
   #mentModalInner h3:first-of-type{margin-top:0;}
-  #mentModalInner p{font-size:15px;margin:5px 0;line-height:1.5;}
+  #mentModalInner p{font-size:15px;margin:5px 0;line-height:1.5;cursor:pointer;padding:2px 0;}
+  #mentModalInner p:active{opacity:.5;}
   #mentClose{
     display:block;width:100%;margin-top:18px;padding:12px;border-radius:14px;
     border:none;background:#614878;color:#fff;font-weight:700;font-size:15px;cursor:pointer;
@@ -380,7 +383,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v110</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v111</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile enter" id="bMent" style="animation-delay:.07s"><span class="ico">💬</span><span class="tlabel">멘트</span></button>
@@ -1071,6 +1074,15 @@
     $('mentList').innerHTML=MENT_DATA.map(g=>
       '<h3>'+g.cat+'</h3>'+g.items.map(p=>'<p>'+p+'</p>').join('')
     ).join('');
+    // 목록에서 멘트를 고르면 그 멘트가 바로 카메라 버튼 밑에 뜨고 모달은 닫힌다
+    $('mentList').querySelectorAll('p').forEach(p=>{
+      p.onclick=()=>{
+        const text=p.textContent;
+        lastMentIdx=MENT_FLAT.indexOf(text);
+        $('mentLine').textContent='💬 '+text;
+        $('mentModal').classList.remove('on');
+      };
+    });
   }
   $('bMent').onclick=()=>{
     buildMentModal();
