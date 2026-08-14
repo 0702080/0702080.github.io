@@ -82,7 +82,7 @@
     font-family:inherit;font-size:18px;font-weight:700;width:100%;
     padding:18px;border-radius:26px;cursor:pointer;color:#463a52;
     display:flex;align-items:center;justify-content:center;
-    border:2px solid #3a9bd1;
+    border:2px solid #307fab;
     background:linear-gradient(180deg,#9cd4f0 0%,#6fbfe8 52%,#a8ddf2 84%,#dcf0fa 100%);
     box-shadow:
       0 5px 12px rgba(74,59,87,.20),
@@ -113,7 +113,7 @@
   #quickGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .tile{
     font-family:inherit;font-weight:700;color:#463a52;cursor:pointer;
-    border:2px solid #4fb890;border-radius:22px;
+    border:2px solid #419776;border-radius:22px;
     background:linear-gradient(180deg,#a0e8cc 0%,#7dd8b0 52%,#a8ecd0 84%,#dbf7e8 100%);
     box-shadow:
       0 5px 12px rgba(74,59,87,.20),
@@ -146,9 +146,9 @@
     min-width:0;   /* flex 자식도 같은 이유로 필요 — 없으면 글자 길이만큼 밀어낸다 */
   }
   .tile:active, .tile.pressing{
-    border-color:#2f8f6d;transform:scale(.965);
+    border-color:#277559;transform:scale(.965);
     background:linear-gradient(180deg,#8fd9ba 0%,#6bc79c 55%,#98dcbf 100%);
-    box-shadow:0 1px 3px rgba(74,59,87,.18), inset 0 5px 11px rgba(47,143,109,.30);
+    box-shadow:0 1px 3px rgba(74,59,87,.18), inset 0 5px 11px rgba(39,117,89,.30);
   }
   .tile:active::before, .tile.pressing::before{ opacity:.35; }
 
@@ -190,11 +190,11 @@
       inset 0 5px 13px rgba(0,0,0,.36);
   }
   .sub:active, .sub.pressing{
-    border-color:#2a7fb0;
+    border-color:#226890;
     background:linear-gradient(180deg,#88ccec 0%,#68b6e0 55%,#94d3ee 100%);
     box-shadow:
       0 1px 3px rgba(74,59,87,.18),
-      inset 0 5px 11px rgba(42,127,176,.30);
+      inset 0 5px 11px rgba(34,104,144,.30);
   }
   /* 어두운 배경 위의 버튼들(태블릿 확대 막대) */
   #tvZoom button:active, #tvZoom button.pressing{
@@ -387,7 +387,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v113</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v114</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile enter" id="bMent" style="animation-delay:.07s"><span class="ico">💬</span><span class="tlabel">멘트</span></button>
