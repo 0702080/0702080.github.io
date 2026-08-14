@@ -16,6 +16,22 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏷️%3C/text%3E%3C/svg%3E">
 
 <style>
+  /* 빙그레체 — 눈누(noonnu.cc)에서 배포하는 상업용 무료 폰트, CDN에서 불러온다.
+     본문 index.html 자체는 서비스워커가 접속할 때마다 새로 받아오지만(sw.js
+     network-first 전략), 이 폰트 파일은 별도 출처라 브라우저가 평소 캐시
+     규칙대로 오래 캐싱해준다 — 그래서 base64로 파일 자체를 심지 않고
+     CDN 주소만 참조한다(안 그러면 페이지 열 때마다 폰트 용량까지 매번
+     다시 받게 됨). 못 받아오면 기존 폰트로 자연스럽게 대체된다. */
+  @font-face{
+    font-family:'Binggre';
+    src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Binggrae.woff') format('woff');
+    font-weight:normal;font-display:swap;
+  }
+  @font-face{
+    font-family:'Binggre';
+    src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2110@1.0/Binggrae-Bold.woff2') format('woff2');
+    font-weight:700;font-display:swap;
+  }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
   :root{ --plum:#8B6E9E; }
@@ -38,7 +54,7 @@
     top:100%;left:0;
   }
   body{
-    font-family:'Malgun Gothic','맑은 고딕','Noto Sans KR',-apple-system,sans-serif;
+    font-family:'Binggre','Malgun Gothic','맑은 고딕','Noto Sans KR',-apple-system,sans-serif;
     /* 원래 배경(#FFF9F1)보다 살짝 어둡게(#F5ECDD) 한 뒤, 거기서 10% 더 어둡게 */
     background:#D1C7B7;color:#3E3348;
     -webkit-user-select:none;user-select:none;
@@ -421,7 +437,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v124</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v125</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
