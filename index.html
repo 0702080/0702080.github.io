@@ -152,9 +152,13 @@
   }
   .tile:active::before, .tile.pressing::before{ opacity:.35; }
 
-  /* 태블릿 연결 + 멘트 버튼을 나란히(아래 2x2 타일과 같은 폭으로) */
-  #tvRow{display:flex;gap:12px;}
-  #tvRow>button{flex:1;width:auto;min-width:0;}
+  /* 태블릿 연결 + 멘트 버튼을 나란히, 아래 2x2 타일과 정확히 같은 폭으로.
+     flex:1 은 각 버튼의 padding·border 만큼을 최소 폭으로 먼저 깔고 남는
+     공간만 나눠 갖기 때문에(.sub 는 좌우 padding 18px, .tile 은 10px이라
+     서로 달라) 폭이 미세하게 어긋난다. grid 는 #quickGrid 와 똑같이
+     내용과 무관하게 트랙을 정확히 반으로 나눈다. */
+  #tvRow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  #tvRow>button{width:auto;min-width:0;}
 
   /* "카메라로 찍기" 바로 밑에 뜨는 멘트 한 줄 — 탭하면 다른 멘트로 바뀐다 */
   #mentLine{
@@ -383,7 +387,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v112</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v113</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile enter" id="bMent" style="animation-delay:.07s"><span class="ico">💬</span><span class="tlabel">멘트</span></button>
@@ -1124,7 +1128,7 @@
   function tvStatus(){
     const btn=$('bTvLink');
     if(!data.tvCode){ setBtn(btn,'📺','태블릿'); return; }
-    setBtn(btn,'📺',(TV.isReady()?'태블릿 연결됨 ✓ ':'태블릿 연결 중… ')+data.tvCode);
+    setBtn(btn,'📺',(TV.isReady()?'✓ ':'연결 중… ')+data.tvCode);
   }
   async function tvConnectPhone(){
     if(!data.tvCode) return;
