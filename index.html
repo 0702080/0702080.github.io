@@ -190,15 +190,17 @@
     box-shadow:0 1px 3px rgba(74,59,87,.18), inset 0 5px 11px rgba(132,21,77,.30);
   }
 
-  /* 앱 주소 버튼 색상 — SPRING BLISS 팔레트의 #D9A1C0(더스티 로즈) 기준 */
+  /* 앱 주소 버튼 색상 — "BLUE TURQUOISE" 팔레트 기준. 이 색은 .tile 계열
+     중에서 유독 짙어서(민트/하늘/핑크처럼 파스텔이 아님) 어두운 글자 대신
+     .go(카메라 버튼)와 같은 방식(흰 글자 + brightness 필터로 눌림 표현)을 쓴다 */
   .tile.link{
-    border-color:#ac3978;
-    background:linear-gradient(180deg,#e1b7ce 0%,#db9fc0 52%,#deafc9 84%,#f0dbe7 100%);
+    border-color:#1d5972;
+    background:linear-gradient(180deg,#2a83aa 0%,#246e8f 52%,#2e8fb8 84%,#6bb9da 100%);
+    color:#fff;
   }
   .tile.link:active, .tile.link.pressing{
-    border-color:#86285b;
-    background:linear-gradient(180deg,#da95bb 0%,#d685b1 55%,#d78eb6 100%);
-    box-shadow:0 1px 3px rgba(74,59,87,.18), inset 0 5px 11px rgba(134,40,91,.30);
+    filter:brightness(.88) saturate(1.08);
+    box-shadow:0 1px 3px rgba(60,45,72,.34), inset 0 5px 13px rgba(0,0,0,.36);
   }
 
   /* 태블릿 연결 + 멘트 버튼을 나란히, 아래 2x2 타일과 정확히 같은 폭으로.
@@ -437,7 +439,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v125</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v126</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
