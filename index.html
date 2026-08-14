@@ -184,7 +184,8 @@
 
   /* "카메라로 찍기" 바로 밑에 뜨는 멘트 한 줄 — 탭하면 다른 멘트로 바뀐다 */
   #mentLine{
-    margin-top:8px;font-size:20px;font-weight:700;color:#614878;
+    display:block;width:100%;margin-top:8px;font-size:20px;font-weight:700;color:#614878;
+    font-family:inherit;background:none;border:none;appearance:none;-webkit-appearance:none;
     text-align:center;cursor:pointer;padding:4px 10px;line-height:1.4;
     user-select:none;-webkit-user-select:none;
   }
@@ -409,7 +410,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v121</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v122</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -425,7 +426,7 @@
   </div>
 
   <button class="go enter" id="bShoot" style="animation-delay:.32s"><span class="ico">📷</span>카메라로 찍기</button>
-  <div id="mentLine" title="눌러서 다른 멘트 보기"></div>
+  <button id="mentLine" type="button" title="눌러서 다른 멘트 보기"></button>
 
   <div id="todayWrap">
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
