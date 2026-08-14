@@ -440,7 +440,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v133</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v134</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -787,9 +787,9 @@
     }
 
     function makeCode(){
-      const AB='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // 헷갈리는 O,0,I,1 제외
-      const a=crypto.getRandomValues(new Uint8Array(6));
-      let s=''; for(let i=0;i<6;i++) s+=AB[a[i]%AB.length];
+      const DIGITS='0123456789';
+      const a=crypto.getRandomValues(new Uint8Array(2));
+      let s='TB'; for(let i=0;i<2;i++) s+=DIGITS[a[i]%DIGITS.length];
       return s;
     }
     /* 연결을 진짜로 끊는다. 소켓만 닫는 게 아니라 암호열쇠·토픽까지 버려야
@@ -1212,7 +1212,7 @@
   $('bTvLink').onclick=()=>{
     let v;
     try{
-      v=prompt('태블릿 화면에 떠 있는 6자리 코드를 입력하세요.\n(연결을 끊으려면 비워두고 확인)', data.tvCode||'');
+      v=prompt('태블릿 화면에 떠 있는 코드를 입력하세요.\n(연결을 끊으려면 비워두고 확인)', data.tvCode||'');
     }catch(e){ return; }
     if(v===null) return;
     const c=(v||'').trim().toUpperCase();
