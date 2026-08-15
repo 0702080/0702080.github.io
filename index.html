@@ -389,6 +389,14 @@
     border:none;background:#614878;color:#fff;font-weight:700;font-size:15px;cursor:pointer;
   }
 
+  /* 오늘 찍은 사진 썸네일 → 전체화면 보기. 탭하면 닫힌다 */
+  #thumbView{
+    position:fixed;inset:0;z-index:80;display:none;
+    background:#000;align-items:center;justify-content:center;cursor:pointer;
+  }
+  #thumbView.on{display:flex;}
+  #thumbView img{max-width:100%;max-height:100%;object-fit:contain;}
+
   /* ── 벽걸이 태블릿 확인 화면 (주소 뒤에 #tv 를 붙여서 열기) ── */
   #tv{
     position:fixed;inset:0;z-index:60;display:none;background:#0d0b10;color:#fff;
@@ -465,7 +473,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v141</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v142</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -504,6 +512,9 @@
     <button id="mentClose">닫기</button>
   </div>
 </div>
+
+<!-- 오늘 찍은 사진 썸네일을 폰 화면 전체로 크게 보기 -->
+<div id="thumbView"><img id="thumbViewImg" alt=""></div>
 
 <!-- 사진에 이름표 붙이기 -->
 <div id="editor">
@@ -845,10 +856,16 @@
     const img=document.createElement('img');
     img.src=s.url;
     img.alt=s.name||s.tel||'';
-    img.title='탭하면 태블릿 화면에 다시 크게 띄웁니다';
-    img.onclick=()=>resendToTv(s, img);
+    img.title='탭하면 크게 보고, 태블릿 화면에도 다시 띄웁니다';
+    img.onclick=()=>{
+      $('thumbViewImg').src=s.url;
+      $('thumbView').classList.add('on');
+      resendToTv(s, img);
+    };
     $('todayThumbs').appendChild(img);
   }
+  // 전체화면으로 띄운 사진을 탭하면 다시 앱 화면으로 돌아온다
+  $('thumbView').onclick=()=>$('thumbView').classList.remove('on');
   /* 썸네일을 탭하면 그 사진(이미 이름표가 합성된 최종본)을 다시 태블릿/PC 확인
      화면으로 보낸다 — 방금 찍은 사진을 화면에 크게 다시 띄우고 싶을 때 사용 */
   async function resendToTv(shot, thumbEl){
