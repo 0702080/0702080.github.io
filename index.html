@@ -204,6 +204,15 @@
     box-shadow:0 1px 3px rgba(74,59,87,.18), inset 0 5px 11px rgba(21,65,90,.30);
   }
 
+  /* "사진 카톡 전송" 버튼만 골드/머스터드로 구분 — 이 색은 밝은 편이라
+     .go(카메라 버튼)의 흰 글자 대신 어두운 글자로 바꾼다. 눌림 효과는
+     .go:active 의 brightness 필터를 그대로 재사용(별도 정의 불필요) */
+  .go.share{
+    border-color:#c18d15;
+    background:linear-gradient(180deg,#eec463 0%,#e9b335 52%,#edc15a 84%,#f5dca3 100%);
+    color:#212121;
+  }
+
   /* 태블릿 연결 + 멘트 버튼을 나란히, 아래 2x2 타일과 정확히 같은 폭으로.
      flex:1 은 각 버튼의 padding·border 만큼을 최소 폭으로 먼저 깔고 남는
      공간만 나눠 갖기 때문에(.sub 는 좌우 padding 18px, .tile 은 10px이라
@@ -455,7 +464,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v138</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v139</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -476,7 +485,7 @@
   <div id="todayWrap">
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
     <div id="todayThumbs"></div>
-    <button class="go" id="bShareAll"><span class="ico">📤</span>전체 카톡으로 공유</button>
+    <button class="go share" id="bShareAll"><span class="ico">📤</span>사진 카톡 전송</button>
   </div>
 
   <div id="homeLog" class="hint"></div>
