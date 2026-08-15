@@ -455,7 +455,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v137</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v138</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -996,12 +996,12 @@
         addTodayShot(blob, name, nm, tel);
 
         if(mySeq===saveSeq){
-          $('homeLog').innerHTML='✅ 저장됨 · <b>'+name+'</b><br>(다운로드 폴더)';
+          $('homeLog').innerHTML='';   // 저장 성공 로그는 화면에 안 띄운다(파일은 그대로 저장됨)
         }
-        // 전송 결과는 위 문구가 찍힌 뒤에 덧붙여야 지워지지 않는다
+        // 태블릿 전송이 실패했을 때만 알려준다 — 성공은 태블릿 화면에 뜨는 것 자체가 확인이 됨
         tvSend.then(ok=>{
           if(mySeq!==saveSeq) return;   // 그 사이 더 최근 저장이 로그를 넘겨받았다
-          $('homeLog').innerHTML += ok ? '<br>📺 태블릿에 표시됨' : '<br>⚠ 태블릿 전송 실패 (📺 태블릿 연결 확인)';
+          if(!ok) $('homeLog').innerHTML='⚠ 태블릿 전송 실패 (📺 태블릿 연결 확인)';
         });
 
         // 여러 장을 골랐다면 다음 장으로, 아니면 편집기를 닫는다.
