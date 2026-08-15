@@ -440,7 +440,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v134</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v135</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1231,8 +1231,10 @@
     $('tv').classList.add('on');
     try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
 
-    // 방 코드는 이 태블릿에 계속 저장해 둔다 (매번 바뀌면 폰을 다시 연결해야 하므로)
-    if(!data.tvCode){ data.tvCode=TV.makeCode(); save(); }
+    // 방 코드는 이 태블릿에 계속 저장해 둔다 (매번 바뀌면 폰을 다시 연결해야 하므로).
+    // 다만 예전 형식(GDB988 같은 랜덤 6자)으로 저장된 코드는 새 형식(TB98)이
+    // 아니므로 한 번만 새로 만든다 — 그 뒤엔 폰에서 새 코드를 다시 입력해야 함.
+    if(!data.tvCode || !/^TB\d{2}$/.test(data.tvCode)){ data.tvCode=TV.makeCode(); save(); }
     $('tvCode').textContent=data.tvCode;
 
     /* 코드를 눌러 복사 — PC에서 복사해 폰으로 붙여넣기 쉽게 */
