@@ -357,8 +357,23 @@
   #mentModalInner h2{font-size:18px;margin:0 0 12px;text-align:center;}
   #mentModalInner h3{font-size:14px;color:#614878;margin:18px 0 6px;}
   #mentModalInner h3:first-of-type{margin-top:0;}
-  #mentModalInner p{font-size:15.75px;margin:5px 0;line-height:1.5;cursor:pointer;padding:2px 0;}
+  #mentModalInner p{margin:5px 0;line-height:1.5;padding:2px 0;}
   #mentModalInner p:active{opacity:.5;}
+  .mentRow{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .mentText{cursor:pointer;flex:1;font-size:15.75px;}
+  .mentDel{
+    cursor:pointer;color:#a08fae;font-size:20px;line-height:1;
+    padding:2px 8px;flex-shrink:0;
+  }
+  #mentAddRow{display:flex;gap:8px;margin-bottom:14px;}
+  #mentNewInput{
+    flex:1;min-width:0;padding:10px 12px;border-radius:10px;
+    border:1px solid #d8cfc0;font-size:15px;font-family:inherit;
+  }
+  #mentAddBtn{
+    padding:10px 16px;border-radius:10px;border:none;
+    background:#614878;color:#fff;font-weight:700;font-size:15px;cursor:pointer;flex-shrink:0;
+  }
   #mentClose{
     display:block;width:100%;margin-top:18px;padding:12px;border-radius:14px;
     border:none;background:#614878;color:#fff;font-weight:700;font-size:15px;cursor:pointer;
@@ -440,7 +455,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v136</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v137</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -471,6 +486,10 @@
 <div id="mentModal">
   <div id="mentModalInner">
     <h2>💬 촬영 멘트 모음</h2>
+    <div id="mentAddRow">
+      <input id="mentNewInput" type="text" placeholder="새 멘트 추가" maxlength="30" autocomplete="off" enterkeyhint="done">
+      <button id="mentAddBtn">추가</button>
+    </div>
     <div id="mentList"></div>
     <button id="mentClose">닫기</button>
   </div>
@@ -1071,7 +1090,7 @@
      찍는 순간 툭 던지기 좋은 짧은 멘트. "카메라로 찍기" 밑에 한 줄 무작위로
      보여주고, 탭하면 다른 멘트로 바뀐다. bMent 버튼은 전체 목록(카테고리별)을
      모달로 보여줘서 필요할 때 골라 쓸 수도 있게 한다. */
-  const MENT_DATA=[
+  const MENT_DEFAULT=[
     {cat:'외모·분위기 칭찬', items:[
       '예뻐요!','완전 멋지세요','모델 같아요','빛나시네요','분위기 있으세요',
       '잘 생기셨어요','스타일이 좋아요','딱 화보네요','미소가 예뻐요','눈빛이 살아 있어요',
@@ -1113,9 +1132,14 @@
       '딱 배우 같으세요','아우라가 다르세요','품격이 다르세요','다정한 인상이세요'
     ]}
   ];
-  const MENT_FLAT=MENT_DATA.flatMap(g=>g.items);
+  // 목록은 이제 고정이 아니라 data.ment 에 저장해서 추가·삭제한 게 계속 남게 한다.
+  // 처음 켤 때만 기본 목록(MENT_DEFAULT)으로 채워 넣는다.
+  if(!data.ment){ data.ment=JSON.parse(JSON.stringify(MENT_DEFAULT)); save(); }
+  function mentFlat(){ return data.ment.flatMap(g=>g.items); }
+  let MENT_FLAT=mentFlat();
   let lastMentIdx=-1;
   function showNewMent(){
+    if(!MENT_FLAT.length){ $('mentLine').textContent='💬 멘트를 추가해보세요'; return; }
     let i;
     do{ i=Math.floor(Math.random()*MENT_FLAT.length); }while(i===lastMentIdx && MENT_FLAT.length>1);
     lastMentIdx=i;
@@ -1124,27 +1148,63 @@
   showNewMent();
   $('mentLine').onclick=showNewMent;
 
-  let mentModalBuilt=false;
-  function buildMentModal(){
-    if(mentModalBuilt) return;
-    mentModalBuilt=true;
-    $('mentList').innerHTML=MENT_DATA.map(g=>
-      '<h3>'+g.cat+'</h3>'+g.items.map(p=>'<p>'+p+'</p>').join('')
+  function escHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  // 화면을 최대한 간단하게: 입력칸 하나 + 추가 버튼 하나, 각 멘트 옆에 삭제(×) 하나뿐.
+  function renderMentList(){
+    $('mentList').innerHTML=data.ment.map((g,gi)=>
+      '<h3>'+escHtml(g.cat)+'</h3>'+g.items.map((p,pi)=>
+        '<p class="mentRow" data-g="'+gi+'" data-i="'+pi+'">'+
+          '<span class="mentText">'+escHtml(p)+'</span>'+
+          '<span class="mentDel">×</span>'+
+        '</p>'
+      ).join('')
     ).join('');
-    // 목록에서 멘트를 고르면 그 멘트가 바로 카메라 버튼 밑에 뜨고 모달은 닫힌다
-    $('mentList').querySelectorAll('p').forEach(p=>{
-      p.onclick=()=>{
-        const text=p.textContent;
+    // 문장을 탭하면 그 멘트가 바로 카메라 버튼 밑에 뜨고 모달은 닫힌다
+    $('mentList').querySelectorAll('.mentText').forEach(el=>{
+      el.onclick=()=>{
+        const text=el.textContent;
         lastMentIdx=MENT_FLAT.indexOf(text);
         $('mentLine').textContent='💬 '+text;
         $('mentModal').classList.remove('on');
       };
     });
+    // ×를 탭하면 그 멘트만 삭제 — 확인창 없이 바로 지움(가벼운 문구라 되돌릴 필요 없음)
+    $('mentList').querySelectorAll('.mentDel').forEach(el=>{
+      el.onclick=e=>{
+        e.stopPropagation();
+        const row=el.closest('.mentRow');
+        const gi=+row.dataset.g, pi=+row.dataset.i;
+        data.ment[gi].items.splice(pi,1);
+        if(!data.ment[gi].items.length) data.ment.splice(gi,1);   // 빈 칸으로 남지 않게
+        save();
+        MENT_FLAT=mentFlat();
+        renderMentList();
+      };
+    });
+  }
+  function addMent(){
+    const v=$('mentNewInput').value.trim();
+    if(!v) return;
+    if(!data.ment.length || data.ment[0].cat!=='내가 추가한 멘트'){
+      data.ment.unshift({cat:'내가 추가한 멘트', items:[]});
+    }
+    data.ment[0].items.unshift(v);
+    save();
+    MENT_FLAT=mentFlat();
+    $('mentNewInput').value='';
+    renderMentList();
   }
   $('bMent').onclick=()=>{
-    buildMentModal();
+    renderMentList();
     $('mentModal').classList.add('on');
+    $('mentNewInput').focus();
   };
+  $('mentAddBtn').onclick=addMent;
+  $('mentNewInput').addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); addMent(); }
+  });
   $('mentModal').onclick=e=>{
     if(e.target.id==='mentModal') $('mentModal').classList.remove('on');
   };
