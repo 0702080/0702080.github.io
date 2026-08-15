@@ -434,6 +434,14 @@
     transform-origin:center center;
     -webkit-user-select:none;user-select:none;-webkit-user-drag:none;
   }
+  #thumbDelBtn{
+    position:absolute;top:max(16px,env(safe-area-inset-top));right:16px;z-index:2;
+    width:44px;height:44px;border-radius:50%;border:none;
+    background:rgba(0,0,0,.55);color:#fff;font-size:20px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;opacity:.85;
+  }
+  #thumbDelBtn:active{opacity:1;background:rgba(0,0,0,.75);}
 
   /* ── 벽걸이 태블릿 확인 화면 (주소 뒤에 #tv 를 붙여서 열기) ── */
   #tv{
@@ -511,7 +519,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v149</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v150</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -552,11 +560,14 @@
 </div>
 
 <!-- 오늘 찍은 사진 썸네일을 폰 화면 전체로 크게 보기 -->
-<div id="thumbView"><div id="thumbViewInner"><div id="thumbTrack">
-  <div class="thumbSlot"><img id="thumbImgPrev" alt=""></div>
-  <div class="thumbSlot"><img id="thumbImgCur" alt=""></div>
-  <div class="thumbSlot"><img id="thumbImgNext" alt=""></div>
-</div></div></div>
+<div id="thumbView">
+  <button id="thumbDelBtn" title="이 사진을 오늘 목록에서 지웁니다(다운로드 폴더의 파일은 그대로 남아요)">🗑️</button>
+  <div id="thumbViewInner"><div id="thumbTrack">
+    <div class="thumbSlot"><img id="thumbImgPrev" alt=""></div>
+    <div class="thumbSlot"><img id="thumbImgCur" alt=""></div>
+    <div class="thumbSlot"><img id="thumbImgNext" alt=""></div>
+  </div></div>
+</div>
 
 <!-- 사진에 이름표 붙이기 -->
 <div id="editor">
@@ -989,6 +1000,26 @@
     openThumbView(s.url);
     resendToTv(s, thumbEl);
   }
+  /* 지금 전체화면으로 보고 있는 사진을 "오늘 찍은 사진" 목록에서 지운다.
+     다운로드 폴더에 이미 저장된 파일 자체는 브라우저가 건드릴 수 없어서
+     그대로 남는다 — 여기서 지우는 건 이 세션 안에서의 목록·미리보기뿐. */
+  function deleteCurrentThumb(){
+    const i=thumbViewIndex;
+    if(i<0 || i>=todaysShots.length) return;
+    const [removed]=todaysShots.splice(i,1);
+    URL.revokeObjectURL(removed.url);
+    const thumbEl=document.querySelectorAll('#todayThumbs img')[i];
+    if(thumbEl) thumbEl.remove();
+    // 남은 썸네일이 한 칸씩 당겨졌으니 각자의 탭 핸들러도 새 순번으로 다시 건다
+    [...document.querySelectorAll('#todayThumbs img')].forEach((el, idx)=>{ el.onclick=()=>openThumbAt(idx); });
+    $('todayCount').textContent=todaysShots.length;
+    if(!todaysShots.length){
+      $('todayWrap').classList.remove('show');
+      thumbView.classList.remove('on');   // 더 볼 사진이 없으면 전체화면도 닫는다
+      return;
+    }
+    openThumbAt(Math.min(i, todaysShots.length-1));   // 남은 사진 중 이어서 보여준다(태블릿도 같이 바뀜)
+  }
 
   const tvwPts=new Map();
   let tvwPanning=false, tvwLastX=0, tvwLastY=0, tvwPinchD=0, tvwPinchS=1;
@@ -1092,6 +1123,14 @@
     if(tvw_sc>1.01) return;
     thumbView.classList.remove('on');
   };
+
+  // 삭제 버튼은 사진 위에 떠 있는 별도 버튼이라, 눌렀을 때 그 아래
+  // 드래그·탭 처리(닫기 등)까지 같이 반응하지 않게 이벤트를 여기서 끊는다.
+  $('thumbDelBtn').addEventListener('pointerdown', e=>e.stopPropagation());
+  $('thumbDelBtn').addEventListener('click', e=>{
+    e.stopPropagation();
+    deleteCurrentThumb();
+  });
 
   function appendTodayThumb(s, idx){
     const img=document.createElement('img');
