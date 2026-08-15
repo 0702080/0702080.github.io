@@ -389,13 +389,20 @@
     border:none;background:#614878;color:#fff;font-weight:700;font-size:15px;cursor:pointer;
   }
 
-  /* 오늘 찍은 사진 썸네일 → 전체화면 보기. 탭하면 닫힌다 */
+  /* 오늘 찍은 사진 썸네일 → 전체화면 보기. 확대 안 됐을 때 탭하면 닫힌다.
+     핀치줌·끌기는 태블릿 확인 화면과 같은 방식(포인터 이벤트 직접 처리)이라
+     터치액션을 꺼서 브라우저 기본 확대/스크롤과 겹치지 않게 한다 */
   #thumbView{
     position:fixed;inset:0;z-index:80;display:none;
     background:#000;align-items:center;justify-content:center;cursor:pointer;
+    touch-action:none;
   }
   #thumbView.on{display:flex;}
-  #thumbView img{max-width:100%;max-height:100%;object-fit:contain;}
+  #thumbView img{
+    max-width:100%;max-height:100%;object-fit:contain;
+    transform-origin:center center;
+    -webkit-user-select:none;user-select:none;-webkit-user-drag:none;
+  }
 
   /* ── 벽걸이 태블릿 확인 화면 (주소 뒤에 #tv 를 붙여서 열기) ── */
   #tv{
@@ -473,7 +480,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v142</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v143</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -852,20 +859,94 @@
   /* 사진마다 objectURL을 딱 한 번만 만들어 재사용한다. 예전엔 사진을 찍을 때마다
      그동안 찍은 것 전체를 처음부터 다시 그리면서 이미 만들어둔 URL까지 매번
      새로 만들어(회수도 안 됨) N장이면 URL이 N²/2개씩 쌓이는 누수가 있었다. */
+  /* ───── 오늘 찍은 사진 전체화면 보기 — 핀치로 확대/축소, 확대 중엔 끌어서 이동 ─────
+     태블릿 확인 화면(#tvStage)의 핀치줌 구현과 같은 방식(포인터 이벤트로
+     한 손가락=이동, 두 손가락=핀치)을 그대로 재사용한다. */
+  const thumbView=$('thumbView'), thumbImg=$('thumbViewImg');
+  let tvw_sc=1, tvw_tx=0, tvw_ty=0;
+  const TVW_MIN=1, TVW_MAX=6;
+  function thumbApplyTf(){
+    thumbImg.style.transform='translate('+tvw_tx+'px,'+tvw_ty+'px) scale('+tvw_sc+')';
+  }
+  function thumbClampPan(){
+    const st=thumbView.getBoundingClientRect();
+    const w=thumbImg.clientWidth*tvw_sc, h=thumbImg.clientHeight*tvw_sc;
+    const mx=Math.max(0,(w-st.width)/2), my=Math.max(0,(h-st.height)/2);
+    tvw_tx=Math.min(mx,Math.max(-mx,tvw_tx));
+    tvw_ty=Math.min(my,Math.max(-my,tvw_ty));
+  }
+  function thumbZoomAt(px,py,next){
+    const st=thumbView.getBoundingClientRect();
+    const ox=px-st.left-st.width/2, oy=py-st.top-st.height/2;
+    const s2=Math.min(TVW_MAX,Math.max(TVW_MIN,next));
+    const u=(ox-tvw_tx)/tvw_sc, v=(oy-tvw_ty)/tvw_sc;
+    tvw_tx=ox-u*s2; tvw_ty=oy-v*s2; tvw_sc=s2;
+    if(tvw_sc<=1.001){ tvw_sc=1; tvw_tx=0; tvw_ty=0; }
+    thumbClampPan(); thumbApplyTf();
+  }
+  function thumbResetZoom(){ tvw_sc=1; tvw_tx=0; tvw_ty=0; thumbApplyTf(); }
+  function openThumbView(url){
+    thumbImg.src=url;
+    thumbResetZoom();               // 새로 열 때마다 항상 원래 크기부터
+    thumbView.classList.add('on');
+  }
+
+  const tvwPts=new Map();
+  let tvwPanning=false, tvwLastX=0, tvwLastY=0, tvwPinchD=0, tvwPinchS=1;
+  thumbView.addEventListener('pointerdown', e=>{
+    try{ thumbView.setPointerCapture(e.pointerId); }catch(err){}
+    tvwPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(tvwPts.size===1){ tvwPanning=true; tvwLastX=e.clientX; tvwLastY=e.clientY; }
+    else if(tvwPts.size===2){
+      tvwPanning=false;
+      const [a,b]=[...tvwPts.values()];
+      tvwPinchD=Math.hypot(a.x-b.x,a.y-b.y); tvwPinchS=tvw_sc;
+    }
+  });
+  thumbView.addEventListener('pointermove', e=>{
+    if(!tvwPts.has(e.pointerId)) return;
+    tvwPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(tvwPts.size===2 && tvwPinchD>0){
+      const [a,b]=[...tvwPts.values()];
+      const d=Math.hypot(a.x-b.x,a.y-b.y);
+      thumbZoomAt((a.x+b.x)/2,(a.y+b.y)/2, tvwPinchS*(d/tvwPinchD));
+    }else if(tvwPanning && tvw_sc>1.01){
+      tvw_tx+=e.clientX-tvwLastX; tvw_ty+=e.clientY-tvwLastY;
+      tvwLastX=e.clientX; tvwLastY=e.clientY;
+      thumbClampPan(); thumbApplyTf();
+    }
+  });
+  function thumbEndPt(e){
+    tvwPts.delete(e.pointerId);
+    if(tvwPts.size<2) tvwPinchD=0;
+    if(tvwPts.size===1){
+      const p=[...tvwPts.values()][0];
+      tvwPanning=true; tvwLastX=p.x; tvwLastY=p.y;
+    }
+    if(tvwPts.size===0) tvwPanning=false;
+  }
+  thumbView.addEventListener('pointerup', thumbEndPt);
+  thumbView.addEventListener('pointercancel', thumbEndPt);
+
+  // 확대 안 된 상태에서 탭하면 닫힌다. 확대 중엔 끌던 손가락이 실수로
+  // 창을 닫아버리지 않게 탭으로 안 닫히게 한다(축소 버튼 대신 다시
+  // 핀치로 줄이거나 썸네일을 다시 눌러서 원래 크기로 열면 됨).
+  thumbView.onclick=()=>{
+    if(tvw_sc>1.01) return;
+    thumbView.classList.remove('on');
+  };
+
   function appendTodayThumb(s){
     const img=document.createElement('img');
     img.src=s.url;
     img.alt=s.name||s.tel||'';
     img.title='탭하면 크게 보고, 태블릿 화면에도 다시 띄웁니다';
     img.onclick=()=>{
-      $('thumbViewImg').src=s.url;
-      $('thumbView').classList.add('on');
+      openThumbView(s.url);
       resendToTv(s, img);
     };
     $('todayThumbs').appendChild(img);
   }
-  // 전체화면으로 띄운 사진을 탭하면 다시 앱 화면으로 돌아온다
-  $('thumbView').onclick=()=>$('thumbView').classList.remove('on');
   /* 썸네일을 탭하면 그 사진(이미 이름표가 합성된 최종본)을 다시 태블릿/PC 확인
      화면으로 보낸다 — 방금 찍은 사진을 화면에 크게 다시 띄우고 싶을 때 사용 */
   async function resendToTv(shot, thumbEl){
