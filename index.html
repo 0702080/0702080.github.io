@@ -397,17 +397,42 @@
   /* 오늘 찍은 사진 썸네일 → 전체화면 보기. 확대 안 됐을 때 탭하면 닫힌다.
      핀치줌·끌기는 태블릿 확인 화면과 같은 방식(포인터 이벤트 직접 처리)이라
      터치액션을 꺼서 브라우저 기본 확대/스크롤과 겹치지 않게 한다 */
+  /* 열고 닫힐 때: 배경이 페이드인되면서 사진 영역이 살짝 커지며 나타난다.
+     #thumbViewImg 자체의 transform 은 핀치줌이 실시간으로 직접 조작하므로
+     (JS가 매번 인라인 style 로 덮어씀) 여기에 CSS 트랜지션을 걸면 서로
+     부딪힌다 — 그래서 열림 애니메이션은 감싸는 #thumbViewInner 에 준다. */
   #thumbView{
-    position:fixed;inset:0;z-index:80;display:none;
-    background:#000;align-items:center;justify-content:center;cursor:pointer;
+    position:fixed;inset:0;z-index:80;
+    background:#000;display:flex;align-items:center;justify-content:center;cursor:pointer;
     touch-action:none;
+    opacity:0;pointer-events:none;
+    transition:opacity .22s ease;
   }
-  #thumbView.on{display:flex;}
+  #thumbView.on{opacity:1;pointer-events:auto;}
+  #thumbViewInner{
+    width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    transform:scale(.92);
+    transition:transform .22s cubic-bezier(.22,1,.36,1);
+  }
+  #thumbView.on #thumbViewInner{transform:scale(1);}
   #thumbView img{
     max-width:100%;max-height:100%;object-fit:contain;
     transform-origin:center center;
     -webkit-user-select:none;user-select:none;-webkit-user-drag:none;
   }
+  /* 전체화면 안에서 좌우로 넘길 때: 새 사진이 넘긴 방향에서 슬라이드되며
+     들어온다. 애니메이션이 끝나면(animationend) 클래스를 떼어내서 그 뒤로는
+     핀치줌의 인라인 transform 이 다시 온전히 제어하게 한다. */
+  @keyframes thumbSlideNext{
+    from{ transform:translateX(50px); opacity:.3; }
+    to{ transform:translateX(0); opacity:1; }
+  }
+  @keyframes thumbSlidePrev{
+    from{ transform:translateX(-50px); opacity:.3; }
+    to{ transform:translateX(0); opacity:1; }
+  }
+  #thumbView img.slideNext{animation:thumbSlideNext .2s ease-out;}
+  #thumbView img.slidePrev{animation:thumbSlidePrev .2s ease-out;}
 
   /* ── 벽걸이 태블릿 확인 화면 (주소 뒤에 #tv 를 붙여서 열기) ── */
   #tv{
@@ -485,7 +510,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v147</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v148</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -526,7 +551,7 @@
 </div>
 
 <!-- 오늘 찍은 사진 썸네일을 폰 화면 전체로 크게 보기 -->
-<div id="thumbView"><img id="thumbViewImg" alt=""></div>
+<div id="thumbView"><div id="thumbViewInner"><img id="thumbViewImg" alt=""></div></div>
 
 <!-- 사진에 이름표 붙이기 -->
 <div id="editor">
@@ -922,28 +947,39 @@
     thumbClampPan(); thumbApplyTf();
   }
   function thumbResetZoom(){ tvw_sc=1; tvw_tx=0; tvw_ty=0; thumbApplyTf(); }
-  function openThumbView(url){
+  /* dir 이 있으면('next'/'prev') 그 방향에서 슬라이드해 들어오는 전환
+     애니메이션을 준다 — 좌우로 넘겨서 열었을 때만 쓰고, 썸네일을 처음
+     탭해서 여는 경우엔 dir 없이 불러 배경 페이드+확대만 보여준다. */
+  function openThumbView(url, dir){
     thumbImg.src=url;
     thumbResetZoom();               // 새로 열 때마다 항상 원래 크기부터
     thumbView.classList.add('on');
+    thumbImg.classList.remove('slideNext','slidePrev');
+    if(dir){
+      void thumbImg.offsetWidth;   // 강제 리플로우 — 같은 방향으로 연달아 넘겨도 매번 다시 재생되게
+      thumbImg.classList.add(dir==='next' ? 'slideNext' : 'slidePrev');
+    }
   }
+  thumbImg.addEventListener('animationend', ()=>{
+    thumbImg.classList.remove('slideNext','slidePrev');
+  });
   /* 오늘 찍은 사진 중 i번째를 전체화면으로 열고 태블릿에도 보낸다.
      썸네일 탭·전체화면 안에서 좌우로 넘기기·홈 화면 스와이프가 전부
      이 하나로 모인다 — "지금 크게 보고 있는 사진 = 태블릿에 뜬 사진"이라는
      규칙을 어디서 열든 항상 똑같이 지키기 위해서다. */
   let thumbViewIndex=-1;
-  function openThumbAt(i){
+  function openThumbAt(i, dir){
     if(i<0 || i>=todaysShots.length) return;
     thumbViewIndex=i;
     const s=todaysShots[i];
     const thumbEl=document.querySelectorAll('#todayThumbs img')[i];
-    openThumbView(s.url);
+    openThumbView(s.url, dir);
     resendToTv(s, thumbEl);
   }
 
   const tvwPts=new Map();
   let tvwPanning=false, tvwLastX=0, tvwLastY=0, tvwPinchD=0, tvwPinchS=1;
-  let tvwStartX=0, tvwStartY=0, tvwStartSc=1, tvwJustSwiped=false;
+  let tvwStartX=0, tvwStartY=0, tvwStartSc=1, tvwJustSwiped=false, tvwWasMulti=false;
   thumbView.addEventListener('pointerdown', e=>{
     try{ thumbView.setPointerCapture(e.pointerId); }catch(err){}
     tvwPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -951,9 +987,13 @@
       tvwPanning=true; tvwLastX=e.clientX; tvwLastY=e.clientY;
       tvwStartX=e.clientX; tvwStartY=e.clientY; tvwStartSc=tvw_sc;
       tvwJustSwiped=false;   // 새 손가락질이 시작됐으니 이전 스와이프 흔적은 지운다
+      tvwWasMulti=false;     // 완전히 새 손가락질 — 이전 두 손가락 흔적도 지운다
     }
     else if(tvwPts.size===2){
       tvwPanning=false;
+      tvwWasMulti=true;      // 두 손가락을 거쳤다는 걸 기억해 둔다 — 손가락을
+                              // 하나씩 떼면 마지막 손가락만 남는 순간이 오는데,
+                              // 그걸 새 한 손가락 스와이프로 착각하면 안 된다
       const [a,b]=[...tvwPts.values()];
       tvwPinchD=Math.hypot(a.x-b.x,a.y-b.y); tvwPinchS=tvw_sc;
     }
@@ -975,7 +1015,7 @@
      대각선이 아니라 확실히 가로 방향) 갤러리 앱처럼 옆 사진으로 넘어간다.
      이때는 탭으로 닫는 동작이 같이 발동하지 않게 tvwJustSwiped 로 막는다. */
   function thumbEndPt(e){
-    const wasLoneFinger=tvwPts.size===1 && tvwStartSc<=1.01;
+    const wasLoneFinger=tvwPts.size===1 && tvwStartSc<=1.01 && !tvwWasMulti;
     const endX=e.clientX, endY=e.clientY;
     tvwPts.delete(e.pointerId);
     if(tvwPts.size<2) tvwPinchD=0;
@@ -989,7 +1029,7 @@
         const dx=endX-tvwStartX, dy=endY-tvwStartY;
         if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.5){
           tvwJustSwiped=true;
-          if(dx<0) openThumbAt(thumbViewIndex+1); else openThumbAt(thumbViewIndex-1);
+          if(dx<0) openThumbAt(thumbViewIndex+1, 'next'); else openThumbAt(thumbViewIndex-1, 'prev');
         }
       }
     }
