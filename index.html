@@ -465,7 +465,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v140</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v141</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1209,7 +1209,8 @@
   $('bMent').onclick=()=>{
     renderMentList();
     $('mentModal').classList.add('on');
-    $('mentNewInput').focus();
+    // 자동 포커스를 주면 모달이 열리자마자 키보드가 확 튀어나와 화면을 절반쯤
+    // 가려버린다. 직접 입력칸을 눌렀을 때만 키보드가 뜨게 자동 포커스는 안 준다.
   };
   $('mentAddBtn').onclick=addMent;
   $('mentNewInput').addEventListener('keydown', e=>{
