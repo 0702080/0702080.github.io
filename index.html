@@ -415,24 +415,25 @@
     transition:transform .22s cubic-bezier(.22,1,.36,1);
   }
   #thumbView.on #thumbViewInner{transform:scale(1);}
+  /* 이전/현재/다음 사진을 옆으로 나란히 두고(전체 폭 300%) 평소엔 가운데
+     칸(현재 사진)만 보이게 -33.3333%(=자기 폭의 1/3 = 화면 폭 1칸) 만큼
+     당겨둔다. 손가락으로 끄는 동안엔 여기에 픽셀 값을 더해서 옆 사진의
+     테두리(이음매)가 손가락을 따라 실시간으로 같이 끌려 나오게 하고,
+     손을 떼면 넘어가거나(칸 하나 더 이동) 제자리로 돌아온다(트랜지션).
+     드래그하는 동안엔 .dragging 으로 트랜지션을 꺼서 손가락에 바로바로
+     반응하게 하고, 넘어가거나 되돌아갈 때만 트랜지션을 켠다. */
+  #thumbTrack{
+    display:flex;width:300%;height:100%;
+    transform:translateX(-33.3333%);
+  }
+  #thumbTrack.dragging{transition:none;}
+  #thumbTrack:not(.dragging){transition:transform .32s cubic-bezier(.22,1,.36,1);}
+  .thumbSlot{width:33.3333%;height:100%;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
   #thumbView img{
     max-width:100%;max-height:100%;object-fit:contain;
     transform-origin:center center;
     -webkit-user-select:none;user-select:none;-webkit-user-drag:none;
   }
-  /* 전체화면 안에서 좌우로 넘길 때: 새 사진이 넘긴 방향에서 슬라이드되며
-     들어온다. 애니메이션이 끝나면(animationend) 클래스를 떼어내서 그 뒤로는
-     핀치줌의 인라인 transform 이 다시 온전히 제어하게 한다. */
-  @keyframes thumbSlideNext{
-    from{ transform:translateX(50px); opacity:.3; }
-    to{ transform:translateX(0); opacity:1; }
-  }
-  @keyframes thumbSlidePrev{
-    from{ transform:translateX(-50px); opacity:.3; }
-    to{ transform:translateX(0); opacity:1; }
-  }
-  #thumbView img.slideNext{animation:thumbSlideNext .2s ease-out;}
-  #thumbView img.slidePrev{animation:thumbSlidePrev .2s ease-out;}
 
   /* ── 벽걸이 태블릿 확인 화면 (주소 뒤에 #tv 를 붙여서 열기) ── */
   #tv{
@@ -510,7 +511,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v148</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v149</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -551,7 +552,11 @@
 </div>
 
 <!-- 오늘 찍은 사진 썸네일을 폰 화면 전체로 크게 보기 -->
-<div id="thumbView"><div id="thumbViewInner"><img id="thumbViewImg" alt=""></div></div>
+<div id="thumbView"><div id="thumbViewInner"><div id="thumbTrack">
+  <div class="thumbSlot"><img id="thumbImgPrev" alt=""></div>
+  <div class="thumbSlot"><img id="thumbImgCur" alt=""></div>
+  <div class="thumbSlot"><img id="thumbImgNext" alt=""></div>
+</div></div></div>
 
 <!-- 사진에 이름표 붙이기 -->
 <div id="editor">
@@ -909,7 +914,8 @@
   /* ───── 오늘 찍은 사진 전체화면 보기 — 핀치로 확대/축소, 확대 중엔 끌어서 이동 ─────
      태블릿 확인 화면(#tvStage)의 핀치줌 구현과 같은 방식(포인터 이벤트로
      한 손가락=이동, 두 손가락=핀치)을 그대로 재사용한다. */
-  const thumbView=$('thumbView'), thumbImg=$('thumbViewImg');
+  const thumbView=$('thumbView'), thumbTrack=$('thumbTrack');
+  const thumbImgPrev=$('thumbImgPrev'), thumbImg=$('thumbImgCur'), thumbImgNext=$('thumbImgNext');
   let tvw_sc=1, tvw_tx=0, tvw_ty=0;
   const TVW_MIN=1, TVW_MAX=6;
   function thumbApplyTf(){
@@ -947,39 +953,47 @@
     thumbClampPan(); thumbApplyTf();
   }
   function thumbResetZoom(){ tvw_sc=1; tvw_tx=0; tvw_ty=0; thumbApplyTf(); }
-  /* dir 이 있으면('next'/'prev') 그 방향에서 슬라이드해 들어오는 전환
-     애니메이션을 준다 — 좌우로 넘겨서 열었을 때만 쓰고, 썸네일을 처음
-     탭해서 여는 경우엔 dir 없이 불러 배경 페이드+확대만 보여준다. */
-  function openThumbView(url, dir){
+  /* 옆 칸(이전/다음)에 실제로 그 방향의 사진이 있으면 채우고, 없으면
+     src 자체를 지운다("" 로 비우면 일부 브라우저가 페이지 자신을 이미지로
+     다시 요청해버리는 부작용이 있어 removeAttribute 를 쓴다) — 그래야
+     목록 끝에서 당겨도 깨진 이미지가 살짝 비치는 일이 없다. */
+  function thumbFillNeighbors(){
+    if(thumbViewIndex>0) thumbImgPrev.src=todaysShots[thumbViewIndex-1].url;
+    else thumbImgPrev.removeAttribute('src');
+    if(thumbViewIndex<todaysShots.length-1) thumbImgNext.src=todaysShots[thumbViewIndex+1].url;
+    else thumbImgNext.removeAttribute('src');
+  }
+  function thumbTrackSnapInstant(){
+    thumbTrack.classList.add('dragging');      // 트랜지션 없이 즉시 이동
+    thumbTrack.style.transform='translateX(-33.3333%)';
+    void thumbTrack.offsetWidth;
+    thumbTrack.classList.remove('dragging');
+  }
+  function openThumbView(url){
     thumbImg.src=url;
     thumbResetZoom();               // 새로 열 때마다 항상 원래 크기부터
+    thumbTrackSnapInstant();
     thumbView.classList.add('on');
-    thumbImg.classList.remove('slideNext','slidePrev');
-    if(dir){
-      void thumbImg.offsetWidth;   // 강제 리플로우 — 같은 방향으로 연달아 넘겨도 매번 다시 재생되게
-      thumbImg.classList.add(dir==='next' ? 'slideNext' : 'slidePrev');
-    }
   }
-  thumbImg.addEventListener('animationend', ()=>{
-    thumbImg.classList.remove('slideNext','slidePrev');
-  });
   /* 오늘 찍은 사진 중 i번째를 전체화면으로 열고 태블릿에도 보낸다.
-     썸네일 탭·전체화면 안에서 좌우로 넘기기·홈 화면 스와이프가 전부
-     이 하나로 모인다 — "지금 크게 보고 있는 사진 = 태블릿에 뜬 사진"이라는
-     규칙을 어디서 열든 항상 똑같이 지키기 위해서다. */
+     썸네일 탭·홈 화면 스와이프가 이 하나로 모인다 — "지금 크게 보고 있는
+     사진 = 태블릿에 뜬 사진"이라는 규칙을 어디서 열든 똑같이 지키기 위해서다.
+     (전체화면 안에서 좌우로 끌어 넘기는 건 아래 드래그-트랙 쪽에서 따로 처리) */
   let thumbViewIndex=-1;
-  function openThumbAt(i, dir){
+  function openThumbAt(i){
     if(i<0 || i>=todaysShots.length) return;
     thumbViewIndex=i;
     const s=todaysShots[i];
     const thumbEl=document.querySelectorAll('#todayThumbs img')[i];
-    openThumbView(s.url, dir);
+    thumbFillNeighbors();
+    openThumbView(s.url);
     resendToTv(s, thumbEl);
   }
 
   const tvwPts=new Map();
   let tvwPanning=false, tvwLastX=0, tvwLastY=0, tvwPinchD=0, tvwPinchS=1;
   let tvwStartX=0, tvwStartY=0, tvwStartSc=1, tvwJustSwiped=false, tvwWasMulti=false;
+  let thumbTrackPendingDir=0;   // 손을 뗀 뒤 트랙이 다음/이전 칸으로 이동 중이면 1/-1
   thumbView.addEventListener('pointerdown', e=>{
     try{ thumbView.setPointerCapture(e.pointerId); }catch(err){}
     tvwPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -988,6 +1002,7 @@
       tvwStartX=e.clientX; tvwStartY=e.clientY; tvwStartSc=tvw_sc;
       tvwJustSwiped=false;   // 새 손가락질이 시작됐으니 이전 스와이프 흔적은 지운다
       tvwWasMulti=false;     // 완전히 새 손가락질 — 이전 두 손가락 흔적도 지운다
+      if(tvw_sc<=1.01) thumbTrack.classList.add('dragging');   // 손가락을 바로 따라가게 트랜지션 끔
     }
     else if(tvwPts.size===2){
       tvwPanning=false;
@@ -1009,11 +1024,21 @@
       tvw_tx+=e.clientX-tvwLastX; tvw_ty+=e.clientY-tvwLastY;
       tvwLastX=e.clientX; tvwLastY=e.clientY;
       thumbClampPan(); thumbApplyTf();
+    }else if(tvwPanning && tvw_sc<=1.01 && tvwPts.size===1){
+      /* 확대 안 된 상태에서 한 손가락으로 끄는 중 — 옆 사진의 이음매(테두리)가
+         손가락을 그대로 따라오게 트랙을 실시간으로 옮긴다. 더 넘길 사진이
+         없는 방향이면 고무줄처럼 30%만 딸려오게 해서 "여기가 끝"임을 알려준다. */
+      let dx=e.clientX-tvwStartX;
+      const canNext=thumbViewIndex<todaysShots.length-1, canPrev=thumbViewIndex>0;
+      if(dx<0 && !canNext) dx*=.3;
+      if(dx>0 && !canPrev) dx*=.3;
+      thumbTrack.style.transform='translateX(calc(-33.3333% + '+dx+'px))';
     }
   });
-  /* 확대 안 된(1배) 상태에서 한 손가락으로 크게 옆으로 훑으면(좌우 70px 이상,
-     대각선이 아니라 확실히 가로 방향) 갤러리 앱처럼 옆 사진으로 넘어간다.
-     이때는 탭으로 닫는 동작이 같이 발동하지 않게 tvwJustSwiped 로 막는다. */
+  /* 손을 뗀 뒤: 확실히 옆으로(70px 이상, 대각선 아님) 끌었고 그 방향에
+     넘길 사진이 있으면 트랙을 한 칸 더 이동시켜 완전히 넘기고, 아니면
+     제자리로 돌아온다. 실제 사진 전환(썸네일 갱신·태블릿 전송)은
+     이동 애니메이션이 끝난 뒤 transitionend 에서 한다. */
   function thumbEndPt(e){
     const wasLoneFinger=tvwPts.size===1 && tvwStartSc<=1.01 && !tvwWasMulti;
     const endX=e.clientX, endY=e.clientY;
@@ -1027,15 +1052,37 @@
       tvwPanning=false; thumbSyncXf(true);
       if(wasLoneFinger){
         const dx=endX-tvwStartX, dy=endY-tvwStartY;
-        if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.5){
+        const isSwipe=Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.5;
+        const goNext=isSwipe && dx<0 && thumbViewIndex<todaysShots.length-1;
+        const goPrev=isSwipe && dx>0 && thumbViewIndex>0;
+        thumbTrack.classList.remove('dragging');   // 트랜지션을 켜서 아래 이동이 애니메이션되게
+        if(goNext || goPrev){
           tvwJustSwiped=true;
-          if(dx<0) openThumbAt(thumbViewIndex+1, 'next'); else openThumbAt(thumbViewIndex-1, 'prev');
+          thumbTrackPendingDir=goNext?1:-1;
+          thumbTrack.style.transform=goNext ? 'translateX(-66.6667%)' : 'translateX(0%)';
+        }else{
+          thumbTrack.style.transform='translateX(-33.3333%)';   // 제자리로 스프링백
         }
+      }else{
+        thumbTrack.classList.remove('dragging');
+        thumbTrack.style.transform='translateX(-33.3333%)';
       }
     }
   }
   thumbView.addEventListener('pointerup', thumbEndPt);
   thumbView.addEventListener('pointercancel', thumbEndPt);
+  thumbTrack.addEventListener('transitionend', e=>{
+    if(e.propertyName!=='transform' || !thumbTrackPendingDir) return;
+    const dir=thumbTrackPendingDir; thumbTrackPendingDir=0;
+    const newIndex=thumbViewIndex+dir;
+    thumbViewIndex=newIndex;
+    const s=todaysShots[newIndex];
+    thumbImg.src=s.url;
+    thumbResetZoom();
+    thumbFillNeighbors();
+    thumbTrackSnapInstant();       // 겉보기엔 계속 이어서 움직인 것처럼, 속으론 가운데 칸으로 순간 복귀
+    resendToTv(s, document.querySelectorAll('#todayThumbs img')[newIndex]);
+  });
 
   // 확대 안 된 상태에서 탭하면 닫힌다. 확대 중엔 끌던 손가락이 실수로
   // 창을 닫아버리지 않게 탭으로 안 닫히게 한다(축소 버튼 대신 다시
