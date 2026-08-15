@@ -485,7 +485,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v146</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v147</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1025,9 +1025,12 @@
   $('home').addEventListener('pointerup', e=>{
     if(e.pointerId!==homeSwipeId) return;
     homeSwipeId=null;
-    if(!todaysShots.length) return;
     const dx=e.clientX-homeSwipeStartX, dy=e.clientY-homeSwipeStartY;
-    if(dx<-70 && Math.abs(dx)>Math.abs(dy)*1.5) openThumbAt(todaysShots.length-1);
+    if(!(dx<-70 && Math.abs(dx)>Math.abs(dy)*1.5)) return;   // 스와이프가 아니면 조용히 무시
+    // "사진이 없어서 조용히 아무 일도 안 일어남"과 "손짓 자체가 안 먹힘"을
+    // 구분할 수 있게, 사진이 없을 때도 뭔가 인식은 됐다는 걸 보여준다.
+    if(!todaysShots.length){ $('homeLog').textContent='오늘 찍은 사진이 아직 없어요'; return; }
+    openThumbAt(todaysShots.length-1);
   }, {passive:true});
   // 브라우저가 제스처를 도중에 가로채면(뒤로가기 등) pointerup 이 안 오고
   // 이게 대신 온다 — 다음 손가락질을 위해 상태만 정리한다
