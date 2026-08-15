@@ -480,7 +480,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v144</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v145</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -922,13 +922,31 @@
     thumbResetZoom();               // 새로 열 때마다 항상 원래 크기부터
     thumbView.classList.add('on');
   }
+  /* 오늘 찍은 사진 중 i번째를 전체화면으로 열고 태블릿에도 보낸다.
+     썸네일 탭·전체화면 안에서 좌우로 넘기기·홈 화면 스와이프가 전부
+     이 하나로 모인다 — "지금 크게 보고 있는 사진 = 태블릿에 뜬 사진"이라는
+     규칙을 어디서 열든 항상 똑같이 지키기 위해서다. */
+  let thumbViewIndex=-1;
+  function openThumbAt(i){
+    if(i<0 || i>=todaysShots.length) return;
+    thumbViewIndex=i;
+    const s=todaysShots[i];
+    const thumbEl=document.querySelectorAll('#todayThumbs img')[i];
+    openThumbView(s.url);
+    resendToTv(s, thumbEl);
+  }
 
   const tvwPts=new Map();
   let tvwPanning=false, tvwLastX=0, tvwLastY=0, tvwPinchD=0, tvwPinchS=1;
+  let tvwStartX=0, tvwStartY=0, tvwStartSc=1, tvwJustSwiped=false;
   thumbView.addEventListener('pointerdown', e=>{
     try{ thumbView.setPointerCapture(e.pointerId); }catch(err){}
     tvwPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(tvwPts.size===1){ tvwPanning=true; tvwLastX=e.clientX; tvwLastY=e.clientY; }
+    if(tvwPts.size===1){
+      tvwPanning=true; tvwLastX=e.clientX; tvwLastY=e.clientY;
+      tvwStartX=e.clientX; tvwStartY=e.clientY; tvwStartSc=tvw_sc;
+      tvwJustSwiped=false;   // 새 손가락질이 시작됐으니 이전 스와이프 흔적은 지운다
+    }
     else if(tvwPts.size===2){
       tvwPanning=false;
       const [a,b]=[...tvwPts.values()];
@@ -948,14 +966,28 @@
       thumbClampPan(); thumbApplyTf();
     }
   });
+  /* 확대 안 된(1배) 상태에서 한 손가락으로 크게 옆으로 훑으면(좌우 70px 이상,
+     대각선이 아니라 확실히 가로 방향) 갤러리 앱처럼 옆 사진으로 넘어간다.
+     이때는 탭으로 닫는 동작이 같이 발동하지 않게 tvwJustSwiped 로 막는다. */
   function thumbEndPt(e){
+    const wasLoneFinger=tvwPts.size===1 && tvwStartSc<=1.01;
+    const endX=e.clientX, endY=e.clientY;
     tvwPts.delete(e.pointerId);
     if(tvwPts.size<2) tvwPinchD=0;
     if(tvwPts.size===1){
       const p=[...tvwPts.values()][0];
       tvwPanning=true; tvwLastX=p.x; tvwLastY=p.y;
     }
-    if(tvwPts.size===0){ tvwPanning=false; thumbSyncXf(true); }
+    if(tvwPts.size===0){
+      tvwPanning=false; thumbSyncXf(true);
+      if(wasLoneFinger){
+        const dx=endX-tvwStartX, dy=endY-tvwStartY;
+        if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.5){
+          tvwJustSwiped=true;
+          if(dx<0) openThumbAt(thumbViewIndex+1); else openThumbAt(thumbViewIndex-1);
+        }
+      }
+    }
   }
   thumbView.addEventListener('pointerup', thumbEndPt);
   thumbView.addEventListener('pointercancel', thumbEndPt);
@@ -964,21 +996,34 @@
   // 창을 닫아버리지 않게 탭으로 안 닫히게 한다(축소 버튼 대신 다시
   // 핀치로 줄이거나 썸네일을 다시 눌러서 원래 크기로 열면 됨).
   thumbView.onclick=()=>{
+    if(tvwJustSwiped){ tvwJustSwiped=false; return; }
     if(tvw_sc>1.01) return;
     thumbView.classList.remove('on');
   };
 
-  function appendTodayThumb(s){
+  function appendTodayThumb(s, idx){
     const img=document.createElement('img');
     img.src=s.url;
     img.alt=s.name||s.tel||'';
-    img.title='탭하면 크게 보고, 태블릿 화면에도 다시 띄웁니다';
-    img.onclick=()=>{
-      openThumbView(s.url);
-      resendToTv(s, img);
-    };
+    img.title='탭하면 크게 보고, 태블릿 화면에도 다시 띄웁니다(전체화면에서 좌우로 훑으면 다른 사진으로 넘어감)';
+    img.onclick=()=>openThumbAt(idx);
     $('todayThumbs').appendChild(img);
   }
+  /* 홈 화면에서 오른쪽→왼쪽으로 크게 훑으면 오늘 찍은 사진 중 마지막 걸
+     바로 전체화면으로 연다 — 아래로 스크롤해서 작은 썸네일을 찾아 누르는
+     대신 방금 찍은 사진을 빠르게 확인할 수 있게. 버튼 탭과는 안 겹친다
+     (일반 탭은 이동 거리가 짧아 70px 문턱을 넘지 않는다). */
+  let homeSwipeId=null, homeSwipeStartX=0, homeSwipeStartY=0;
+  $('home').addEventListener('pointerdown', e=>{
+    homeSwipeId=e.pointerId; homeSwipeStartX=e.clientX; homeSwipeStartY=e.clientY;
+  }, {passive:true});
+  $('home').addEventListener('pointerup', e=>{
+    if(e.pointerId!==homeSwipeId) return;
+    homeSwipeId=null;
+    if(!todaysShots.length) return;
+    const dx=e.clientX-homeSwipeStartX, dy=e.clientY-homeSwipeStartY;
+    if(dx<-70 && Math.abs(dx)>Math.abs(dy)*1.5) openThumbAt(todaysShots.length-1);
+  }, {passive:true});
   /* 썸네일을 탭하면 그 사진(이미 이름표가 합성된 최종본)을 다시 태블릿/PC 확인
      화면으로 보낸다 — 방금 찍은 사진을 화면에 크게 다시 띄우고 싶을 때 사용 */
   async function resendToTv(shot, thumbEl){
@@ -1005,7 +1050,7 @@
     const url=URL.createObjectURL(blob);
     const shot={blob, filename, name, tel, url};
     todaysShots.push(shot);
-    appendTodayThumb(shot);
+    appendTodayThumb(shot, todaysShots.length-1);
     $('todayWrap').classList.add('show');
     $('todayCount').textContent=todaysShots.length;
   }
