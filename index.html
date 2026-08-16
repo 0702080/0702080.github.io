@@ -519,7 +519,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v158</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v159</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1295,7 +1295,9 @@
       if(new Date(s.t).getHours()<CUTOFF_HOUR) aCount++; else bCount++;
     }
     const count=part==='A' ? aCount : bCount;
-    return todayKey()+'_'+part+'부 사진 : '+count+'명';
+    const d=new Date(), p=n=>('0'+n).slice(-2);
+    const displayDate=d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate());
+    return displayDate+'_'+part+'부 사진 : '+count+'명';
   }
 
   $('bShareAll').onclick=async ()=>{
