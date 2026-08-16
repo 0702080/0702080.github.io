@@ -519,7 +519,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v152</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v153</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -919,6 +919,55 @@
      사진 파일 자체는 이미 저장할 때마다 다운로드 폴더에 들어가 있으니,
      여기 있는 목록은 "한꺼번에 공유하기용" 임시 모음일 뿐이다. */
   const todaysShots=[];
+  /* ───── 오늘 찍은 사진을 앱을 껐다 켜도 남아있게 (IndexedDB) ─────
+     localStorage는 문자열만, 용량도 작아서 사진(Blob)엔 안 맞는다. IndexedDB는
+     Blob을 그대로 담을 수 있고 용량도 넉넉하다. "오늘" 날짜 것만 불러오고,
+     날짜가 지난 예전 기록은 열 때 정리한다 — 실제 사진 파일은 이미 다운로드
+     폴더에 안전하게 있으니, 여기 있는 건 순전히 "오늘 찍은 사진" 목록·
+     미리보기를 되살리기 위한 사본일 뿐이다. */
+  function todayKey(){
+    const d=new Date(), p=n=>('0'+n).slice(-2);
+    return ''+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate());
+  }
+  let shotsDbP=null;
+  function shotsDb(){
+    if(shotsDbP) return shotsDbP;
+    shotsDbP=new Promise((res,rej)=>{
+      if(!window.indexedDB){ rej(new Error('no idb')); return; }
+      const req=indexedDB.open('nfp_shots',1);
+      req.onupgradeneeded=()=>{
+        const store=req.result.createObjectStore('shots',{keyPath:'id'});
+        store.createIndex('date','date',{unique:false});
+      };
+      req.onsuccess=()=>res(req.result);
+      req.onerror=()=>rej(req.error);
+    });
+    return shotsDbP;
+  }
+  async function dbPutShot(rec){
+    try{ const db=await shotsDb(); db.transaction('shots','readwrite').objectStore('shots').put(rec); }
+    catch(e){}
+  }
+  async function dbDeleteShot(id){
+    try{ const db=await shotsDb(); db.transaction('shots','readwrite').objectStore('shots').delete(id); }
+    catch(e){}
+  }
+  async function dbLoadTodayAndCleanup(){
+    try{
+      const db=await shotsDb();
+      const store=db.transaction('shots','readwrite').objectStore('shots');
+      const all=await new Promise((res,rej)=>{
+        const r=store.getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+      });
+      const today=todayKey(), todays=[];
+      for(const rec of all){
+        if(rec.date===today) todays.push(rec);
+        else store.delete(rec.id);   // 날짜 지난 기록은 자리만 차지하니 정리
+      }
+      todays.sort((a,b)=>a.t-b.t);   // 찍은 순서대로
+      return todays;
+    }catch(e){ return []; }
+  }
   /* 사진마다 objectURL을 딱 한 번만 만들어 재사용한다. 예전엔 사진을 찍을 때마다
      그동안 찍은 것 전체를 처음부터 다시 그리면서 이미 만들어둔 URL까지 매번
      새로 만들어(회수도 안 됨) N장이면 URL이 N²/2개씩 쌓이는 누수가 있었다. */
@@ -1008,6 +1057,7 @@
     if(i<0 || i>=todaysShots.length) return;
     const [removed]=todaysShots.splice(i,1);
     URL.revokeObjectURL(removed.url);
+    dbDeleteShot(removed.id);
     const thumbEl=document.querySelectorAll('#todayThumbs img')[i];
     if(thumbEl) thumbEl.remove();
     // 남은 썸네일이 한 칸씩 당겨졌으니 각자의 탭 핸들러도 새 순번으로 다시 건다
@@ -1185,13 +1235,23 @@
     // 성공했을 때는 문구를 따로 띄우지 않는다 (태블릿 화면에 뜨는 것 자체가 확인이 됨)
     if(!ok) $('homeLog').innerHTML='⚠ 태블릿이 연결되어 있지 않습니다 (📺 태블릿 연결 확인)';
   }
-  function addTodayShot(blob, filename, name, tel){
+  /* id를 넘기면(앱을 다시 열어 예전 기록을 되살리는 경우) 새로 저장하지 않고
+     그 id 그대로 쓴다 — 안 넘기면(방금 찍은 사진) 새 id를 만들어 DB에도 남긴다. */
+  function addTodayShot(blob, filename, name, tel, id){
     const url=URL.createObjectURL(blob);
-    const shot={blob, filename, name, tel, url};
+    const isNew=!id;
+    if(isNew) id=Date.now()+'_'+Math.random().toString(36).slice(2,8);
+    const shot={blob, filename, name, tel, url, id};
     todaysShots.push(shot);
     appendTodayThumb(shot, todaysShots.length-1);
     $('todayWrap').classList.add('show');
     $('todayCount').textContent=todaysShots.length;
+    if(isNew) dbPutShot({id, date:todayKey(), filename, name, tel, blob, t:Date.now()});
+  }
+  // 앱을 다시 열었을 때 오늘 찍은 사진을 그대로 되살린다(태블릿 모드에는 이 목록이 없어서 건너뜀)
+  async function restoreTodayShots(){
+    const recs=await dbLoadTodayAndCleanup();
+    for(const r of recs) addTodayShot(r.blob, r.filename, r.name, r.tel, r.id);
   }
   $('bShareAll').onclick=async ()=>{
     if(!todaysShots.length) return;
@@ -1562,6 +1622,7 @@
 
   /* ───── 폰: 태블릿과 짝 맺기 (최초 1회) ───── */
   const isTvMode = location.hash.toLowerCase().indexOf('tv')>=0;
+  if(!isTvMode) restoreTodayShots();
 
   function tvStatus(){
     const btn=$('bTvLink');
