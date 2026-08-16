@@ -519,7 +519,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v153</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v154</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -541,6 +541,7 @@
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
     <div id="todayThumbs"></div>
     <button class="go share" id="bShareAll"><span class="ico">📤</span>카톡 사진 전송</button>
+    <button class="sub" id="bCopyHeadcount"><span class="ico">🔢</span>인원수 문구 복사</button>
   </div>
 
   <div id="homeLog" class="hint"></div>
@@ -1237,21 +1238,22 @@
   }
   /* id를 넘기면(앱을 다시 열어 예전 기록을 되살리는 경우) 새로 저장하지 않고
      그 id 그대로 쓴다 — 안 넘기면(방금 찍은 사진) 새 id를 만들어 DB에도 남긴다. */
-  function addTodayShot(blob, filename, name, tel, id){
+  function addTodayShot(blob, filename, name, tel, id, t){
     const url=URL.createObjectURL(blob);
     const isNew=!id;
     if(isNew) id=Date.now()+'_'+Math.random().toString(36).slice(2,8);
-    const shot={blob, filename, name, tel, url, id};
+    if(!t) t=Date.now();   // 되살릴 때는 원래 찍은 시각을 그대로 넘겨받는다(안 넘기면 지금 시각)
+    const shot={blob, filename, name, tel, url, id, t};
     todaysShots.push(shot);
     appendTodayThumb(shot, todaysShots.length-1);
     $('todayWrap').classList.add('show');
     $('todayCount').textContent=todaysShots.length;
-    if(isNew) dbPutShot({id, date:todayKey(), filename, name, tel, blob, t:Date.now()});
+    if(isNew) dbPutShot({id, date:todayKey(), filename, name, tel, blob, t});
   }
   // 앱을 다시 열었을 때 오늘 찍은 사진을 그대로 되살린다(태블릿 모드에는 이 목록이 없어서 건너뜀)
   async function restoreTodayShots(){
     const recs=await dbLoadTodayAndCleanup();
-    for(const r of recs) addTodayShot(r.blob, r.filename, r.name, r.tel, r.id);
+    for(const r of recs) addTodayShot(r.blob, r.filename, r.name, r.tel, r.id, r.t);
   }
   $('bShareAll').onclick=async ()=>{
     if(!todaysShots.length) return;
@@ -1264,6 +1266,44 @@
         alert('이 브라우저에서는 여러 장을 한 번에 공유할 수 없습니다.\n사진은 이미 다운로드 폴더에 저장되어 있으니, 갤러리(사진) 앱에서 직접 선택해 카톡으로 보내주세요.');
       }
     }catch(e){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
+  };
+
+  /* ───── 오전 11시 기준 A부/B부 인원수 문구 ─────
+     같은 사람이 다시 찍혀도(재촬영 등) 한 명으로 센다 — 전화번호가 있으면
+     전화번호로, 없으면 이름으로 구분한다. 여러 번 찍혔으면 그 중 가장
+     이른 시각을 그 사람의 촬영 시각으로 삼아 A/B부를 가른다. */
+  function headcountDedupKey(s){
+    const tel=(s.tel||'').trim(), nm=(s.name||'').trim();
+    if(tel) return 'tel:'+tel;
+    if(nm) return 'name:'+nm;
+    return null;
+  }
+  function buildHeadcountText(){
+    const CUTOFF_HOUR=11;
+    const earliest=new Map();
+    for(const s of todaysShots){
+      const key=headcountDedupKey(s);
+      if(!key) continue;
+      const prev=earliest.get(key);
+      if(!prev || s.t<prev.t) earliest.set(key, s);
+    }
+    let aCount=0, bCount=0;
+    for(const s of earliest.values()){
+      if(new Date(s.t).getHours()<CUTOFF_HOUR) aCount++; else bCount++;
+    }
+    const d=todayKey();
+    return d+'_A부 사진 : '+aCount+'명\n'+d+'_B부 사진 : '+bCount+'명';
+  }
+  $('bCopyHeadcount').onclick=async ()=>{
+    const btn=$('bCopyHeadcount');
+    const origEl=btn.querySelector('.tlabel');
+    const orig=origEl ? origEl.textContent : '인원수 문구 복사';
+    const flash=(msg)=>{ setBtn(btn,'🔢',msg); setTimeout(()=>setBtn(btn,'🔢',orig), 1800); };
+    if(!todaysShots.length){ flash('오늘 찍은 사진 없음'); return; }
+    const text=buildHeadcountText();
+    try{ await navigator.clipboard.writeText(text); flash('복사됨 ✓'); return; }catch(e){}
+    if(legacyCopy(text)){ flash('복사됨 ✓'); return; }
+    try{ prompt('아래 문구를 길게 눌러 복사하세요', text); }catch(e){}
   };
 
   /* ───── 사진 편집기 ─────
