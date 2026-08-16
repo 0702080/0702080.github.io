@@ -519,7 +519,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v157</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v158</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -541,6 +541,7 @@
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
     <div id="todayThumbs"></div>
     <button class="go share" id="bShareAll"><span class="ico">📤</span>카톡 사진 전송</button>
+    <button class="sub" id="bSendHeadcount"><span class="ico">🔢</span>인원수 문구 보내기</button>
   </div>
 
   <div id="homeLog" class="hint"></div>
@@ -1301,25 +1302,43 @@
     if(!todaysShots.length) return;
     const part=await ensurePart();
     const files=todaysShots.map(s=>new File([s.blob], s.filename, {type:'image/jpeg'}));
+    // 문구를 사진과 한 번에 같이 실어 보낸다 — 받는 앱이 이걸 캡션으로
+    // 보여주면 좋고, 무시해도 손해는 없다(밑에 "인원수 문구 보내기"
+    // 버튼이 확실한 방법이다).
     const text=part ? buildHeadcountText(part) : todaysShots.length+'장';
     const shareData={ files, title:'새가족 사진', text };
-    let photosSent=false;
     try{
       if(navigator.canShare && navigator.canShare(shareData)){
         await navigator.share(shareData);
-        photosSent=true;
       }else{
         alert('이 브라우저에서는 여러 장을 한 번에 공유할 수 없습니다.\n사진은 이미 다운로드 폴더에 저장되어 있으니, 갤러리(사진) 앱에서 직접 선택해 카톡으로 보내주세요.');
       }
     }catch(e){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
-    if(!photosSent || !part) return;
-    // 사진(파일)과 문구를 한 번에 같이 보내면, 받는 앱(카톡 등)이 문구는
-    // 무시하고 사진만 받는 경우가 실제로 있다(웹 공유 API의 흔한 한계).
-    // 그래서 사진을 다 보낸 直後, 문구만 담은 공유를 한 번 더 띄워서
-    // 같은 대화방에 이어 보낼 수 있게 한다 — 파일 없이 글자만 있으면
-    // 대부분의 메신저가 문제없이 받아준다.
-    try{ await navigator.share({ text: buildHeadcountText(part) }); }
-    catch(e){}   // 취소했거나(연속 공유가 막힌 기기 포함) 조용히 넘어감
+  };
+
+  /* 위 사진 공유가 끝난 뒤 이 버튼을 따로 눌러야 하는 이유: 브라우저는
+     "방금 사용자가 직접 눌렀을 때"만 공유창을 띄워준다(악용 방지). 사진
+     공유창이 떴다가 카톡 갔다 돌아오는 사이 그 자격이 사라져서, 코드에서
+     자동으로 이어 부르면 조용히 막힌다 — 그래서 반드시 새로 한 번 더
+     탭해야 한다. */
+  $('bSendHeadcount').onclick=async ()=>{
+    if(!todaysShots.length) return;
+    const part=await ensurePart();
+    if(!part) return;   // 취소함
+    const text=buildHeadcountText(part);
+    try{
+      if(navigator.canShare && navigator.canShare({text})){
+        await navigator.share({text});
+        return;
+      }
+    }catch(e){ return; }   // 공유창을 취소한 경우 — 클립보드로 대신 넘기지 않고 그냥 끝냄
+    const btn=$('bSendHeadcount');
+    const origEl=btn.querySelector('.tlabel');
+    const orig=origEl ? origEl.textContent : '인원수 문구 보내기';
+    const flash=(msg)=>{ setBtn(btn,'🔢',msg); setTimeout(()=>setBtn(btn,'🔢',orig), 1800); };
+    try{ await navigator.clipboard.writeText(text); flash('복사됨 ✓'); return; }catch(e){}
+    if(legacyCopy(text)){ flash('복사됨 ✓'); return; }
+    try{ prompt('아래 문구를 길게 눌러 복사하세요', text); }catch(e){}
   };
 
   /* ───── 사진 편집기 ─────
