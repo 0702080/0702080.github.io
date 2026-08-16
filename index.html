@@ -342,20 +342,20 @@
      이름 칸은 그만큼 살짝 좁게 — 안 그러면 맨 앞자리(0)가 잘려 보였다.
      전화번호는 글자를 살짝 줄이고 가운데 정렬해서 항상 다 보이게 한다. */
   #edNameWrap{position:relative;flex:0.85;display:flex;}
-  #edTel{flex:1.15;}
+  #edTelWrap{position:relative;flex:1.15;display:flex;}
   /* #edBottom input 규칙(20px)보다 확실히 우선하도록 특정도를 높인다 */
   #edBottom #edTel{font-size:17px;text-align:center;}
-  /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 이름칸 오른쪽에
+  /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 각 칸 오른쪽에
      자리를 비워둔다 — 버튼이 없는(아이폰) 경우엔 이 여백도 필요 없다. */
-  #edNameWrap.hasMic #edName{padding-right:38px;}
-  #edMic{
+  #edNameWrap.hasMic #edName, #edTelWrap.hasMic #edTel{padding-right:38px;}
+  #edMic, #edTelMic{
     position:absolute;right:3px;top:50%;transform:translateY(-50%);
     width:30px;height:30px;border:none;border-radius:50%;padding:0;
     background:transparent;font-size:16px;line-height:1;color:#555;
     display:flex;align-items:center;justify-content:center;cursor:pointer;
   }
-  #edMic[hidden]{display:none;}
-  #edMic.listening{background:#e0433c;color:#fff;animation:edMicPulse 1s ease-in-out infinite;}
+  #edMic[hidden], #edTelMic[hidden]{display:none;}
+  #edMic.listening, #edTelMic.listening{background:#e0433c;color:#fff;animation:edMicPulse 1s ease-in-out infinite;}
   @keyframes edMicPulse{ 0%,100%{opacity:1;} 50%{opacity:.5;} }
   /* 아래 저장/다시찍기 버튼도 위 입력칸과 같은 비율·간격으로 나눠서
      세로 경계선이 서로 정확히 맞춰 정렬되게 한다 */
@@ -531,7 +531,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v161</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v162</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -591,7 +591,10 @@
         <input id="edName" type="text" placeholder="이름" autocomplete="off" enterkeyhint="next">
         <button id="edMic" type="button" title="눌러서 이름을 말하면 자동으로 입력됩니다" hidden>🎤</button>
       </div>
-      <input id="edTel"  type="tel" inputmode="numeric" placeholder="전화번호(8자리)" autocomplete="off" enterkeyhint="done">
+      <div id="edTelWrap">
+        <input id="edTel"  type="tel" inputmode="numeric" placeholder="전화번호(8자리)" autocomplete="off" enterkeyhint="done">
+        <button id="edTelMic" type="button" title="눌러서 전화번호를 말하면 자동으로 입력됩니다" hidden>🎤</button>
+      </div>
     </div>
     <div id="edHint"></div>
     <div id="edActions">
@@ -715,6 +718,14 @@
     if(d.length<=7) return d.slice(0,3)+'-'+d.slice(3);
     if(d.length<=10) return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
     return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
+  }
+  /* 전화번호를 말로 부를 땐 "공일공에 일이삼사..." 처럼 한글 숫자를 한 자씩
+     읽는 경우가 거의 전부라, 음성 인식 결과에 섞인 그 글자들을 먼저 아라비아
+     숫자로 바꿔둔다. 관계없는 글자는 그대로 두고, 어차피 fmtTel 이 숫자 외엔
+     다 걸러내므로 여기서 지나치게 정교할 필요는 없다. */
+  const HANGUL_DIGIT={'공':'0','영':'0','일':'1','이':'2','삼':'3','사':'4','오':'5','육':'6','륙':'6','칠':'7','팔':'8','구':'9'};
+  function hangulDigitsToArabic(s){
+    return (s||'').split('').map(ch=>HANGUL_DIGIT[ch]!==undefined?HANGUL_DIGIT[ch]:ch).join('');
   }
 
   function safeSeg(s){
@@ -1414,7 +1425,8 @@
      (웹 카메라를 직접 쓰면 기본 앱의 1x 광각 렌즈에 접근할 수 없어 화각이
       좁아지는 문제가 있어, 촬영은 전적으로 기본 카메라 앱에 맡긴다.) */
   const ED = (function(){
-    const nI=$('edName'), tI=$('edTel'), hintEl=$('edHint'), nameWrap=$('edNameWrap'), micBtn=$('edMic');
+    const nI=$('edName'), tI=$('edTel'), hintEl=$('edHint');
+    const nameWrap=$('edNameWrap'), micBtn=$('edMic'), telWrap=$('edTelWrap'), telMicBtn=$('edTelMic');
     const MAXPX=2400;                       // 긴 변 기준 최대 크기 (용량·속도 절충)
     let baseCanvas=null;                    // 방향까지 바로잡힌 원본
     let queue=[], qi=0;                     // 여러 장 선택했을 때의 처리 대기열
@@ -1589,28 +1601,42 @@
     tI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveShot(); } });
 
     /* 아이폰 사파리엔 이 API 자체가 없다 — 그런 폰에서는 버튼이 아예 안 나타나서
-       지금처럼 손으로 입력하면 되고, 안드로이드(크롬 계열)에서만 마이크가 뜬다. */
+       지금처럼 손으로 입력하면 되고, 안드로이드(크롬 계열)에서만 마이크가 뜬다.
+       이름·전화번호 두 마이크가 인식 상태(micRec/micGen)를 공유해서, 한쪽이
+       듣고 있을 때 다른 쪽을 누르면(동시에 둘 다 들을 순 없으므로) 우선
+       듣던 쪽을 멈춘다 — 두 세션이 동시에 떠서 서로 결과를 덮어쓰는 일을 막는다. */
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    function startMic(btn, applyResult){
+      if(micRec){ micStop(); return; }   // 듣는 중에 다시 누르면(같은 버튼이든 다른 버튼이든) 그만 듣는다
+      const myGen=++micGen;
+      let rec;
+      try{ rec=new SR(); }catch(e){ return; }
+      micRec=rec;
+      rec.lang='ko-KR'; rec.interimResults=false; rec.maxAlternatives=1;
+      rec.onstart=()=>{ btn.classList.add('listening'); };
+      rec.onresult=ev=>{
+        if(myGen!==micGen) return;   // 그 사이 사진이 바뀌었거나 편집기가 닫혔다
+        const text=(ev.results[0][0].transcript||'').trim();
+        if(text) applyResult(text);
+      };
+      rec.onerror=ev=>{ if(myGen===micGen && ev.error==='not-allowed') hintEl.textContent='마이크 권한이 필요해요'; };
+      rec.onend=()=>{ btn.classList.remove('listening'); if(micRec===rec) micRec=null; };
+      try{ rec.start(); }catch(e){ btn.classList.remove('listening'); micRec=null; }
+    }
     if(SR && micBtn){
       micBtn.hidden=false;
       nameWrap.classList.add('hasMic');
-      micBtn.addEventListener('click', ()=>{
-        if(micRec){ micStop(); return; }   // 듣는 중에 다시 누르면 그만 듣는다
-        const myGen=++micGen;
-        let rec;
-        try{ rec=new SR(); }catch(e){ return; }
-        micRec=rec;
-        rec.lang='ko-KR'; rec.interimResults=false; rec.maxAlternatives=1;
-        rec.onstart=()=>{ micBtn.classList.add('listening'); };
-        rec.onresult=ev=>{
-          if(myGen!==micGen) return;   // 그 사이 사진이 바뀌었거나 편집기가 닫혔다
-          const text=(ev.results[0][0].transcript||'').trim();
-          if(text){ nI.value=text; if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent=''; }
-        };
-        rec.onerror=ev=>{ if(myGen===micGen && ev.error==='not-allowed') hintEl.textContent='마이크 권한이 필요해요'; };
-        rec.onend=()=>{ micBtn.classList.remove('listening'); if(micRec===rec) micRec=null; };
-        try{ rec.start(); }catch(e){ micBtn.classList.remove('listening'); micRec=null; }
-      });
+      micBtn.addEventListener('click', ()=>startMic(micBtn, text=>{
+        nI.value=text;
+        if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent='';
+      }));
+    }
+    if(SR && telMicBtn){
+      telMicBtn.hidden=false;
+      telWrap.classList.add('hasMic');
+      telMicBtn.addEventListener('click', ()=>startMic(telMicBtn, text=>{
+        tI.value=fmtTel(hangulDigitsToArabic(text));
+      }));
     }
 
     return { start };
