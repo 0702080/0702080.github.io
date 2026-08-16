@@ -519,7 +519,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v159</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v160</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1013,7 +1013,12 @@
     if(tvw_sc<=1.001){ tvw_sc=1; tvw_tx=0; tvw_ty=0; }
     thumbClampPan(); thumbApplyTf();
   }
-  function thumbResetZoom(){ tvw_sc=1; tvw_tx=0; tvw_ty=0; thumbApplyTf(); }
+  function thumbResetZoom(){
+    tvw_sc=1; tvw_tx=0; tvw_ty=0;
+    thumbImg.style.transition='none';   // 아래로 끌기 취소/삭제 애니메이션이 남겨둔 상태가 있으면 지운다
+    thumbImg.style.opacity='';
+    thumbApplyTf();
+  }
   /* 옆 칸(이전/다음)에 실제로 그 방향의 사진이 있으면 채우고, 없으면
      src 자체를 지운다("" 로 비우면 일부 브라우저가 페이지 자신을 이미지로
      다시 요청해버리는 부작용이 있어 removeAttribute 를 쓴다) — 그래야
@@ -1075,6 +1080,8 @@
   const tvwPts=new Map();
   let tvwPanning=false, tvwLastX=0, tvwLastY=0, tvwPinchD=0, tvwPinchS=1;
   let tvwStartX=0, tvwStartY=0, tvwStartSc=1, tvwJustSwiped=false, tvwWasMulti=false;
+  let tvwAxisLock=null;         // 한 손가락 드래그의 방향을 한 번 정하면 끝까지 고정: 'h'=옆으로 넘기기, 'v'=아래로 끌어 삭제
+  const TVW_DEL_PX=120;         // 이만큼 아래로 끌고 놓으면 삭제, 못 미치면 제자리로 복귀
   let thumbTrackPendingDir=0;   // 손을 뗀 뒤 트랙이 다음/이전 칸으로 이동 중이면 1/-1
   thumbView.addEventListener('pointerdown', e=>{
     try{ thumbView.setPointerCapture(e.pointerId); }catch(err){}
@@ -1084,6 +1091,7 @@
       tvwStartX=e.clientX; tvwStartY=e.clientY; tvwStartSc=tvw_sc;
       tvwJustSwiped=false;   // 새 손가락질이 시작됐으니 이전 스와이프 흔적은 지운다
       tvwWasMulti=false;     // 완전히 새 손가락질 — 이전 두 손가락 흔적도 지운다
+      tvwAxisLock=null;      // 이번 드래그가 옆으로인지 아래로인지 아직 안 정해졌다
       if(tvw_sc<=1.01) thumbTrack.classList.add('dragging');   // 손가락을 바로 따라가게 트랜지션 끔
     }
     else if(tvwPts.size===2){
@@ -1091,6 +1099,13 @@
       tvwWasMulti=true;      // 두 손가락을 거쳤다는 걸 기억해 둔다 — 손가락을
                               // 하나씩 떼면 마지막 손가락만 남는 순간이 오는데,
                               // 그걸 새 한 손가락 스와이프로 착각하면 안 된다
+      // 한 손가락으로 아래로 끌던 도중 두 번째 손가락이 닿아 핀치로 바뀌는
+      // 경우, 아래로-끌기용으로 남겨둔 흐릿한 상태를 지우고 진짜 확대/이동
+      // 상태로 되돌린다 — 안 그러면 핀치 중에도 사진이 흐린 채로 남는다.
+      tvwAxisLock=null;
+      thumbImg.style.transition='none';
+      thumbImg.style.opacity='';
+      thumbApplyTf();
       const [a,b]=[...tvwPts.values()];
       tvwPinchD=Math.hypot(a.x-b.x,a.y-b.y); tvwPinchS=tvw_sc;
     }
@@ -1107,14 +1122,28 @@
       tvwLastX=e.clientX; tvwLastY=e.clientY;
       thumbClampPan(); thumbApplyTf();
     }else if(tvwPanning && tvw_sc<=1.01 && tvwPts.size===1){
-      /* 확대 안 된 상태에서 한 손가락으로 끄는 중 — 옆 사진의 이음매(테두리)가
-         손가락을 그대로 따라오게 트랙을 실시간으로 옮긴다. 더 넘길 사진이
-         없는 방향이면 고무줄처럼 30%만 딸려오게 해서 "여기가 끝"임을 알려준다. */
-      let dx=e.clientX-tvwStartX;
-      const canNext=thumbViewIndex<todaysShots.length-1, canPrev=thumbViewIndex>0;
-      if(dx<0 && !canNext) dx*=.3;
-      if(dx>0 && !canPrev) dx*=.3;
-      thumbTrack.style.transform='translateX(calc(-33.3333% + '+dx+'px))';
+      const dx=e.clientX-tvwStartX, dy=e.clientY-tvwStartY;
+      if(!tvwAxisLock){
+        if(Math.hypot(dx,dy)<8) return;   // 아주 조금만 움직였을 땐 아직 방향을 정하지 않는다(탭과 헷갈리지 않게)
+        tvwAxisLock=(dy>0 && dy>Math.abs(dx)*1.2) ? 'v' : 'h';
+      }
+      if(tvwAxisLock==='v'){
+        /* 아래로 끄는 중 — 사진이 손가락을 따라 내려가며 옅어진다.
+           위로 끄는 건 이 모드로 들어오지 않는다(아래로만 삭제). */
+        const d=Math.max(0,dy);
+        thumbImg.style.transition='none';
+        thumbImg.style.transform='translateY('+d+'px)';
+        thumbImg.style.opacity=Math.max(.15, 1-d/400);
+      }else{
+        /* 확대 안 된 상태에서 옆으로 끄는 중 — 옆 사진의 이음매(테두리)가
+           손가락을 그대로 따라오게 트랙을 실시간으로 옮긴다. 더 넘길 사진이
+           없는 방향이면 고무줄처럼 30%만 딸려오게 해서 "여기가 끝"임을 알려준다. */
+        let ddx=dx;
+        const canNext=thumbViewIndex<todaysShots.length-1, canPrev=thumbViewIndex>0;
+        if(ddx<0 && !canNext) ddx*=.3;
+        if(ddx>0 && !canPrev) ddx*=.3;
+        thumbTrack.style.transform='translateX(calc(-33.3333% + '+ddx+'px))';
+      }
     }
   });
   /* 손을 뗀 뒤: 확실히 옆으로(70px 이상, 대각선 아님) 끌었고 그 방향에
@@ -1132,7 +1161,29 @@
     }
     if(tvwPts.size===0){
       tvwPanning=false; thumbSyncXf(true);
-      if(wasLoneFinger){
+      if(wasLoneFinger && tvwAxisLock==='v'){
+        /* 아래로 끌다가 손을 뗌 — 충분히 내려갔으면 마저 떨어뜨리며 삭제,
+           아니면 원래 자리로 튕겨 돌아온다. 트랙(좌우 캐러셀)은 이 동안
+           전혀 움직이지 않았으니 자리를 다시 맞춰줄 필요만 있다. */
+        const dy=Math.max(0,endY-tvwStartY);
+        thumbTrack.classList.remove('dragging');
+        thumbTrack.style.transform='translateX(-33.3333%)';
+        thumbImg.style.transition='transform .22s ease, opacity .22s ease';
+        if(dy>TVW_DEL_PX){
+          tvwJustSwiped=true;   // 손 뗀 뒤 이어지는 click 으로 창이 도로 닫히지 않게
+          thumbImg.style.transform='translateY('+(dy+400)+'px)';
+          thumbImg.style.opacity='0';
+          setTimeout(()=>{
+            thumbImg.style.transition='none';
+            thumbImg.style.opacity='';
+            deleteCurrentThumb();
+          }, 220);
+        }else{
+          thumbImg.style.transform='translate(0px,0px) scale(1)';
+          thumbImg.style.opacity='';
+          setTimeout(()=>{ thumbImg.style.transition='none'; }, 220);
+        }
+      }else if(wasLoneFinger){
         const dx=endX-tvwStartX, dy=endY-tvwStartY;
         const isSwipe=Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.5;
         const goNext=isSwipe && dx<0 && thumbViewIndex<todaysShots.length-1;
