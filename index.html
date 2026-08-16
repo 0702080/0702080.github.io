@@ -519,7 +519,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v156</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v157</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -541,7 +541,6 @@
     <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
     <div id="todayThumbs"></div>
     <button class="go share" id="bShareAll"><span class="ico">📤</span>카톡 사진 전송</button>
-    <button class="sub" id="bCopyHeadcount"><span class="ico">🔢</span>인원수 문구 복사</button>
   </div>
 
   <div id="homeLog" class="hint"></div>
@@ -1320,21 +1319,7 @@
     // 같은 대화방에 이어 보낼 수 있게 한다 — 파일 없이 글자만 있으면
     // 대부분의 메신저가 문제없이 받아준다.
     try{ await navigator.share({ text: buildHeadcountText(part) }); }
-    catch(e){}   // 취소했거나(연속 공유가 막힌 기기 포함) 조용히 넘어감 — "인원수 문구 복사" 버튼으로 대신하면 됨
-  };
-
-  $('bCopyHeadcount').onclick=async ()=>{
-    const btn=$('bCopyHeadcount');
-    const origEl=btn.querySelector('.tlabel');
-    const orig=origEl ? origEl.textContent : '인원수 문구 복사';
-    const flash=(msg)=>{ setBtn(btn,'🔢',msg); setTimeout(()=>setBtn(btn,'🔢',orig), 1800); };
-    if(!todaysShots.length){ flash('오늘 찍은 사진 없음'); return; }
-    const part=await ensurePart();
-    if(!part) return;   // 취소함
-    const text=buildHeadcountText(part);
-    try{ await navigator.clipboard.writeText(text); flash('복사됨 ✓'); return; }catch(e){}
-    if(legacyCopy(text)){ flash('복사됨 ✓'); return; }
-    try{ prompt('아래 문구를 길게 눌러 복사하세요', text); }catch(e){}
+    catch(e){}   // 취소했거나(연속 공유가 막힌 기기 포함) 조용히 넘어감
   };
 
   /* ───── 사진 편집기 ─────
