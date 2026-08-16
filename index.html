@@ -341,10 +341,22 @@
   /* 전화번호 칸은 "010-1234-5678"까지 들어가야 해서 좀 더 넓게,
      이름 칸은 그만큼 살짝 좁게 — 안 그러면 맨 앞자리(0)가 잘려 보였다.
      전화번호는 글자를 살짝 줄이고 가운데 정렬해서 항상 다 보이게 한다. */
-  #edName{flex:0.85;}
+  #edNameWrap{position:relative;flex:0.85;display:flex;}
   #edTel{flex:1.15;}
   /* #edBottom input 규칙(20px)보다 확실히 우선하도록 특정도를 높인다 */
   #edBottom #edTel{font-size:17px;text-align:center;}
+  /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 이름칸 오른쪽에
+     자리를 비워둔다 — 버튼이 없는(아이폰) 경우엔 이 여백도 필요 없다. */
+  #edNameWrap.hasMic #edName{padding-right:38px;}
+  #edMic{
+    position:absolute;right:3px;top:50%;transform:translateY(-50%);
+    width:30px;height:30px;border:none;border-radius:50%;padding:0;
+    background:transparent;font-size:16px;line-height:1;color:#555;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  #edMic[hidden]{display:none;}
+  #edMic.listening{background:#e0433c;color:#fff;animation:edMicPulse 1s ease-in-out infinite;}
+  @keyframes edMicPulse{ 0%,100%{opacity:1;} 50%{opacity:.5;} }
   /* 아래 저장/다시찍기 버튼도 위 입력칸과 같은 비율·간격으로 나눠서
      세로 경계선이 서로 정확히 맞춰 정렬되게 한다 */
   #edActions{display:flex;gap:8px;}
@@ -519,7 +531,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v160</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v161</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -575,7 +587,10 @@
   <div id="edStage"></div>
   <div id="edBottom">
     <div class="row">
-      <input id="edName" type="text" placeholder="이름" autocomplete="off" enterkeyhint="next">
+      <div id="edNameWrap">
+        <input id="edName" type="text" placeholder="이름" autocomplete="off" enterkeyhint="next">
+        <button id="edMic" type="button" title="눌러서 이름을 말하면 자동으로 입력됩니다" hidden>🎤</button>
+      </div>
       <input id="edTel"  type="tel" inputmode="numeric" placeholder="전화번호(8자리)" autocomplete="off" enterkeyhint="done">
     </div>
     <div id="edHint"></div>
@@ -1399,10 +1414,15 @@
      (웹 카메라를 직접 쓰면 기본 앱의 1x 광각 렌즈에 접근할 수 없어 화각이
       좁아지는 문제가 있어, 촬영은 전적으로 기본 카메라 앱에 맡긴다.) */
   const ED = (function(){
-    const nI=$('edName'), tI=$('edTel'), hintEl=$('edHint');
+    const nI=$('edName'), tI=$('edTel'), hintEl=$('edHint'), nameWrap=$('edNameWrap'), micBtn=$('edMic');
     const MAXPX=2400;                       // 긴 변 기준 최대 크기 (용량·속도 절충)
     let baseCanvas=null;                    // 방향까지 바로잡힌 원본
     let queue=[], qi=0;                     // 여러 장 선택했을 때의 처리 대기열
+    /* 이름 칸 옆 마이크 — 이름을 직접 타이핑하지 않고 말해서 채운다.
+       사진마다(그리고 편집기가 닫힐 때마다) micGen 을 올려서, 사진이 바뀐 뒤에
+       뒤늦게 도착한 인식 결과가 엉뚱한 사진의 이름칸에 쓰이지 않게 한다. */
+    let micRec=null, micGen=0;
+    function micStop(){ micGen++; if(micRec){ try{ micRec.abort(); }catch(e){} micRec=null; } }
 
     /* EXIF 방향까지 반영해서 이미지를 읽는다 */
     async function loadOriented(file){
@@ -1419,6 +1439,7 @@
     }
 
     async function showFile(file){
+      micStop();   // 이전 사진에서 켜져 있던 음성 인식이 있으면 끊는다
       const src=await loadOriented(file);
       const sw=src.width, sh=src.height;
       const k=Math.min(1, MAXPX/Math.max(sw,sh));
@@ -1531,6 +1552,7 @@
     }
 
     function close(){
+      micStop();
       $('editor').classList.remove('on');
       baseCanvas=null;
       saving=false; $('edSave').disabled=false;   // 어떤 경로로 닫히든 잠금은 반드시 푼다
@@ -1565,6 +1587,31 @@
     nI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); tI.focus(); } });
     tI.addEventListener('input', e=>{ e.target.value=fmtTel(e.target.value); });
     tI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveShot(); } });
+
+    /* 아이폰 사파리엔 이 API 자체가 없다 — 그런 폰에서는 버튼이 아예 안 나타나서
+       지금처럼 손으로 입력하면 되고, 안드로이드(크롬 계열)에서만 마이크가 뜬다. */
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(SR && micBtn){
+      micBtn.hidden=false;
+      nameWrap.classList.add('hasMic');
+      micBtn.addEventListener('click', ()=>{
+        if(micRec){ micStop(); return; }   // 듣는 중에 다시 누르면 그만 듣는다
+        const myGen=++micGen;
+        let rec;
+        try{ rec=new SR(); }catch(e){ return; }
+        micRec=rec;
+        rec.lang='ko-KR'; rec.interimResults=false; rec.maxAlternatives=1;
+        rec.onstart=()=>{ micBtn.classList.add('listening'); };
+        rec.onresult=ev=>{
+          if(myGen!==micGen) return;   // 그 사이 사진이 바뀌었거나 편집기가 닫혔다
+          const text=(ev.results[0][0].transcript||'').trim();
+          if(text){ nI.value=text; if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent=''; }
+        };
+        rec.onerror=ev=>{ if(myGen===micGen && ev.error==='not-allowed') hintEl.textContent='마이크 권한이 필요해요'; };
+        rec.onend=()=>{ micBtn.classList.remove('listening'); if(micRec===rec) micRec=null; };
+        try{ rec.start(); }catch(e){ micBtn.classList.remove('listening'); micRec=null; }
+      });
+    }
 
     return { start };
   })();
