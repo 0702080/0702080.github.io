@@ -519,7 +519,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v154</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v155</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1255,30 +1255,33 @@
     const recs=await dbLoadTodayAndCleanup();
     for(const r of recs) addTodayShot(r.blob, r.filename, r.name, r.tel, r.id, r.t);
   }
-  $('bShareAll').onclick=async ()=>{
-    if(!todaysShots.length) return;
-    const files=todaysShots.map(s=>new File([s.blob], s.filename, {type:'image/jpeg'}));
-    const shareData={ files, title:'새가족 사진', text:todaysShots.length+'장' };
-    try{
-      if(navigator.canShare && navigator.canShare(shareData)){
-        await navigator.share(shareData);
-      }else{
-        alert('이 브라우저에서는 여러 장을 한 번에 공유할 수 없습니다.\n사진은 이미 다운로드 폴더에 저장되어 있으니, 갤러리(사진) 앱에서 직접 선택해 카톡으로 보내주세요.');
-      }
-    }catch(e){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
-  };
-
   /* ───── 오전 11시 기준 A부/B부 인원수 문구 ─────
      같은 사람이 다시 찍혀도(재촬영 등) 한 명으로 센다 — 전화번호가 있으면
      전화번호로, 없으면 이름으로 구분한다. 여러 번 찍혔으면 그 중 가장
-     이른 시각을 그 사람의 촬영 시각으로 삼아 A/B부를 가른다. */
+     이른 시각을 그 사람의 촬영 시각으로 삼아 A/B부를 가른다.
+     이 폰이 A부인지 B부인지는 한 번 물어보고 계속 기억해 둔다 — 봉사자
+     한 명은 보통 하루 종일 같은 부에서 섬기므로, 자기 부 숫자만 보내면
+     되고 상대 부 숫자까지 같이 보일 필요가 없다. */
   function headcountDedupKey(s){
     const tel=(s.tel||'').trim(), nm=(s.name||'').trim();
     if(tel) return 'tel:'+tel;
     if(nm) return 'name:'+nm;
     return null;
   }
-  function buildHeadcountText(){
+  async function ensurePart(){
+    if(data.part==='A' || data.part==='B') return data.part;
+    let v;
+    try{ v=prompt('A부·B부 중 어느 쪽에서 사진 봉사를 하고 계신가요?\nA 또는 B 를 입력해주세요.', ''); }
+    catch(e){ return null; }
+    if(v===null) return null;
+    v=v.trim().toUpperCase();
+    if(v.indexOf('B')>=0) data.part='B';
+    else if(v.indexOf('A')>=0) data.part='A';
+    else return null;
+    save();
+    return data.part;
+  }
+  function buildHeadcountText(part){
     const CUTOFF_HOUR=11;
     const earliest=new Map();
     for(const s of todaysShots){
@@ -1291,16 +1294,38 @@
     for(const s of earliest.values()){
       if(new Date(s.t).getHours()<CUTOFF_HOUR) aCount++; else bCount++;
     }
-    const d=todayKey();
-    return d+'_A부 사진 : '+aCount+'명\n'+d+'_B부 사진 : '+bCount+'명';
+    const count=part==='A' ? aCount : bCount;
+    return todayKey()+'_'+part+'부 사진 : '+count+'명';
   }
+
+  $('bShareAll').onclick=async ()=>{
+    if(!todaysShots.length) return;
+    const part=await ensurePart();
+    const files=todaysShots.map(s=>new File([s.blob], s.filename, {type:'image/jpeg'}));
+    // 인원수 문구를 사진과 같이 보낸다. 다만 파일과 텍스트를 같이 공유할 때
+    // 받는 앱(카톡 등)이 문구를 그냥 무시하고 사진만 받는 경우가 실제로
+    // 있어서(웹 공유 API의 흔한 한계), "인원수 문구 복사" 버튼도 그대로
+    // 남겨뒀다 — 문구가 같이 안 갔으면 그걸로 따로 붙여넣으면 된다.
+    const text=part ? buildHeadcountText(part) : todaysShots.length+'장';
+    const shareData={ files, title:'새가족 사진', text };
+    try{
+      if(navigator.canShare && navigator.canShare(shareData)){
+        await navigator.share(shareData);
+      }else{
+        alert('이 브라우저에서는 여러 장을 한 번에 공유할 수 없습니다.\n사진은 이미 다운로드 폴더에 저장되어 있으니, 갤러리(사진) 앱에서 직접 선택해 카톡으로 보내주세요.');
+      }
+    }catch(e){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
+  };
+
   $('bCopyHeadcount').onclick=async ()=>{
     const btn=$('bCopyHeadcount');
     const origEl=btn.querySelector('.tlabel');
     const orig=origEl ? origEl.textContent : '인원수 문구 복사';
     const flash=(msg)=>{ setBtn(btn,'🔢',msg); setTimeout(()=>setBtn(btn,'🔢',orig), 1800); };
     if(!todaysShots.length){ flash('오늘 찍은 사진 없음'); return; }
-    const text=buildHeadcountText();
+    const part=await ensurePart();
+    if(!part) return;   // 취소함
+    const text=buildHeadcountText(part);
     try{ await navigator.clipboard.writeText(text); flash('복사됨 ✓'); return; }catch(e){}
     if(legacyCopy(text)){ flash('복사됨 ✓'); return; }
     try{ prompt('아래 문구를 길게 눌러 복사하세요', text); }catch(e){}
