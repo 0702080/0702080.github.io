@@ -519,7 +519,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v155</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v156</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1302,19 +1302,25 @@
     if(!todaysShots.length) return;
     const part=await ensurePart();
     const files=todaysShots.map(s=>new File([s.blob], s.filename, {type:'image/jpeg'}));
-    // 인원수 문구를 사진과 같이 보낸다. 다만 파일과 텍스트를 같이 공유할 때
-    // 받는 앱(카톡 등)이 문구를 그냥 무시하고 사진만 받는 경우가 실제로
-    // 있어서(웹 공유 API의 흔한 한계), "인원수 문구 복사" 버튼도 그대로
-    // 남겨뒀다 — 문구가 같이 안 갔으면 그걸로 따로 붙여넣으면 된다.
     const text=part ? buildHeadcountText(part) : todaysShots.length+'장';
     const shareData={ files, title:'새가족 사진', text };
+    let photosSent=false;
     try{
       if(navigator.canShare && navigator.canShare(shareData)){
         await navigator.share(shareData);
+        photosSent=true;
       }else{
         alert('이 브라우저에서는 여러 장을 한 번에 공유할 수 없습니다.\n사진은 이미 다운로드 폴더에 저장되어 있으니, 갤러리(사진) 앱에서 직접 선택해 카톡으로 보내주세요.');
       }
     }catch(e){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
+    if(!photosSent || !part) return;
+    // 사진(파일)과 문구를 한 번에 같이 보내면, 받는 앱(카톡 등)이 문구는
+    // 무시하고 사진만 받는 경우가 실제로 있다(웹 공유 API의 흔한 한계).
+    // 그래서 사진을 다 보낸 直後, 문구만 담은 공유를 한 번 더 띄워서
+    // 같은 대화방에 이어 보낼 수 있게 한다 — 파일 없이 글자만 있으면
+    // 대부분의 메신저가 문제없이 받아준다.
+    try{ await navigator.share({ text: buildHeadcountText(part) }); }
+    catch(e){}   // 취소했거나(연속 공유가 막힌 기기 포함) 조용히 넘어감 — "인원수 문구 복사" 버튼으로 대신하면 됨
   };
 
   $('bCopyHeadcount').onclick=async ()=>{
