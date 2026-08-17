@@ -531,7 +531,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v166</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v167</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1423,8 +1423,8 @@
     const padX=Math.round(fs*0.55), padY=Math.round(fs*0.4);
     const boxW=textW+padX*2, boxH=fs+padY*2;
     const marginX=Math.round(w*0.025);
-    const gap=Math.round(h*0.012);   // 하단 바와 살짝 띄운다
-    const x=w-marginX-boxW, y=h-barH-boxH-gap, r=boxH/2;   // 바 위쪽(우측)으로 올려서 전화번호와 안 겹치게
+    const marginBottom=Math.round(h*0.02);
+    const x=w-marginX-boxW, y=h-marginBottom-boxH, r=boxH/2;   // 사진 우측 하단 구석 — 전화번호 오른쪽 빈 자리
     ctx.fillStyle='rgba(109,40,217,.7)';   // 보라색
     ctx.strokeStyle='rgba(255,255,255,.85)';
     ctx.lineWidth=Math.max(1, Math.round(fs*0.08));
