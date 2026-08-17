@@ -531,7 +531,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v164</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v165</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1103,8 +1103,7 @@
       return;
     }
     await recomputeAllDisplays();
-    const thumbEls=document.querySelectorAll('#todayThumbs img');
-    todaysShots.forEach((s, idx)=>{ if(thumbEls[idx]) thumbEls[idx].src=s.displayUrl; });
+    refreshAllThumbSrcs();
     openThumbAt(Math.min(i, todaysShots.length-1));   // 남은 사진 중 이어서 보여준다(태블릿도 같이 바뀜)
   }
 
@@ -1319,36 +1318,48 @@
     // 성공했을 때는 문구를 따로 띄우지 않는다 (태블릿 화면에 뜨는 것 자체가 확인이 됨)
     if(!ok) $('homeLog').innerHTML='⚠ 태블릿이 연결되어 있지 않습니다 (📺 태블릿 연결 확인)';
   }
+  // recomputeAllDisplays() 로 새로 만든 displayUrl 을 지금 화면에 떠 있는
+  // 썸네일 <img> 들에 순서대로 반영한다.
+  function refreshAllThumbSrcs(){
+    const thumbEls=document.querySelectorAll('#todayThumbs img');
+    todaysShots.forEach((s, idx)=>{ if(thumbEls[idx]) thumbEls[idx].src=s.displayUrl; });
+  }
   /* id를 넘기면(앱을 다시 열어 예전 기록을 되살리는 경우) 새로 저장하지 않고
      그 id 그대로 쓴다 — 안 넘기면(방금 찍은 사진) 새 id를 만들어 DB에도 남긴다.
      blob 은 이름표가 찍히지 않은 "원본" 사진이다 — 화면에 보여줄 합성본은
-     번호까지 정해진 뒤 이 함수 안에서 그때그때 새로 만든다(그래야 나중에
-     다른 사진이 지워져 번호가 바뀌어도 다시 합성해서 최신 번호를 보여줄 수
-     있다). 다운로드된 파일 자체는 저장 당시 번호로 이미 고정되어 있다. */
+     이 함수 안에서 그때그때 새로 만든다. 사진 한 장이 늘면 "오늘 전체 몇 명"
+     배지 값이 이미 찍힌 사람들 것도 같이 바뀌므로, 이번 한 장만이 아니라
+     todaysShots 전체를 다시 합성한다(다운로드된 파일 자체는 저장 당시
+     값으로 이미 고정되어 있어 영향받지 않는다). */
   async function addTodayShot(blob, filename, name, tel, id, t){
     const isNew=!id;
     if(isNew) id=Date.now()+'_'+Math.random().toString(36).slice(2,8);
     if(!t) t=Date.now();   // 되살릴 때는 원래 찍은 시각을 그대로 넘겨받는다(안 넘기면 지금 시각)
-    // 번호 계산과 todaysShots 에 밀어넣는 건 반드시 같은 동기 구간에서 함께
-    // 한다 — 그 사이에 다른 저장이 끼어들면 두 사진이 같은 번호를 받을 수
-    // 있기 때문. 뒤이은 합성(화면 표시용 사진 만들기)만 비동기로 늦게 해도
-    // 번호 자체는 이미 정해져 있어 안전하다.
-    const idx=personIndexFor(name, tel);
     const shot={blob, filename, name, tel, displayBlob:null, displayUrl:null, id, t};
     todaysShots.push(shot);
-    const thumbEl=appendTodayThumb(shot, todaysShots.length-1);
+    appendTodayThumb(shot, todaysShots.length-1);
     $('todayWrap').classList.add('show');
     $('todayCount').textContent=todaysShots.length;
     if(isNew) dbPutShot({id, date:todayKey(), filename, name, tel, blob, t});
 
-    const disp=await composeDisplay(blob, name, tel, idx);
-    shot.displayBlob=disp.blob; shot.displayUrl=disp.url;
-    if(thumbEl) thumbEl.src=disp.url;
+    await recomputeAllDisplays();
+    refreshAllThumbSrcs();
   }
-  // 앱을 다시 열었을 때 오늘 찍은 사진을 그대로 되살린다(태블릿 모드에는 이 목록이 없어서 건너뜀)
+  // 앱을 다시 열었을 때 오늘 찍은 사진을 그대로 되살린다(태블릿 모드에는 이 목록이 없어서 건너뜀).
+  // 한 장씩 addTodayShot 을 부르면 사진마다 전체를 다시 합성하는 게 중첩돼
+  // 느려지므로, 전부 밀어넣고 나서 딱 한 번만 다시 합성한다.
   async function restoreTodayShots(){
     const recs=await dbLoadTodayAndCleanup();
-    for(const r of recs) await addTodayShot(r.blob, r.filename, r.name, r.tel, r.id, r.t);
+    if(!recs.length) return;
+    for(const r of recs){
+      const shot={blob:r.blob, filename:r.filename, name:r.name, tel:r.tel, displayBlob:null, displayUrl:null, id:r.id, t:r.t};
+      todaysShots.push(shot);
+      appendTodayThumb(shot, todaysShots.length-1);
+    }
+    $('todayWrap').classList.add('show');
+    $('todayCount').textContent=todaysShots.length;
+    await recomputeAllDisplays();
+    refreshAllThumbSrcs();
   }
   /* ───── 오전 11시 기준 A부/B부 인원수 문구 ─────
      같은 사람이 다시 찍혀도(재촬영 등) 한 명으로 센다 — 전화번호가 있으면
@@ -1363,15 +1374,15 @@
     if(nm) return 'name:'+nm;
     return null;
   }
-  /* 사진에 찍어 넣을 "오늘 몇 번째 새가족"인지 — 인원수 집계와 똑같은
-     기준(전화번호 우선, 없으면 이름)으로 같은 사람을 하나로 묶는다.
-     같은 사람을 다시 찍으면(재촬영) 새 번호를 받지 않고 처음 번호를
-     그대로 받고, 그 사람 사진이 전부 지워지면 다음 새 사람부터는 빈자리
-     없이 다시 이어서 번호가 매겨진다 — todaysShots 를 저장할 때마다 그
-     자리에서 처음부터 다시 세기 때문에 따로 번호를 손볼 필요가 없다. */
-  function personIndexFor(nm, tel){
+  /* "오늘 몇 번째/전체 몇 명" 배지에 쓸 값 — 인원수 집계와 똑같은 기준
+     (전화번호 우선, 없으면 이름)으로 같은 사람을 하나로 묶는다. 이 함수는
+     "지금 이 한 장을 새로 저장하는 순간"의 스냅샷을 구할 때만 쓴다(ED의
+     compose() = 다운로드 파일에 고정으로 박히는 값). 화면 표시용은 항상
+     오늘 전체를 다시 세는 recomputeAllDisplays() 를 쓴다 — 사진이 늘거나
+     줄면 "전체 몇 명"이 매번 바뀌기 때문에, 이미 찍힌 사람들 배지도 같이
+     새로 그려야 하기 때문이다. */
+  function personIndexAndTotal(nm, tel){
     const key=headcountDedupKey({name:nm, tel:tel});
-    if(!key) return null;
     const seen=new Map();
     let next=1;
     for(const s of todaysShots){
@@ -1379,13 +1390,16 @@
       if(!k || seen.has(k)) continue;
       seen.set(k, next++);
     }
-    return seen.has(key) ? seen.get(key) : next;
+    if(!key) return {idx:null, total:next-1};
+    const isDup=seen.has(key);
+    return { idx: isDup?seen.get(key):next, total: isDup?(next-1):next };
   }
-  /* 사진 캔버스에 이름·전화번호·순번 바를 그린다 — 저장 시(다운로드용,
+  /* 사진 캔버스에 이름·전화번호와 "N/전체" 배지를 그린다 — 저장 시(다운로드용,
      ED.compose())와 화면 표시용 재합성(composeDisplay()) 둘 다 이 함수를
-     같이 쓴다. */
-  function drawNameBar(ctx, w, h, nm, tel, idx){
-    const idxPrefix=idx?idx+'. ':'';
+     같이 쓴다. 이름·전화번호는 그대로 가운데에 두고, 순번은 별도 알약 모양
+     배지로 하단 바 오른쪽 구석에 둬서 "오늘 몇 번째/전체 몇 명"이 이름과
+     안 섞이고 한눈에 읽히게 한다. */
+  function drawNameBar(ctx, w, h, nm, tel, idx, total){
     const barH=Math.round(h*0.16);
     ctx.fillStyle='rgba(0,0,0,.55)';
     ctx.fillRect(0,h-barH,w,barH);
@@ -1393,19 +1407,43 @@
     const fs=Math.round(barH*0.36);
     if(nm){
       ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
-      ctx.fillText(idxPrefix+nm, w/2, h-barH*0.60);
+      ctx.fillText(nm, w/2, h-barH*0.60);
     }
     if(tel){
       ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
-      ctx.fillText((nm?'':idxPrefix)+tel, w/2, h-barH*0.24);
+      ctx.fillText(tel, w/2, h-barH*0.24);
     }
+    if(idx && total) drawIndexBadge(ctx, w, h, barH, idx, total);
+  }
+  function drawIndexBadge(ctx, w, h, barH, idx, total){
+    const text=idx+'/'+total;
+    const fs=Math.round(barH*0.30);
+    ctx.font='800 '+fs+'px "Malgun Gothic",sans-serif';
+    const textW=ctx.measureText(text).width;
+    const padX=Math.round(fs*0.55), padY=Math.round(fs*0.38);
+    const boxW=textW+padX*2, boxH=fs+padY*2;
+    const margin=Math.round(w*0.025);
+    const x=w-margin-boxW, y=h-barH/2-boxH/2, r=boxH/2;
+    ctx.fillStyle='rgba(0,0,0,.55)';
+    ctx.strokeStyle='rgba(255,255,255,.85)';
+    ctx.lineWidth=Math.max(1, Math.round(fs*0.06));
+    if(ctx.roundRect){
+      ctx.beginPath(); ctx.roundRect(x,y,boxW,boxH,r); ctx.fill(); ctx.stroke();
+    }else{
+      ctx.fillRect(x,y,boxW,boxH); ctx.strokeRect(x,y,boxW,boxH);
+    }
+    ctx.fillStyle='#fff';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='800 '+fs+'px "Malgun Gothic",sans-serif';
+    ctx.fillText(text, x+boxW/2, y+boxH/2+Math.round(fs*0.03));
   }
   /* 앱 안(썸네일·전체화면·태블릿)에 보여줄 합성본을 "원본" 클린 사진에서
      그때그때 새로 만든다 — 저장은 클린 사진만 해두고, 보여줄 때마다 이름·
-     번호를 다시 그리기 때문에, 나중에 사진을 지워 번호가 바뀌어도 화면에는
-     항상 최신 번호가 보인다. (이미 다운로드 폴더에 저장된 파일 자체는
-     저장하던 순간의 번호로 고정돼 있고 앱이 되돌아가 고칠 방법이 없다.) */
-  async function composeDisplay(cleanBlob, nm, tel, idx){
+     번호를 다시 그리기 때문에, 나중에 사진을 지우거나 늘어서 "전체 몇 명"이
+     바뀌어도 화면에는 항상 최신 값이 보인다. (이미 다운로드 폴더에 저장된
+     파일 자체는 저장하던 순간의 값으로 고정돼 있고 앱이 되돌아가 고칠
+     방법이 없다.) */
+  async function composeDisplay(cleanBlob, nm, tel, idx, total){
     const bmp = await (window.createImageBitmap
       ? createImageBitmap(cleanBlob)
       : new Promise((res,rej)=>{
@@ -1419,27 +1457,30 @@
     const ctx=cv.getContext('2d');
     ctx.drawImage(bmp,0,0,w,h);
     if(bmp.close) bmp.close();
-    drawNameBar(ctx, w, h, nm, tel, idx);
+    drawNameBar(ctx, w, h, nm, tel, idx, total);
     const blob=await new Promise(res=>cv.toBlob(res, 'image/jpeg', 0.92));
     return { blob, url: URL.createObjectURL(blob) };
   }
-  /* 사진을 지운 뒤(또는 앱을 다시 열 때) todaysShots 전체를 처음부터 다시
-     세어, 남은 사진들의 화면 표시용 합성본을 전부 새로 만든다 — 지워진
-     사람 뒤에 있던 사람들의 번호가 당겨졌을 수 있기 때문. */
+  /* 사진을 지우거나 새로 저장한 뒤(또는 앱을 다시 열 때) todaysShots
+     전체를 처음부터 다시 세어, "오늘 전체 몇 명"이 바뀐 걸 반영해서 모든
+     사진의 화면 표시용 합성본을 새로 만든다 — 사진 한 장이 늘거나 줄면
+     이미 찍힌 다른 사람들의 배지("N/전체")도 전체 값이 달라지므로 같이
+     다시 그려야 한다. */
   async function recomputeAllDisplays(){
     const seen=new Map();
     let next=1;
     for(const s of todaysShots){
       const k=headcountDedupKey(s);
-      let idx=null;
-      if(k){
-        if(seen.has(k)) idx=seen.get(k);
-        else { idx=next++; seen.set(k, idx); }
-      }
-      const disp=await composeDisplay(s.blob, s.name, s.tel, idx);
+      if(k && !seen.has(k)) seen.set(k, next++);
+    }
+    const total=next-1;
+    await Promise.all(todaysShots.map(async s=>{
+      const k=headcountDedupKey(s);
+      const idx=k?seen.get(k):null;
+      const disp=await composeDisplay(s.blob, s.name, s.tel, idx, total);
       if(s.displayUrl) URL.revokeObjectURL(s.displayUrl);
       s.displayBlob=disp.blob; s.displayUrl=disp.url;
-    }
+    }));
   }
   async function ensurePart(){
     if(data.part==='A' || data.part==='B') return data.part;
@@ -1578,8 +1619,8 @@
       const ctx=cv.getContext('2d');
       ctx.drawImage(baseCanvas,0,0);
       const nm=nI.value.trim(), tel=fmtTel(tI.value);
-      const idx=personIndexFor(nm, tel);   // 오늘 몇 번째 새가족인지 — 다운로드 파일엔 이 순간의 번호로 고정된다
-      drawNameBar(ctx, w, h, nm, tel, idx);
+      const {idx, total}=personIndexAndTotal(nm, tel);   // 오늘 몇 번째/전체 몇 명 — 다운로드 파일엔 이 순간의 값으로 고정된다
+      drawNameBar(ctx, w, h, nm, tel, idx, total);
       return cv;
     }
 
