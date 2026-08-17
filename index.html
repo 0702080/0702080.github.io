@@ -531,7 +531,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v162</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v163</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1345,6 +1345,24 @@
     if(nm) return 'name:'+nm;
     return null;
   }
+  /* 사진에 찍어 넣을 "오늘 몇 번째 새가족"인지 — 인원수 집계와 똑같은
+     기준(전화번호 우선, 없으면 이름)으로 같은 사람을 하나로 묶는다.
+     같은 사람을 다시 찍으면(재촬영) 새 번호를 받지 않고 처음 번호를
+     그대로 받고, 그 사람 사진이 전부 지워지면 다음 새 사람부터는 빈자리
+     없이 다시 이어서 번호가 매겨진다 — todaysShots 를 저장할 때마다 그
+     자리에서 처음부터 다시 세기 때문에 따로 번호를 손볼 필요가 없다. */
+  function personIndexFor(nm, tel){
+    const key=headcountDedupKey({name:nm, tel:tel});
+    if(!key) return null;
+    const seen=new Map();
+    let next=1;
+    for(const s of todaysShots){
+      const k=headcountDedupKey(s);
+      if(!k || seen.has(k)) continue;
+      seen.set(k, next++);
+    }
+    return seen.has(key) ? seen.get(key) : next;
+  }
   async function ensurePart(){
     if(data.part==='A' || data.part==='B') return data.part;
     let v;
@@ -1483,6 +1501,8 @@
       ctx.drawImage(baseCanvas,0,0);
 
       const nm=nI.value.trim(), tel=fmtTel(tI.value);
+      const idx=personIndexFor(nm, tel);
+      const idxPrefix=idx?idx+'. ':'';   // 오늘 몇 번째 새가족인지 — 이름(없으면 전화번호) 앞에 붙인다
       const barH=Math.round(h*0.16);
       ctx.fillStyle='rgba(0,0,0,.55)';
       ctx.fillRect(0,h-barH,w,barH);
@@ -1490,11 +1510,11 @@
       const fs=Math.round(barH*0.36);       // 이름·전화번호 같은 크기
       if(nm){
         ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
-        ctx.fillText(nm, w/2, h-barH*0.60);
+        ctx.fillText(idxPrefix+nm, w/2, h-barH*0.60);
       }
       if(tel){
         ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
-        ctx.fillText(tel, w/2, h-barH*0.24);
+        ctx.fillText((nm?'':idxPrefix)+tel, w/2, h-barH*0.24);
       }
       return cv;
     }
