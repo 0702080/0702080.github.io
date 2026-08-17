@@ -531,7 +531,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v169</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v170</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1234,6 +1234,15 @@
   }
   thumbView.addEventListener('pointerup', thumbEndPt);
   thumbView.addEventListener('pointercancel', thumbEndPt);
+  /* PC 웹에서 마우스 휠로도 확대/축소 — 커서 위치를 기준으로 확대해서(핀치의
+     두 손가락 가운데점과 같은 역할) 커서가 가리키던 지점이 그대로 화면에
+     남는다. deltaY 크기에 비례해서 배율이 바뀌므로, 마우스 휠 한 칸이든
+     트랙패드의 미세한 스크롤이든 자연스러운 속도로 확대/축소된다. */
+  thumbView.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const factor=Math.exp(-e.deltaY*0.0015);
+    thumbZoomAt(e.clientX, e.clientY, tvw_sc*factor);
+  }, {passive:false});
   thumbTrack.addEventListener('transitionend', e=>{
     if(e.propertyName!=='transform' || !thumbTrackPendingDir) return;
     const dir=thumbTrackPendingDir; thumbTrackPendingDir=0;
