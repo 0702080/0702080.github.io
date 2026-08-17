@@ -531,7 +531,7 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v163</span></h1>
+  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v164</span></h1>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
     <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
@@ -1050,9 +1050,9 @@
      다시 요청해버리는 부작용이 있어 removeAttribute 를 쓴다) — 그래야
      목록 끝에서 당겨도 깨진 이미지가 살짝 비치는 일이 없다. */
   function thumbFillNeighbors(){
-    if(thumbViewIndex>0) thumbImgPrev.src=todaysShots[thumbViewIndex-1].url;
+    if(thumbViewIndex>0) thumbImgPrev.src=todaysShots[thumbViewIndex-1].displayUrl;
     else thumbImgPrev.removeAttribute('src');
-    if(thumbViewIndex<todaysShots.length-1) thumbImgNext.src=todaysShots[thumbViewIndex+1].url;
+    if(thumbViewIndex<todaysShots.length-1) thumbImgNext.src=todaysShots[thumbViewIndex+1].displayUrl;
     else thumbImgNext.removeAttribute('src');
   }
   function thumbTrackSnapInstant(){
@@ -1078,17 +1078,19 @@
     const s=todaysShots[i];
     const thumbEl=document.querySelectorAll('#todayThumbs img')[i];
     thumbFillNeighbors();
-    openThumbView(s.url);
+    openThumbView(s.displayUrl);
     resendToTv(s, thumbEl);
   }
   /* 지금 전체화면으로 보고 있는 사진을 "오늘 찍은 사진" 목록에서 지운다.
      다운로드 폴더에 이미 저장된 파일 자체는 브라우저가 건드릴 수 없어서
-     그대로 남는다 — 여기서 지우는 건 이 세션 안에서의 목록·미리보기뿐. */
-  function deleteCurrentThumb(){
+     그대로 남는다 — 여기서 지우는 건 이 세션 안에서의 목록·미리보기뿐.
+     남은 사진들의 번호가 이 삭제로 당겨졌을 수 있으니, 전부 다시 합성해서
+     화면(썸네일·전체화면·태블릿)에는 항상 최신 번호가 보이게 한다. */
+  async function deleteCurrentThumb(){
     const i=thumbViewIndex;
     if(i<0 || i>=todaysShots.length) return;
     const [removed]=todaysShots.splice(i,1);
-    URL.revokeObjectURL(removed.url);
+    if(removed.displayUrl) URL.revokeObjectURL(removed.displayUrl);
     dbDeleteShot(removed.id);
     const thumbEl=document.querySelectorAll('#todayThumbs img')[i];
     if(thumbEl) thumbEl.remove();
@@ -1100,6 +1102,9 @@
       thumbView.classList.remove('on');   // 더 볼 사진이 없으면 전체화면도 닫는다
       return;
     }
+    await recomputeAllDisplays();
+    const thumbEls=document.querySelectorAll('#todayThumbs img');
+    todaysShots.forEach((s, idx)=>{ if(thumbEls[idx]) thumbEls[idx].src=s.displayUrl; });
     openThumbAt(Math.min(i, todaysShots.length-1));   // 남은 사진 중 이어서 보여준다(태블릿도 같이 바뀜)
   }
 
@@ -1236,7 +1241,7 @@
     const newIndex=thumbViewIndex+dir;
     thumbViewIndex=newIndex;
     const s=todaysShots[newIndex];
-    thumbImg.src=s.url;
+    thumbImg.src=s.displayUrl;
     thumbResetZoom();
     thumbFillNeighbors();
     thumbTrackSnapInstant();       // 겉보기엔 계속 이어서 움직인 것처럼, 속으론 가운데 칸으로 순간 복귀
@@ -1262,11 +1267,12 @@
 
   function appendTodayThumb(s, idx){
     const img=document.createElement('img');
-    img.src=s.url;
+    if(s.displayUrl) img.src=s.displayUrl;   // 합성이 아직 안 끝났으면 잠깐 빈 채로 있다가 곧 채워진다
     img.alt=s.name||s.tel||'';
     img.title='탭하면 크게 보고, 태블릿 화면에도 다시 띄웁니다(전체화면에서 좌우로 훑으면 다른 사진으로 넘어감)';
     img.onclick=()=>openThumbAt(idx);
     $('todayThumbs').appendChild(img);
+    return img;
   }
   /* 홈 화면에서 오른쪽→왼쪽으로 크게 훑으면 오늘 찍은 사진 중 마지막 걸
      바로 전체화면으로 연다 — 아래로 스크롤해서 작은 썸네일을 찾아 누르는
@@ -1295,12 +1301,12 @@
      화면으로 보낸다 — 방금 찍은 사진을 화면에 크게 다시 띄우고 싶을 때 사용 */
   async function resendToTv(shot, thumbEl){
     const bmp = await (window.createImageBitmap
-      ? createImageBitmap(shot.blob)
+      ? createImageBitmap(shot.displayBlob)
       : new Promise((res,rej)=>{
-          const im=new Image(); const u=URL.createObjectURL(shot.blob);
-          im.onload=()=>{ URL.revokeObjectURL(u); res(im); };
-          im.onerror=()=>{ URL.revokeObjectURL(u); rej(); };
-          im.src=u;
+          const im=new Image();
+          im.onload=()=>res(im);
+          im.onerror=()=>rej();
+          im.src=shot.displayUrl;
         }));
     const cv=document.createElement('canvas');
     cv.width=bmp.width||bmp.naturalWidth; cv.height=bmp.height||bmp.naturalHeight;
@@ -1314,23 +1320,35 @@
     if(!ok) $('homeLog').innerHTML='⚠ 태블릿이 연결되어 있지 않습니다 (📺 태블릿 연결 확인)';
   }
   /* id를 넘기면(앱을 다시 열어 예전 기록을 되살리는 경우) 새로 저장하지 않고
-     그 id 그대로 쓴다 — 안 넘기면(방금 찍은 사진) 새 id를 만들어 DB에도 남긴다. */
-  function addTodayShot(blob, filename, name, tel, id, t){
-    const url=URL.createObjectURL(blob);
+     그 id 그대로 쓴다 — 안 넘기면(방금 찍은 사진) 새 id를 만들어 DB에도 남긴다.
+     blob 은 이름표가 찍히지 않은 "원본" 사진이다 — 화면에 보여줄 합성본은
+     번호까지 정해진 뒤 이 함수 안에서 그때그때 새로 만든다(그래야 나중에
+     다른 사진이 지워져 번호가 바뀌어도 다시 합성해서 최신 번호를 보여줄 수
+     있다). 다운로드된 파일 자체는 저장 당시 번호로 이미 고정되어 있다. */
+  async function addTodayShot(blob, filename, name, tel, id, t){
     const isNew=!id;
     if(isNew) id=Date.now()+'_'+Math.random().toString(36).slice(2,8);
     if(!t) t=Date.now();   // 되살릴 때는 원래 찍은 시각을 그대로 넘겨받는다(안 넘기면 지금 시각)
-    const shot={blob, filename, name, tel, url, id, t};
+    // 번호 계산과 todaysShots 에 밀어넣는 건 반드시 같은 동기 구간에서 함께
+    // 한다 — 그 사이에 다른 저장이 끼어들면 두 사진이 같은 번호를 받을 수
+    // 있기 때문. 뒤이은 합성(화면 표시용 사진 만들기)만 비동기로 늦게 해도
+    // 번호 자체는 이미 정해져 있어 안전하다.
+    const idx=personIndexFor(name, tel);
+    const shot={blob, filename, name, tel, displayBlob:null, displayUrl:null, id, t};
     todaysShots.push(shot);
-    appendTodayThumb(shot, todaysShots.length-1);
+    const thumbEl=appendTodayThumb(shot, todaysShots.length-1);
     $('todayWrap').classList.add('show');
     $('todayCount').textContent=todaysShots.length;
     if(isNew) dbPutShot({id, date:todayKey(), filename, name, tel, blob, t});
+
+    const disp=await composeDisplay(blob, name, tel, idx);
+    shot.displayBlob=disp.blob; shot.displayUrl=disp.url;
+    if(thumbEl) thumbEl.src=disp.url;
   }
   // 앱을 다시 열었을 때 오늘 찍은 사진을 그대로 되살린다(태블릿 모드에는 이 목록이 없어서 건너뜀)
   async function restoreTodayShots(){
     const recs=await dbLoadTodayAndCleanup();
-    for(const r of recs) addTodayShot(r.blob, r.filename, r.name, r.tel, r.id, r.t);
+    for(const r of recs) await addTodayShot(r.blob, r.filename, r.name, r.tel, r.id, r.t);
   }
   /* ───── 오전 11시 기준 A부/B부 인원수 문구 ─────
      같은 사람이 다시 찍혀도(재촬영 등) 한 명으로 센다 — 전화번호가 있으면
@@ -1362,6 +1380,66 @@
       seen.set(k, next++);
     }
     return seen.has(key) ? seen.get(key) : next;
+  }
+  /* 사진 캔버스에 이름·전화번호·순번 바를 그린다 — 저장 시(다운로드용,
+     ED.compose())와 화면 표시용 재합성(composeDisplay()) 둘 다 이 함수를
+     같이 쓴다. */
+  function drawNameBar(ctx, w, h, nm, tel, idx){
+    const idxPrefix=idx?idx+'. ':'';
+    const barH=Math.round(h*0.16);
+    ctx.fillStyle='rgba(0,0,0,.55)';
+    ctx.fillRect(0,h-barH,w,barH);
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
+    const fs=Math.round(barH*0.36);
+    if(nm){
+      ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
+      ctx.fillText(idxPrefix+nm, w/2, h-barH*0.60);
+    }
+    if(tel){
+      ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
+      ctx.fillText((nm?'':idxPrefix)+tel, w/2, h-barH*0.24);
+    }
+  }
+  /* 앱 안(썸네일·전체화면·태블릿)에 보여줄 합성본을 "원본" 클린 사진에서
+     그때그때 새로 만든다 — 저장은 클린 사진만 해두고, 보여줄 때마다 이름·
+     번호를 다시 그리기 때문에, 나중에 사진을 지워 번호가 바뀌어도 화면에는
+     항상 최신 번호가 보인다. (이미 다운로드 폴더에 저장된 파일 자체는
+     저장하던 순간의 번호로 고정돼 있고 앱이 되돌아가 고칠 방법이 없다.) */
+  async function composeDisplay(cleanBlob, nm, tel, idx){
+    const bmp = await (window.createImageBitmap
+      ? createImageBitmap(cleanBlob)
+      : new Promise((res,rej)=>{
+          const im=new Image(); const u=URL.createObjectURL(cleanBlob);
+          im.onload=()=>{ URL.revokeObjectURL(u); res(im); };
+          im.onerror=()=>{ URL.revokeObjectURL(u); rej(); };
+          im.src=u;
+        }));
+    const w=bmp.width||bmp.naturalWidth, h=bmp.height||bmp.naturalHeight;
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    const ctx=cv.getContext('2d');
+    ctx.drawImage(bmp,0,0,w,h);
+    if(bmp.close) bmp.close();
+    drawNameBar(ctx, w, h, nm, tel, idx);
+    const blob=await new Promise(res=>cv.toBlob(res, 'image/jpeg', 0.92));
+    return { blob, url: URL.createObjectURL(blob) };
+  }
+  /* 사진을 지운 뒤(또는 앱을 다시 열 때) todaysShots 전체를 처음부터 다시
+     세어, 남은 사진들의 화면 표시용 합성본을 전부 새로 만든다 — 지워진
+     사람 뒤에 있던 사람들의 번호가 당겨졌을 수 있기 때문. */
+  async function recomputeAllDisplays(){
+    const seen=new Map();
+    let next=1;
+    for(const s of todaysShots){
+      const k=headcountDedupKey(s);
+      let idx=null;
+      if(k){
+        if(seen.has(k)) idx=seen.get(k);
+        else { idx=next++; seen.set(k, idx); }
+      }
+      const disp=await composeDisplay(s.blob, s.name, s.tel, idx);
+      if(s.displayUrl) URL.revokeObjectURL(s.displayUrl);
+      s.displayBlob=disp.blob; s.displayUrl=disp.url;
+    }
   }
   async function ensurePart(){
     if(data.part==='A' || data.part==='B') return data.part;
@@ -1398,7 +1476,7 @@
   $('bShareAll').onclick=async ()=>{
     if(!todaysShots.length) return;
     const part=await ensurePart();
-    const files=todaysShots.map(s=>new File([s.blob], s.filename, {type:'image/jpeg'}));
+    const files=todaysShots.map(s=>new File([s.displayBlob||s.blob], s.filename, {type:'image/jpeg'}));
     // 문구를 사진과 한 번에 같이 실어 보낸다 — 받는 앱이 이걸 캡션으로
     // 보여주면 좋고, 무시해도 손해는 없다(밑에 "인원수 문구 보내기"
     // 버튼이 확실한 방법이다).
@@ -1499,23 +1577,9 @@
       const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
       const ctx=cv.getContext('2d');
       ctx.drawImage(baseCanvas,0,0);
-
       const nm=nI.value.trim(), tel=fmtTel(tI.value);
-      const idx=personIndexFor(nm, tel);
-      const idxPrefix=idx?idx+'. ':'';   // 오늘 몇 번째 새가족인지 — 이름(없으면 전화번호) 앞에 붙인다
-      const barH=Math.round(h*0.16);
-      ctx.fillStyle='rgba(0,0,0,.55)';
-      ctx.fillRect(0,h-barH,w,barH);
-      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
-      const fs=Math.round(barH*0.36);       // 이름·전화번호 같은 크기
-      if(nm){
-        ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
-        ctx.fillText(idxPrefix+nm, w/2, h-barH*0.60);
-      }
-      if(tel){
-        ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
-        ctx.fillText((nm?'':idxPrefix)+tel, w/2, h-barH*0.24);
-      }
+      const idx=personIndexFor(nm, tel);   // 오늘 몇 번째 새가족인지 — 다운로드 파일엔 이 순간의 번호로 고정된다
+      drawNameBar(ctx, w, h, nm, tel, idx);
       return cv;
     }
 
@@ -1539,6 +1603,7 @@
       const mySeq=++saveSeq;
 
       const name=fileBase()+'.jpg';
+      const cleanCanvas=baseCanvas;   // showFile()이 다음 사진으로 baseCanvas 를 바꾸기 전에 미리 붙잡아둔다
       const composed=compose();
 
       // 벽걸이 태블릿에도 즉시 띄운다 (연결돼 있을 때만)
@@ -1558,7 +1623,11 @@
 
         // 실제 저장·전송은 화면 상태와 무관하게 항상 한다 — 입력한 이름·전화가
         // 담긴 사진을 화면 전환 타이밍 때문에 버리면 안 된다.
-        addTodayShot(blob, name, nm, tel);
+        // 앱 안(썸네일·전체화면·태블릿)에는 이름표 없는 "원본"을 따로 저장해서,
+        // 나중에 사진을 지워 번호가 바뀌어도 그 자리에서 다시 합성해 보여줄 수
+        // 있게 한다 — 지금 막 다운로드한 파일은 이미 고정된 번호라 못 바꾼다.
+        const cleanBlob=await new Promise(res=>cleanCanvas.toBlob(res, 'image/jpeg', 0.92));
+        await addTodayShot(cleanBlob||blob, name, nm, tel);
 
         if(mySeq===saveSeq){
           $('homeLog').innerHTML='';   // 저장 성공 로그는 화면에 안 띄운다(파일은 그대로 저장됨)
