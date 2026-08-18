@@ -584,7 +584,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v181</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v182</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
   </div>
   <div id="tvRow">
@@ -1916,10 +1916,20 @@
        옅어지며 숨어서, 다 끌었을 때 사진이 가려짐 없이 진짜 전체 크기로
        보인다. 충분히 끌고 놓으면 ✕ 버튼과 같이 대기열째 전부 취소하고
        처음 화면으로 돌아가고, 덜 끌면 둘 다 원래대로 돌아오고 편집은
-       그대로 계속된다. */
+       그대로 계속된다.
+
+       이미 ✕ 로 미리보기 중일 때는(edPreviewOn) 같은 좌우 드래그가 다른
+       뜻이 된다 — 여러 장을 골랐을 때 다음/이전 사진으로 넘기며 훑어보는
+       용도로 바뀐다(왼쪽=다음, 오른쪽=이전). 사진이 이미 전체 화면으로
+       나와 있어서 "드러내기"는 더 의미가 없기 때문. */
     let edDragId=null, edDragStartX=0, edDragStartY=0, edDragging=false, edJustCancelled=false;
-    const ED_REVEAL_PX=140, ED_CANCEL_PX=170;
+    const ED_REVEAL_PX=140, ED_CANCEL_PX=170, ED_QUEUE_NAV_PX=70;
     const edBottom=$('edBottom');
+    function edEnterPreview(){
+      edPreviewOn=true;
+      if(baseCanvas){ baseCanvas.style.transition='none'; baseCanvas.style.opacity='1'; }
+      edBottom.style.transition='none'; edBottom.style.opacity='0';
+    }
     $('edStage').addEventListener('pointerdown', e=>{
       if(saving) return;
       edDragId=e.pointerId; edDragStartX=e.clientX; edDragStartY=e.clientY; edDragging=false;
@@ -1930,13 +1940,17 @@
       const dx=e.clientX-edDragStartX, dy=e.clientY-edDragStartY;
       if(!edDragging){
         if(Math.hypot(dx,dy)<10) return;   // 아직 방향을 정하기엔 너무 조금 움직였다
-        if(!(dx>0 && dx>Math.abs(dy)*1.2)){ edDragId=null; return; }   // 오른쪽이 아니면 이 제스처는 포기(탭·다른 동작에 맡김)
+        const horizontal=Math.abs(dx)>Math.abs(dy)*1.2;
+        if(edPreviewOn ? !horizontal : !(dx>0 && horizontal)){ edDragId=null; return; }   // 평소엔 오른쪽으로만, 미리보기 중엔 좌우 다 허용
         edDragging=true;
-        edBottom.style.transition='none';
+        if(!edPreviewOn) edBottom.style.transition='none';
       }
-      const t=Math.min(1, dx/ED_REVEAL_PX);
-      if(baseCanvas){ baseCanvas.style.transition='none'; baseCanvas.style.opacity=String(t); }
-      edBottom.style.opacity=String(1-t);
+      if(!edPreviewOn){
+        const t=Math.min(1, dx/ED_REVEAL_PX);
+        if(baseCanvas){ baseCanvas.style.transition='none'; baseCanvas.style.opacity=String(t); }
+        edBottom.style.opacity=String(1-t);
+      }
+      // 미리보기 중엔 사진을 실시간으로 끌어당기지 않고, 손을 뗄 때 방향만 보고 넘긴다
     });
     function edStageEndDrag(e){
       if(e.pointerId!==edDragId) return;
@@ -1944,6 +1958,18 @@
       if(!edDragging) return;
       edDragging=false;
       const dx=e.clientX-edDragStartX;
+      if(edPreviewOn){
+        if(dx<-ED_QUEUE_NAV_PX && qi+1<queue.length){
+          qi++;
+          showFile(queue[qi]).then(edEnterPreview)
+            .catch(()=>{ alert('다음 사진을 불러오지 못했습니다.'); queue=[]; qi=0; close(); });
+        }else if(dx>ED_QUEUE_NAV_PX && qi>0){
+          qi--;
+          showFile(queue[qi]).then(edEnterPreview)
+            .catch(()=>{ alert('사진을 불러오지 못했습니다.'); queue=[]; qi=0; close(); });
+        }
+        return;
+      }
       if(baseCanvas) baseCanvas.style.transition='opacity .2s ease';
       edBottom.style.transition='opacity .2s ease';
       if(dx>ED_CANCEL_PX){
