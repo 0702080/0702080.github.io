@@ -588,7 +588,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v184</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v185</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
   </div>
   <div id="tvRow">
@@ -1722,12 +1722,14 @@
       const stage=$('edStage');
       const prevCanvas=stage.querySelector('canvas');
       if(prevCanvas) prevCanvas.remove();
-      baseCanvas.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;pointer-events:none;';
+      baseCanvas.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;pointer-events:none;transform-origin:center center;';
       stage.appendChild(baseCanvas);
       $('edBottom').style.transition='none';
       $('edBottom').style.opacity='1';   // 직전에 오른쪽으로 끌다 만 상태가 남아있을 수 있으니 매 사진마다 되돌려둔다
+      $('edBottom').style.pointerEvents='';   // 미리보기 중 숨겨서 꺼뒀던 상호작용도 다시 켠다
       edPreviewOn=false;   // 이전 사진에서 ✕ 로 미리보기를 켜둔 채 다음 사진으로 넘어가지 않게
       edJustCancelled=false;   // 예전 취소 스와이프의 흔적이 다음(새) 편집 세션의 첫 탭을 삼켜버리지 않게
+      edResetZoom();   // 이전 사진에서 확대해 둔 채로 다음 사진이 시작되지 않게
 
       nI.value=''; tI.value='';
       hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
@@ -1856,23 +1858,28 @@
         return;
       }
       edPreviewOn=true;
+      edResetZoom();
       if(baseCanvas){ baseCanvas.style.transition='opacity .2s ease'; baseCanvas.style.opacity='1'; }
       edBottom.style.transition='opacity .2s ease';
       edBottom.style.opacity='0';
+      edBottom.style.pointerEvents='none';   // 숨은 이름·전화번호 칸이 사진 터치를 가로채 키보드가 뜨는 일이 없게
     };
     /* 사진을 안 보여주는 대신, 그 배경(입력판 바깥)을 탭하면 저장하지 않고 닫힌다.
        여러 장을 고른 경우엔 "전부 취소"가 아니라 "이 한 장만 건너뛰기"로 동작해서
        나머지 대기 중인 사진까지 같이 사라지지 않게 한다.
        미리보기 중일 때는 뜻이 달라져서, 탭하면 건너뛰지 않고 그냥 입력
-       화면으로 돌아간다(✕ 는 그 상태에서 전체 취소 전용이 됐으므로). */
+       화면으로 돌아간다(✕ 는 그 상태에서 전체 취소 전용이 됐으므로) — 단,
+       확대되어 있는 동안은 탭으로 실수로 안 닫히게 막는다. */
     $('edStage').onclick=()=>{
       if(edJustCancelled){ edJustCancelled=false; return; }   // 방금 오른쪽으로 끌어 취소한 뒤 이어지는 탭은 무시
       if(saving) return;   // 저장 처리 중엔 무시
       if(edPreviewOn){
+        if(edZ_sc>1.01) return;   // 확대 중엔 탭으로 안 닫힌다(다시 축소하거나 사진을 다시 눌러야 함)
         edPreviewOn=false;
         if(baseCanvas){ baseCanvas.style.transition='opacity .2s ease'; baseCanvas.style.opacity='0'; }
         edBottom.style.transition='opacity .2s ease';
         edBottom.style.opacity='1';
+        edBottom.style.pointerEvents='';
         return;
       }
       if(qi+1 < queue.length){
@@ -1889,58 +1896,127 @@
        처음 화면으로 돌아가고, 덜 끌면 둘 다 원래대로 돌아오고 편집은
        그대로 계속된다.
 
-       이미 ✕ 로 미리보기 중일 때는(edPreviewOn) 같은 좌우 드래그가 다른
-       뜻이 된다 — 여러 장을 골랐을 때 다음/이전 사진으로 넘기며 훑어보는
-       용도로 바뀐다(왼쪽=다음, 오른쪽=이전). 사진이 이미 전체 화면으로
-       나와 있어서 "드러내기"는 더 의미가 없기 때문. */
+       이미 ✕ 로 미리보기 중일 때는(edPreviewOn) 완전히 다른 제스처
+       체계로 바뀐다 — 태블릿 확인 화면의 핀치줌과 같은 방식으로 두 손가락
+       핀치·한 손가락 이동(확대 중)·좌우 스와이프(안 확대일 때, 다음/이전
+       사진 넘기기)를 모두 처리한다. */
     let edDragId=null, edDragStartX=0, edDragStartY=0, edDragging=false, edJustCancelled=false;
     const ED_REVEAL_PX=140, ED_CANCEL_PX=170, ED_QUEUE_NAV_PX=70;
     const edBottom=$('edBottom');
+
+    // ── 미리보기 중 핀치줌·이동(썸네일 전체화면 보기와 같은 방식) ──
+    const edZPts=new Map();
+    let edZPanning=false, edZLastX=0, edZLastY=0, edZPinchD=0, edZPinchS=1;
+    let edZStartX=0, edZStartY=0, edZStartSc=1, edZWasMulti=false;
+    let edZ_sc=1, edZ_tx=0, edZ_ty=0;
+    const EDZ_MIN=1, EDZ_MAX=6;
+    function edApplyZoomTf(){ if(baseCanvas) baseCanvas.style.transform='translate('+edZ_tx+'px,'+edZ_ty+'px) scale('+edZ_sc+')'; }
+    function edClampZoomPan(){
+      if(!baseCanvas) return;
+      const st=$('edStage').getBoundingClientRect();
+      const w=baseCanvas.clientWidth*edZ_sc, h=baseCanvas.clientHeight*edZ_sc;
+      const mx=Math.max(0,(w-st.width)/2), my=Math.max(0,(h-st.height)/2);
+      edZ_tx=Math.min(mx,Math.max(-mx,edZ_tx));
+      edZ_ty=Math.min(my,Math.max(-my,edZ_ty));
+    }
+    function edZoomAt(px,py,next){
+      const st=$('edStage').getBoundingClientRect();
+      const ox=px-st.left-st.width/2, oy=py-st.top-st.height/2;
+      const s2=Math.min(EDZ_MAX,Math.max(EDZ_MIN,next));
+      const u=(ox-edZ_tx)/edZ_sc, v=(oy-edZ_ty)/edZ_sc;
+      edZ_tx=ox-u*s2; edZ_ty=oy-v*s2; edZ_sc=s2;
+      if(edZ_sc<=1.001){ edZ_sc=1; edZ_tx=0; edZ_ty=0; }
+      edClampZoomPan(); edApplyZoomTf();
+    }
+    function edResetZoom(){ edZ_sc=1; edZ_tx=0; edZ_ty=0; edApplyZoomTf(); }
+
     function edEnterPreview(){
       edPreviewOn=true;
+      edResetZoom();
       if(baseCanvas){ baseCanvas.style.transition='none'; baseCanvas.style.opacity='1'; }
       edBottom.style.transition='none'; edBottom.style.opacity='0';
+      edBottom.style.pointerEvents='none';
     }
     $('edStage').addEventListener('pointerdown', e=>{
       if(saving) return;
+      if(edPreviewOn){
+        try{ $('edStage').setPointerCapture(e.pointerId); }catch(err){}
+        edZPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+        if(edZPts.size===1){
+          edZPanning=true; edZLastX=e.clientX; edZLastY=e.clientY;
+          edZStartX=e.clientX; edZStartY=e.clientY; edZStartSc=edZ_sc;
+          edZWasMulti=false;
+        }else if(edZPts.size===2){
+          edZPanning=false; edZWasMulti=true;
+          const [a,b]=[...edZPts.values()];
+          edZPinchD=Math.hypot(a.x-b.x,a.y-b.y); edZPinchS=edZ_sc;
+        }
+        return;
+      }
       edDragId=e.pointerId; edDragStartX=e.clientX; edDragStartY=e.clientY; edDragging=false;
       try{ $('edStage').setPointerCapture(e.pointerId); }catch(err){}
     });
     $('edStage').addEventListener('pointermove', e=>{
+      if(edPreviewOn){
+        if(!edZPts.has(e.pointerId)) return;
+        edZPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+        if(edZPts.size===2 && edZPinchD>0){
+          const [a,b]=[...edZPts.values()];
+          const d=Math.hypot(a.x-b.x,a.y-b.y);
+          edZoomAt((a.x+b.x)/2,(a.y+b.y)/2, edZPinchS*(d/edZPinchD));
+        }else if(edZPanning && edZ_sc>1.01){
+          edZ_tx+=e.clientX-edZLastX; edZ_ty+=e.clientY-edZLastY;
+          edZLastX=e.clientX; edZLastY=e.clientY;
+          edClampZoomPan(); edApplyZoomTf();
+        }
+        // 확대 안 된 상태에서 한 손가락 이동은 여기선 아무것도 안 하고
+        // 손을 뗄 때(edStageEndDrag)만 방향을 보고 다음/이전 사진으로 넘긴다
+        return;
+      }
       if(e.pointerId!==edDragId) return;
       const dx=e.clientX-edDragStartX, dy=e.clientY-edDragStartY;
       if(!edDragging){
         if(Math.hypot(dx,dy)<10) return;   // 아직 방향을 정하기엔 너무 조금 움직였다
-        const horizontal=Math.abs(dx)>Math.abs(dy)*1.2;
-        if(edPreviewOn ? !horizontal : !(dx>0 && horizontal)){ edDragId=null; return; }   // 평소엔 오른쪽으로만, 미리보기 중엔 좌우 다 허용
+        if(!(dx>0 && dx>Math.abs(dy)*1.2)){ edDragId=null; return; }   // 오른쪽이 아니면 이 제스처는 포기
         edDragging=true;
-        if(!edPreviewOn) edBottom.style.transition='none';
+        edBottom.style.transition='none';
       }
-      if(!edPreviewOn){
-        const t=Math.min(1, dx/ED_REVEAL_PX);
-        if(baseCanvas){ baseCanvas.style.transition='none'; baseCanvas.style.opacity=String(t); }
-        edBottom.style.opacity=String(1-t);
-      }
-      // 미리보기 중엔 사진을 실시간으로 끌어당기지 않고, 손을 뗄 때 방향만 보고 넘긴다
+      const t=Math.min(1, dx/ED_REVEAL_PX);
+      if(baseCanvas){ baseCanvas.style.transition='none'; baseCanvas.style.opacity=String(t); }
+      edBottom.style.opacity=String(1-t);
     });
     function edStageEndDrag(e){
+      if(edPreviewOn){
+        const wasLoneFinger=edZPts.size===1 && edZStartSc<=1.01 && !edZWasMulti;
+        const endX=e.clientX;
+        edZPts.delete(e.pointerId);
+        if(edZPts.size<2) edZPinchD=0;
+        if(edZPts.size===1){
+          const p=[...edZPts.values()][0];
+          edZPanning=true; edZLastX=p.x; edZLastY=p.y;
+        }
+        if(edZPts.size===0){
+          edZPanning=false;
+          if(wasLoneFinger){
+            const dx=endX-edZStartX;
+            if(dx<-ED_QUEUE_NAV_PX && qi+1<queue.length){
+              qi++;
+              showFile(queue[qi]).then(edEnterPreview)
+                .catch(()=>{ alert('다음 사진을 불러오지 못했습니다.'); queue=[]; qi=0; close(); });
+            }else if(dx>ED_QUEUE_NAV_PX && qi>0){
+              qi--;
+              showFile(queue[qi]).then(edEnterPreview)
+                .catch(()=>{ alert('사진을 불러오지 못했습니다.'); queue=[]; qi=0; close(); });
+            }
+          }
+        }
+        return;
+      }
       if(e.pointerId!==edDragId) return;
       edDragId=null;
       if(!edDragging) return;
       edDragging=false;
       const dx=e.clientX-edDragStartX;
-      if(edPreviewOn){
-        if(dx<-ED_QUEUE_NAV_PX && qi+1<queue.length){
-          qi++;
-          showFile(queue[qi]).then(edEnterPreview)
-            .catch(()=>{ alert('다음 사진을 불러오지 못했습니다.'); queue=[]; qi=0; close(); });
-        }else if(dx>ED_QUEUE_NAV_PX && qi>0){
-          qi--;
-          showFile(queue[qi]).then(edEnterPreview)
-            .catch(()=>{ alert('사진을 불러오지 못했습니다.'); queue=[]; qi=0; close(); });
-        }
-        return;
-      }
       if(baseCanvas) baseCanvas.style.transition='opacity .2s ease';
       edBottom.style.transition='opacity .2s ease';
       if(dx>ED_CANCEL_PX){
@@ -1949,10 +2025,19 @@
       }else{
         if(baseCanvas) baseCanvas.style.opacity='0';
         edBottom.style.opacity='1';
+        edBottom.style.pointerEvents='';
       }
     }
     $('edStage').addEventListener('pointerup', edStageEndDrag);
     $('edStage').addEventListener('pointercancel', edStageEndDrag);
+    /* PC 웹에서도 마우스 휠로 미리보기 사진을 확대/축소(썸네일 전체화면
+       보기와 같은 방식) — 미리보기 중일 때만 동작한다. */
+    $('edStage').addEventListener('wheel', e=>{
+      if(!edPreviewOn) return;
+      e.preventDefault();
+      const factor=Math.exp(-e.deltaY*0.0015);
+      edZoomAt(e.clientX, e.clientY, edZ_sc*factor);
+    }, {passive:false});
     nI.addEventListener('input', ()=>{ if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent=''; });
     nI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); tI.focus(); } });
     tI.addEventListener('input', e=>{ e.target.value=fmtTel(e.target.value); });
