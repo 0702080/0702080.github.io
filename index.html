@@ -588,7 +588,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v183</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v184</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
   </div>
   <div id="tvRow">
@@ -1636,42 +1636,12 @@
       s.displayBlob=disp.blob; s.displayUrl=disp.url;
     }));
   }
-  async function ensurePart(){
-    if(data.part==='A' || data.part==='B') return data.part;
-    let v;
-    try{ v=prompt('A부·B부 중 어느 쪽에서 사진 봉사를 하고 계신가요?\nA 또는 B 를 입력해주세요.', ''); }
-    catch(e){ return null; }
-    if(v===null) return null;
-    v=v.trim().toUpperCase();
-    if(v.indexOf('B')>=0) data.part='B';
-    else if(v.indexOf('A')>=0) data.part='A';
-    else return null;
-    save();
-    return data.part;
-  }
-  function buildHeadcountText(part){
-    const CUTOFF_HOUR=11;
-    const earliest=new Map();
-    for(const s of todaysShots){
-      const key=headcountDedupKey(s);
-      if(!key) continue;
-      const prev=earliest.get(key);
-      if(!prev || s.t<prev.t) earliest.set(key, s);
-    }
-    let aCount=0, bCount=0;
-    for(const s of earliest.values()){
-      if(new Date(s.t).getHours()<CUTOFF_HOUR) aCount++; else bCount++;
-    }
-    const count=part==='A' ? aCount : bCount;
-    const d=new Date(), p=n=>('0'+n).slice(-2);
-    const displayDate=d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate());
-    return displayDate+'_'+part+'부 사진 : '+count+'명';
-  }
-
   /* "카톡 사진 전송"과 "갤러리 사진 전송"을 버튼 하나로 합쳤다 — 오늘 찍은
-     사진이 있으면 그걸 바로 보내고(인원수 문구도 같이 실어서), 없으면
-     (나중에 따로 보내려고 미뤄뒀거나, 앱을 다시 열었거나, 전체 지우기를
-     눌렀을 때) 갤러리에서 사진을 골라 그대로 보낸다.
+     사진이 있든 없든 항상 갤러리에서 사진을 골라 그대로 보낸다. 오늘 찍은
+     사진도 이미 다운로드 폴더(갤러리)에 저장돼 있으므로 거기서 같이 고르면
+     된다 — "오늘 찍은 사진이 있으면 자동으로 그걸 먼저 보낸다"는 예전
+     동작은, 사진이 하나라도 있으면 갤러리 선택 자체가 안 열려서 오히려
+     헷갈린다는 피드백을 받고 없앴다.
 
      갤러리 선택 흐름은 파일 선택창(갤러리 앱)을 한 번 거치고 돌아오면
      방금까지의 사용자 조작 자격이 사라져서, 그 흐름 안에서 바로 share() 를
@@ -1694,23 +1664,6 @@
           alert('이 브라우저에서는 여러 장을 한 번에 공유할 수 없습니다.\n갤러리(사진) 앱에서 직접 선택해 카톡으로 보내주세요.');
         }
       }catch(err){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
-      return;
-    }
-    if(todaysShots.length){
-      const part=await ensurePart();
-      const files=todaysShots.map(s=>new File([s.displayBlob||s.blob], s.filename, {type:'image/jpeg'}));
-      // 문구를 사진과 한 번에 같이 실어 보낸다 — 받는 앱이 이걸 캡션으로
-      // 보여주면 좋고, 무시해도 손해는 없다(밑에 "인원수 문구 보내기"
-      // 버튼이 확실한 방법이다).
-      const text=part ? buildHeadcountText(part) : todaysShots.length+'장';
-      const shareData={ files, title:'새가족 사진', text };
-      try{
-        if(navigator.canShare && navigator.canShare(shareData)){
-          await navigator.share(shareData);
-        }else{
-          alert('이 브라우저에서는 여러 장을 한 번에 공유할 수 없습니다.\n사진은 이미 다운로드 폴더에 저장되어 있으니, 갤러리(사진) 앱에서 직접 선택해 카톡으로 보내주세요.');
-        }
-      }catch(e){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
       return;
     }
     $('fResend').click();
