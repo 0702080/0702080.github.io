@@ -584,7 +584,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v180</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v181</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
   </div>
   <div id="tvRow">
@@ -652,7 +652,7 @@
 
 <!-- 사진에 이름표 붙이기 -->
 <div id="editor">
-  <button id="edCancelBtn" type="button" title="전부 취소하고 처음 화면으로">✕</button>
+  <button id="edCancelBtn" type="button" title="눌러서 사진을 전체 크기로 미리 보기(다시 누르면 되돌아옴)">✕</button>
   <div id="edStage"></div>
   <div id="edBottom">
     <div class="row">
@@ -1769,6 +1769,8 @@
       stage.appendChild(baseCanvas);
       $('edBottom').style.transition='none';
       $('edBottom').style.opacity='1';   // 직전에 오른쪽으로 끌다 만 상태가 남아있을 수 있으니 매 사진마다 되돌려둔다
+      edPreviewOn=false;   // 이전 사진에서 ✕ 로 미리보기를 켜둔 채 다음 사진으로 넘어가지 않게
+      edJustCancelled=false;   // 예전 취소 스와이프의 흔적이 다음(새) 편집 세션의 첫 탭을 삼켜버리지 않게
 
       nI.value=''; tI.value='';
       hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
@@ -1885,12 +1887,16 @@
       if(saving) return;   // 저장 처리 중엔 무시 — 끝나면 다시 눌러도 늦지 않다
       queue=[]; qi=0; close(); $('fCam').click();
     };
-    /* 여러 장을 고른 뒤(갤러리) 마음이 바뀌어 전부 취소하고 싶을 때 —
-       배경을 탭하면 남은 사진을 한 장씩 건너뛰는 것과 달리, 이 버튼은
-       대기열째 통째로 비우고 곧장 처음 화면으로 돌아간다. */
+    /* 눌러서 이름·전화번호·다시찍기·저장 입력판을 숨기고, 그 자리에 골라둔
+       사진을 전체 크기로 보여준다(오른쪽으로 끌었을 때와 같은 방식) — 다시
+       누르면 원래대로 돌아온다. 대기열째 전부 취소하려면(마음이 바뀌었을
+       때) 오른쪽 끝까지 끌어서 넘기면 된다(별도 스와이프 기능). */
+    let edPreviewOn=false;
     $('edCancelBtn').onclick=()=>{
-      if(saving) return;
-      queue=[]; qi=0; close();
+      edPreviewOn=!edPreviewOn;
+      if(baseCanvas){ baseCanvas.style.transition='opacity .2s ease'; baseCanvas.style.opacity=edPreviewOn?'1':'0'; }
+      edBottom.style.transition='opacity .2s ease';
+      edBottom.style.opacity=edPreviewOn?'0':'1';
     };
     /* 사진을 안 보여주는 대신, 그 배경(입력판 바깥)을 탭하면 저장하지 않고 닫힌다.
        여러 장을 고른 경우엔 "전부 취소"가 아니라 "이 한 장만 건너뛰기"로 동작해서
