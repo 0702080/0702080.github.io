@@ -348,6 +348,8 @@
   #edStage{
     position:relative;flex:1;overflow:hidden;cursor:pointer;
     background:linear-gradient(160deg,#3a2c47 0%,#241a2e 60%,#160f1c 100%);
+    touch-action:none;   /* 오른쪽 끌기를 JS로 직접 처리 — 없으면 브라우저 자체
+                             제스처(엣지 스와이프 등)가 먼저 가로채 버린다 */
   }
   /* 입력·저장 패널을 화면 한가운데에 둔다.
      아래쪽에 있으면 폰을 한 손으로 들고 섬기는 현장에서 엄지가 닿지 않고,
@@ -582,7 +584,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v178</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v179</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
   </div>
   <div id="tvRow">
