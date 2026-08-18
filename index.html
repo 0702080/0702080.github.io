@@ -83,8 +83,10 @@
     display:flex;align-items:center;justify-content:center;
     border:2px solid #614878;
     background:linear-gradient(180deg,#8e6ea6 0%,#7a5b90 52%,#9a78b0 84%,#c2a4d3 100%);
+    /* 바깥 그림자 진하기는 다른 버튼들(.sub/.tile)과 똑같이 맞춘다 —
+       예전엔 이 버튼만 유독 더 짙어서 유독 도드라져 보였다 */
     box-shadow:
-      0 6px 14px rgba(60,45,72,.42),
+      0 5px 12px rgba(74,59,87,.20),
       inset 0 -3px 9px rgba(255,255,255,.30),
       inset 0 2px 4px rgba(0,0,0,.22);
     text-shadow:0 1px 2px rgba(0,0,0,.42);
@@ -569,7 +571,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v175</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v176</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
   </div>
   <div id="tvRow">
@@ -588,11 +590,12 @@
   <button class="go enter" id="bShoot" style="animation-delay:.32s"><span class="ico">📷</span>카메라로 찍기</button>
   <button id="mentLine" type="button" title="눌러서 다른 멘트 보기"></button>
 
-  <!-- "오늘 찍은 사진" 목록이 비어 있어도(나중에 따로 보내려고 미뤄뒀을 때)
-       갤러리에서 이미 저장된 사진을 골라 그대로 카톡으로 보낼 수 있다.
-       이름표는 저장할 때 이미 사진에 합성돼 있으므로 다시 편집할 필요가
+  <!-- "카톡 사진 전송"과 "갤러리 사진 전송"을 합친 버튼 — 오늘 찍은 사진이
+       있으면 그걸 바로 보내고, 없으면(나중에 따로 보내려고 미뤄뒀거나 앱을
+       다시 열었을 때) 갤러리에서 골라 그대로 보낸다. 이름표는 저장할 때
+       이미 사진에 합성돼 있으므로 갤러리로 고른 사진은 다시 편집할 필요가
        없다 — 고른 파일을 그대로 공유만 한다. -->
-  <button class="sub enter" id="bResendGallery" style="animation-delay:.36s"><span class="ico">📤</span>갤러리 사진 전송</button>
+  <button class="go share enter" id="bResendGallery" style="animation-delay:.36s"><span class="ico">📤</span>사진 카톡 전송</button>
 
   <div id="todayWrap">
     <div id="todayHead">
@@ -600,7 +603,6 @@
       <button id="bClearAll" type="button">전체 지우기</button>
     </div>
     <div id="todayThumbs"></div>
-    <button class="go share" id="bShareAll"><span class="ico">📤</span>카톡 사진 전송</button>
     <button class="sub" id="bSendHeadcount"><span class="ico">🔢</span>인원수 문구 보내기</button>
   </div>
 
@@ -1649,41 +1651,24 @@
     return displayDate+'_'+part+'부 사진 : '+count+'명';
   }
 
-  $('bShareAll').onclick=async ()=>{
-    if(!todaysShots.length) return;
-    const part=await ensurePart();
-    const files=todaysShots.map(s=>new File([s.displayBlob||s.blob], s.filename, {type:'image/jpeg'}));
-    // 문구를 사진과 한 번에 같이 실어 보낸다 — 받는 앱이 이걸 캡션으로
-    // 보여주면 좋고, 무시해도 손해는 없다(밑에 "인원수 문구 보내기"
-    // 버튼이 확실한 방법이다).
-    const text=part ? buildHeadcountText(part) : todaysShots.length+'장';
-    const shareData={ files, title:'새가족 사진', text };
-    try{
-      if(navigator.canShare && navigator.canShare(shareData)){
-        await navigator.share(shareData);
-      }else{
-        alert('이 브라우저에서는 여러 장을 한 번에 공유할 수 없습니다.\n사진은 이미 다운로드 폴더에 저장되어 있으니, 갤러리(사진) 앱에서 직접 선택해 카톡으로 보내주세요.');
-      }
-    }catch(e){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
-  };
+  /* "카톡 사진 전송"과 "갤러리 사진 전송"을 버튼 하나로 합쳤다 — 오늘 찍은
+     사진이 있으면 그걸 바로 보내고(인원수 문구도 같이 실어서), 없으면
+     (나중에 따로 보내려고 미뤄뒀거나, 앱을 다시 열었거나, 전체 지우기를
+     눌렀을 때) 갤러리에서 사진을 골라 그대로 보낸다.
 
-  /* 카톡 전송을 나중에 따로 하려고 미뤄뒀거나, 앱을 껐다 켜서(혹은 전체
-     지우기로) "오늘 찍은 사진" 목록이 비어버린 경우를 위한 버튼 — 이름표는
-     저장할 때 이미 사진에 합성돼 있으므로, 갤러리에서 그 파일들을 고르기만
-     하면 다시 편집할 필요 없이 그대로 공유창으로 넘긴다.
-
-     파일 선택창(갤러리 앱)을 한 번 거치고 돌아오면, "인원수 문구 보내기"와
-     같은 이유로 방금까지의 사용자 조작 자격이 사라져서 그 흐름 안에서
-     바로 share() 를 불러도 조용히 막힌다(카톡창이 안 뜨는 원인). 그래서
-     파일을 고른 뒤에는 곧장 보내지 않고, 버튼을 "N장 전송" 상태로 바꿔
-     사용자가 한 번 더 직접 눌렀을 때(완전히 새로운 조작) share() 를 부른다. */
+     갤러리 선택 흐름은 파일 선택창(갤러리 앱)을 한 번 거치고 돌아오면
+     방금까지의 사용자 조작 자격이 사라져서, 그 흐름 안에서 바로 share() 를
+     불러도 조용히 막힌다(카톡창이 안 뜨는 원인) — 그래서 파일을 고른 뒤
+     곧장 보내지 않고 버튼을 "N장 선택됨" 상태로 바꿔, 사용자가 한 번 더
+     직접 눌렀을 때(완전히 새로운 조작) share() 를 부른다. */
   let pendingResendFiles=null;
-  const bResendGallery=$('bResendGallery');
+  const bSendPhotos=$('bResendGallery');
+  const SEND_PHOTOS_LABEL='사진 카톡 전송';
   $('bResendGallery').onclick=async ()=>{
     if(pendingResendFiles){
       const files=pendingResendFiles;
       pendingResendFiles=null;
-      setBtn(bResendGallery,'📤','갤러리 사진 전송');
+      setBtn(bSendPhotos,'📤',SEND_PHOTOS_LABEL);
       const shareData={ files, title:'새가족 사진' };
       try{
         if(navigator.canShare && navigator.canShare(shareData)){
@@ -1694,6 +1679,23 @@
       }catch(err){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
       return;
     }
+    if(todaysShots.length){
+      const part=await ensurePart();
+      const files=todaysShots.map(s=>new File([s.displayBlob||s.blob], s.filename, {type:'image/jpeg'}));
+      // 문구를 사진과 한 번에 같이 실어 보낸다 — 받는 앱이 이걸 캡션으로
+      // 보여주면 좋고, 무시해도 손해는 없다(밑에 "인원수 문구 보내기"
+      // 버튼이 확실한 방법이다).
+      const text=part ? buildHeadcountText(part) : todaysShots.length+'장';
+      const shareData={ files, title:'새가족 사진', text };
+      try{
+        if(navigator.canShare && navigator.canShare(shareData)){
+          await navigator.share(shareData);
+        }else{
+          alert('이 브라우저에서는 여러 장을 한 번에 공유할 수 없습니다.\n사진은 이미 다운로드 폴더에 저장되어 있으니, 갤러리(사진) 앱에서 직접 선택해 카톡으로 보내주세요.');
+        }
+      }catch(e){}   // 사용자가 공유창을 취소한 경우 등은 조용히 무시
+      return;
+    }
     $('fResend').click();
   };
   $('fResend').addEventListener('change', e=>{
@@ -1701,7 +1703,7 @@
     e.target.value='';
     if(!files.length) return;
     pendingResendFiles=files;
-    setBtn(bResendGallery,'📤',files.length+'장 선택됨 · 눌러서 전송');
+    setBtn(bSendPhotos,'📤',files.length+'장 선택됨 · 눌러서 전송');
   });
 
   /* 위 사진 공유가 끝난 뒤 이 버튼을 따로 눌러야 하는 이유: 브라우저는
