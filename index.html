@@ -190,19 +190,17 @@
     box-shadow:0 1px 3px rgba(74,59,87,.18), inset 0 5px 11px rgba(132,21,77,.30);
   }
 
-  /* 앱 주소 버튼 색상 — "BLUE TURQUOISE" 팔레트 기준. 이 색은 .tile 계열
-     중에서 유독 짙어서(민트/하늘/핑크처럼 파스텔이 아님) 어두운 글자 대신
-     .go(카메라 버튼)와 같은 방식(흰 글자 + brightness 필터로 눌림 표현)을 쓴다 */
-  .tile.link{
-    border-color:#225977;
-    background:linear-gradient(180deg,#63bbe8 0%,#35a6de 52%,#6dc6e9 84%,#a1d7f2 100%);
-    color:#212121;
+  /* 앱 주소 버튼 — 다른 봉사자에게 공유할 때만 가끔 쓰는 기능이라, 큰
+     타일 대신 제목 옆에 작은 아이콘 버튼 하나로 뒀다(항상 큰 자리를
+     차지하지 않게). */
+  #homeTop{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  #bCopyUrl{
+    flex:0 0 auto;width:34px;height:34px;border-radius:50%;
+    border:1.5px solid #614878;background:rgba(97,72,120,.08);
+    font-size:16px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:#614878;padding:0;
   }
-  .tile.link:active, .tile.link.pressing{
-    border-color:#15415a;
-    background:linear-gradient(180deg,#4fb4e2 0%,#309bd5 55%,#5bbce5 100%);
-    box-shadow:0 1px 3px rgba(74,59,87,.18), inset 0 5px 11px rgba(21,65,90,.30);
-  }
+  #bCopyUrl:active{background:rgba(97,72,120,.2);}
 
   /* "사진 카톡 전송" 버튼만 골드/머스터드로 구분 — 이 색은 밝은 편이라
      .go(카메라 버튼)의 흰 글자 대신 어두운 글자로 바꾼다. 눌림 효과는
@@ -214,12 +212,7 @@
     text-shadow:none;
   }
 
-  /* 태블릿 연결 + 멘트 버튼을 나란히, 아래 2x2 타일과 정확히 같은 폭으로.
-     flex:1 은 각 버튼의 padding·border 만큼을 최소 폭으로 먼저 깔고 남는
-     공간만 나눠 갖기 때문에(.sub 는 좌우 padding 18px, .tile 은 10px이라
-     서로 달라) 폭이 미세하게 어긋난다. grid 는 #quickGrid 와 똑같이
-     내용과 무관하게 트랙을 정확히 반으로 나눈다. */
-  #tvRow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  #tvRow{display:grid;grid-template-columns:1fr;gap:12px;}
   #tvRow>button{width:auto;min-width:0;}
 
   /* "카메라로 찍기" 바로 밑에 뜨는 멘트 한 줄 — 탭하면 다른 멘트로 바뀐다 */
@@ -290,6 +283,9 @@
   #todayWrap{display:none;flex-direction:column;gap:8px;}
   #todayWrap.show{display:flex;}
   #todayWrap label{font-size:14px;font-weight:700;color:#8B6E9E;}
+  #todayHead{display:flex;align-items:center;justify-content:space-between;}
+  /* 자주 쓰는 버튼이 아니라 실수로 잘 안 눌리게, 작고 옅은 글자 링크로만 둔다 */
+  #bClearAll{background:none;border:none;padding:2px 4px;font-size:12px;font-weight:700;color:#a84a63;text-decoration:underline;cursor:pointer;}
   #todayThumbs{display:flex;gap:6px;overflow-x:auto;padding:2px 0;scrollbar-width:none;}
   #todayThumbs::-webkit-scrollbar{display:none;}
   #todayThumbs img{
@@ -455,6 +451,25 @@
   }
   #thumbDelBtn:active{opacity:1;background:rgba(0,0,0,.75);}
 
+  /* 삭제 직후 몇 초간 뜨는 실행취소 알림 — 전체화면 사진 보기(z-index:80)
+     보다도 위에 있어야, 스와이프 삭제로 다음 사진이 뜬 직후에도 가려지지
+     않고 계속 보인다. */
+  #undoToast{
+    position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));
+    transform:translate(-50%,0);z-index:95;
+    display:flex;align-items:center;gap:14px;
+    background:rgba(20,20,24,.92);color:#fff;
+    padding:12px 14px 12px 18px;border-radius:14px;
+    font-size:14px;font-weight:700;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
+    opacity:0;pointer-events:none;transition:opacity .2s ease;
+  }
+  #undoToast.show{opacity:1;pointer-events:auto;}
+  #undoBtn{
+    background:none;border:none;color:#7dd3fc;font-weight:800;font-size:14px;
+    padding:4px 8px;cursor:pointer;white-space:nowrap;
+  }
+
   /* ── 벽걸이 태블릿 확인 화면 (주소 뒤에 #tv 를 붙여서 열기) ── */
   #tv{
     position:fixed;inset:0;z-index:60;display:none;background:#0d0b10;color:#fff;
@@ -531,10 +546,12 @@
 
 <!-- 첫 화면 -->
 <div id="home">
-  <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v170</span></h1>
+  <div id="homeTop">
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v171</span></h1>
+    <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
+  </div>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
-    <button class="tile link enter" id="bCopyUrl" style="animation-delay:.07s" title="봉사자에게 전달할 앱 주소를 복사합니다"><span class="ico">🔗</span><span class="tlabel">앱 주소</span></button>
   </div>
 
   <div id="quickGrid">
@@ -550,7 +567,10 @@
   <button id="mentLine" type="button" title="눌러서 다른 멘트 보기"></button>
 
   <div id="todayWrap">
-    <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
+    <div id="todayHead">
+      <label>오늘 찍은 사진 (<span id="todayCount">0</span>장)</label>
+      <button id="bClearAll" type="button">전체 지우기</button>
+    </div>
     <div id="todayThumbs"></div>
     <button class="go share" id="bShareAll"><span class="ico">📤</span>카톡 사진 전송</button>
     <button class="sub" id="bSendHeadcount"><span class="ico">🔢</span>인원수 문구 보내기</button>
@@ -580,6 +600,12 @@
     <div class="thumbSlot"><img id="thumbImgCur" alt=""></div>
     <div class="thumbSlot"><img id="thumbImgNext" alt=""></div>
   </div></div>
+</div>
+
+<!-- 사진을 지운 뒤 몇 초간 되돌릴 수 있게 뜨는 알림 -->
+<div id="undoToast">
+  <span id="undoMsg"></span>
+  <button id="undoBtn" type="button">실행취소</button>
 </div>
 
 <!-- 사진에 이름표 붙이기 -->
@@ -1081,6 +1107,49 @@
     openThumbView(s.displayUrl);
     resendToTv(s, thumbEl);
   }
+  /* 실행취소 — 사진을 지워도 곧바로 IndexedDB 에서 지우지 않고 몇 초
+     기다린다. 그 사이 "실행취소"를 누르면 목록에 되돌려 넣고, 시간이
+     지나거나 다른 사진을 또 지우면(한 번에 하나만 되돌릴 수 있음) 그제서야
+     진짜로 지운다. 다운로드 폴더에 이미 저장된 파일은 애초에 손대지
+     않으므로 여기서 지우든 되돌리든 상관없다. */
+  let undoTimer=null, undoShot=null;
+  function finalizePendingDelete(){
+    if(!undoShot) return;
+    dbDeleteShot(undoShot.removed.id);
+    undoShot=null;
+  }
+  function showUndoToast(removed, atIndex){
+    clearTimeout(undoTimer);
+    finalizePendingDelete();   // 대기 중이던 이전 삭제가 있으면 이번 삭제로 확정시킨다
+    undoShot={removed, atIndex};
+    $('undoMsg').textContent=(removed.name||removed.tel||'사진')+' 삭제됨';
+    $('undoToast').classList.add('show');
+    undoTimer=setTimeout(()=>{
+      finalizePendingDelete();
+      $('undoToast').classList.remove('show');
+    }, 6000);
+  }
+  async function undoDelete(){
+    if(!undoShot) return;
+    clearTimeout(undoTimer);
+    const {removed, atIndex}=undoShot;
+    undoShot=null;
+    $('undoToast').classList.remove('show');
+    const insertAt=Math.min(atIndex, todaysShots.length);
+    todaysShots.splice(insertAt, 0, removed);
+    rebuildAllThumbs();
+    $('todayWrap').classList.add('show');
+    $('todayCount').textContent=todaysShots.length;
+    await recomputeAllDisplays();
+    refreshAllThumbSrcs();
+    openThumbAt(insertAt);
+  }
+  function rebuildAllThumbs(){
+    $('todayThumbs').innerHTML='';
+    todaysShots.forEach((s, idx)=>appendTodayThumb(s, idx));
+  }
+  $('undoBtn').onclick=undoDelete;
+
   /* 지금 전체화면으로 보고 있는 사진을 "오늘 찍은 사진" 목록에서 지운다.
      다운로드 폴더에 이미 저장된 파일 자체는 브라우저가 건드릴 수 없어서
      그대로 남는다 — 여기서 지우는 건 이 세션 안에서의 목록·미리보기뿐.
@@ -1091,12 +1160,12 @@
     if(i<0 || i>=todaysShots.length) return;
     const [removed]=todaysShots.splice(i,1);
     if(removed.displayUrl) URL.revokeObjectURL(removed.displayUrl);
-    dbDeleteShot(removed.id);
     const thumbEl=document.querySelectorAll('#todayThumbs img')[i];
     if(thumbEl) thumbEl.remove();
     // 남은 썸네일이 한 칸씩 당겨졌으니 각자의 탭 핸들러도 새 순번으로 다시 건다
     [...document.querySelectorAll('#todayThumbs img')].forEach((el, idx)=>{ el.onclick=()=>openThumbAt(idx); });
     $('todayCount').textContent=todaysShots.length;
+    showUndoToast(removed, i);   // 실제 삭제는 미루고 몇 초간 되돌릴 기회를 준다
     if(!todaysShots.length){
       $('todayWrap').classList.remove('show');
       thumbView.classList.remove('on');   // 더 볼 사진이 없으면 전체화면도 닫는다
@@ -1106,6 +1175,27 @@
     refreshAllThumbSrcs();
     openThumbAt(Math.min(i, todaysShots.length-1));   // 남은 사진 중 이어서 보여준다(태블릿도 같이 바뀜)
   }
+
+  /* "오늘 찍은 사진" 목록을 통째로 비운다 — 되돌릴 수 없는 동작이라 먼저
+     확인을 받는다. 다운로드 폴더에 이미 저장된 파일은 그대로 남는다. */
+  async function clearAllToday(){
+    if(!todaysShots.length) return;
+    const n=todaysShots.length;
+    if(!confirm('오늘 찍은 사진 '+n+'장을 목록에서 전부 지울까요?\n(다운로드 폴더에 이미 저장된 파일은 그대로 남아요)')) return;
+    clearTimeout(undoTimer);
+    finalizePendingDelete();
+    $('undoToast').classList.remove('show');
+    for(const s of todaysShots){
+      if(s.displayUrl) URL.revokeObjectURL(s.displayUrl);
+      dbDeleteShot(s.id);
+    }
+    todaysShots.length=0;
+    $('todayThumbs').innerHTML='';
+    $('todayWrap').classList.remove('show');
+    $('todayCount').textContent='0';
+    thumbView.classList.remove('on');
+  }
+  $('bClearAll').onclick=clearAllToday;
 
   const tvwPts=new Map();
   let tvwPanning=false, tvwLastX=0, tvwLastY=0, tvwPinchD=0, tvwPinchS=1;
@@ -1945,21 +2035,19 @@
 
   $('bCopyUrl').onclick=async ()=>{
     const url='https://0702080.github.io/';
-    const btn=$('bCopyUrl');
-    const origEl=btn.querySelector('.tlabel');
-    const orig=origEl ? origEl.textContent : (btn.lastChild ? btn.lastChild.nodeValue : '');
+    // 아이콘 버튼이라 안에 글자를 못 띄우니, 결과는 homeLog 에 잠깐 보여준다
     const flash=(msg)=>{
-      setBtn(btn,'🔗',msg);
-      setTimeout(()=>setBtn(btn,'🔗',orig), 1800);
+      $('homeLog').textContent=msg;
+      setTimeout(()=>{ if($('homeLog').textContent===msg) $('homeLog').textContent=''; }, 1800);
     };
 
     try{
       await navigator.clipboard.writeText(url);
-      flash('복사됨 ✓');
+      flash('앱 주소가 복사됐어요 ✓');
       return;
     }catch(e){}
 
-    if(legacyCopy(url)){ flash('복사됨 ✓'); return; }
+    if(legacyCopy(url)){ flash('앱 주소가 복사됐어요 ✓'); return; }
 
     try{ prompt('아래 주소를 길게 눌러 복사하세요', url); }
     catch(e){ $('homeLog').textContent='주소: '+url; }
