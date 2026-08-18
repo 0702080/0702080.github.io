@@ -588,7 +588,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v185</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v186</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
   </div>
   <div id="tvRow">
@@ -1734,7 +1734,11 @@
       nI.value=''; tI.value='';
       hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
       $('editor').classList.add('on');
-      setTimeout(()=>{ if($('editor').classList.contains('on')) nI.focus(); },150);
+      // 미리보기 중 스와이프로 다음/이전 사진으로 넘어간 경우(showFile 직후
+      // .then(edEnterPreview)가 곧바로 다시 미리보기를 켠다)엔 이 시점에
+      // edPreviewOn이 true가 돼 있어야 정상 — 그럴 땐 입력칸이 안 보이므로
+      // 포커스를 주면 안 된다(안 그러면 키보드가 뜬다).
+      setTimeout(()=>{ if($('editor').classList.contains('on') && !edPreviewOn) nI.focus(); },150);
     }
 
     function fileBase(){
