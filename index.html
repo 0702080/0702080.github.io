@@ -208,12 +208,8 @@
       0 3px 8px rgba(60,45,72,.28),
       inset 0 -2px 5px rgba(255,255,255,.55),
       inset 0 1px 2px rgba(0,0,0,.16);
-    /* 이모지 글꼴을 명시하지 않으면 본문 한글 글꼴(Binggre 등)로 대체되는데,
-       안드로이드에서는 이 글꼴에 색깔 있는 링크 이모지가 없어 흰색 윤곽선으로만
-       나온다 — 다른 아이콘 버튼(.ico)과 같은 이모지 글꼴을 명시해 고친다. */
-    font-family:'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif;
-    font-size:16px;display:flex;align-items:center;justify-content:center;
-    cursor:pointer;color:#0e4a42;padding:0;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;padding:0;
   }
   #bCopyUrl::before{
     content:'';position:absolute;z-index:-1;pointer-events:none;
@@ -588,8 +584,8 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v186</span></h1>
-    <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v187</span></h1>
+    <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
     <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
