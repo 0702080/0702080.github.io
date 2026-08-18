@@ -284,8 +284,10 @@
   #todayWrap.show{display:flex;}
   #todayWrap label{font-size:14px;font-weight:700;color:#8B6E9E;}
   #todayHead{display:flex;align-items:center;justify-content:space-between;}
-  /* 자주 쓰는 버튼이 아니라 실수로 잘 안 눌리게, 작고 옅은 글자 링크로만 둔다 */
-  #bClearAll{background:none;border:none;padding:2px 4px;font-size:12px;font-weight:700;color:#a84a63;text-decoration:underline;cursor:pointer;}
+  /* 자주 쓰는 버튼이 아니라 실수로 잘 안 눌리게 글자 링크로만 두되, 폰트
+     자체는 옆의 라벨과 완전히 같게(버튼 기본 글꼴이 따로 적용되지 않도록
+     font-family 를 명시적으로 물려받는다) */
+  #bClearAll{background:none;border:none;padding:2px 4px;font-family:inherit;font-size:14px;font-weight:700;color:#8B6E9E;cursor:pointer;}
   #todayThumbs{display:flex;gap:6px;overflow-x:auto;padding:2px 0;scrollbar-width:none;}
   #todayThumbs::-webkit-scrollbar{display:none;}
   #todayThumbs img{
@@ -547,7 +549,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v171</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v172</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
   </div>
   <div id="tvRow">
