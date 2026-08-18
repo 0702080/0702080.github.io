@@ -194,13 +194,33 @@
      타일 대신 제목 옆에 작은 아이콘 버튼 하나로 뒀다(항상 큰 자리를
      차지하지 않게). */
   #homeTop{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  /* 다른 버튼들과 같은 유리알 아쿠아 스타일(위는 밝은 광택, 아래는 진한 색)을
+     작은 원 버튼에도 적용한다. 앱 배경(#D1C7B7, 따뜻한 베이지)과 뚜렷이
+     구분되도록 색은 청록(아쿠아) 계열로 골랐다. */
   #bCopyUrl{
     flex:0 0 auto;width:34px;height:34px;border-radius:50%;
-    border:1.5px solid #614878;background:rgba(97,72,120,.08);
+    position:relative;isolation:isolate;
+    border:1.5px solid #0e7a6c;
+    background:linear-gradient(180deg,#7de8dc 0%,#2bc4b2 52%,#5ed9c8 84%,#a8f0e4 100%);
+    box-shadow:
+      0 3px 8px rgba(60,45,72,.28),
+      inset 0 -2px 5px rgba(255,255,255,.55),
+      inset 0 1px 2px rgba(0,0,0,.16);
     font-size:16px;display:flex;align-items:center;justify-content:center;
-    cursor:pointer;color:#614878;padding:0;
+    cursor:pointer;color:#0e4a42;padding:0;
   }
-  #bCopyUrl:active{background:rgba(97,72,120,.2);}
+  #bCopyUrl::before{
+    content:'';position:absolute;z-index:-1;pointer-events:none;
+    left:5px;right:5px;top:3px;height:44%;border-radius:50%;
+    background:linear-gradient(180deg,
+      rgba(255,255,255,.95) 0%, rgba(255,255,255,.5) 60%, rgba(255,255,255,.1) 100%);
+  }
+  #bCopyUrl:active{
+    border-color:#095148;
+    background:linear-gradient(180deg,#5ed9c8 0%,#1fa898 55%,#4fcabb 100%);
+    box-shadow:0 1px 3px rgba(74,59,87,.18), inset 0 4px 8px rgba(9,81,72,.30);
+  }
+  #bCopyUrl:active::before{opacity:.4;}
 
   /* "사진 카톡 전송" 버튼만 골드/머스터드로 구분 — 이 색은 밝은 편이라
      .go(카메라 버튼)의 흰 글자 대신 어두운 글자로 바꾼다. 눌림 효과는
@@ -549,7 +569,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v173</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v174</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다">🔗</button>
   </div>
   <div id="tvRow">
@@ -1185,12 +1205,11 @@
     openThumbAt(Math.min(i, todaysShots.length-1));   // 남은 사진 중 이어서 보여준다(태블릿도 같이 바뀜)
   }
 
-  /* "오늘 찍은 사진" 목록을 통째로 비운다 — 되돌릴 수 없는 동작이라 먼저
-     확인을 받는다. 다운로드 폴더에 이미 저장된 파일은 그대로 남는다. */
+  /* "오늘 찍은 사진" 목록을 통째로 비운다 — 확인창 없이 바로 지운다(눌렀을
+     때 곧바로 끝나야 한다는 요청). 다운로드 폴더에 이미 저장된 파일은
+     그대로 남는다. */
   async function clearAllToday(){
     if(!todaysShots.length) return;
-    const n=todaysShots.length;
-    if(!confirm('오늘 찍은 사진 '+n+'장을 목록에서 전부 지울까요?\n(다운로드 폴더에 이미 저장된 파일은 그대로 남아요)')) return;
     clearTimeout(undoTimer);
     finalizePendingDelete();
     $('undoToast').classList.remove('show');
