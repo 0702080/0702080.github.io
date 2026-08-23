@@ -367,8 +367,8 @@
     backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
     box-shadow:0 10px 34px rgba(0,0,0,.45);
   }
-  /* 이름·전화번호 사이는 좁게 붙인다(원래 8px 의 절반) */
-  #edBottom .row{display:flex;gap:4px;}
+  /* 이름·전화번호 사이 여백은 아래 다시찍기·저장 사이(#edActions)와 같은 8px */
+  #edBottom .row{display:flex;gap:8px;}
   #edBottom input{
     font-size:20px;padding:12px 14px;border-radius:12px;border:none;
     background:rgba(255,255,255,.95);color:#111;font-weight:800;
@@ -469,6 +469,16 @@
   /* 왼쪽 4칸 자음 · 오른쪽 3칸 모음 = 한 줄 7칸. 7칸 그리드로 깔아 줄마다
      세로줄이 정확히 맞는다. */
   .qwRow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  /* 키를 꾹 눌렀을 때 뜨는 고르기 판 — 그 키가 낼 수 있는 글자를 다 펼쳐
+     보여줘서, 몇 번 눌러야 하는지 세지 않고 바로 찍어 넣을 수 있다. */
+  #kbPop{
+    position:absolute;z-index:5;display:flex;gap:6px;padding:7px;
+    border-radius:16px;background:rgba(22,17,29,.98);
+    border:1px solid rgba(255,255,255,.16);
+    box-shadow:0 8px 22px rgba(0,0,0,.6);
+  }
+  #kbPop[hidden]{display:none;}
+  #kbPop button{width:52px;height:58px;font-size:26px;}
   /* 세 줄뿐이라 키를 훨씬 높게 잡을 수 있다 */
   #kbdQC button{
     min-width:0;height:70px;
@@ -757,7 +767,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v210</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v211</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -869,6 +879,8 @@
        입력판(#edBottom) 안이 아니라 밖에 두고 화면 폭을 꽉 채운다 —
        안에 두면 판의 좌우 여백만큼 키가 좁아져서 오타가 난다. -->
   <div id="kbd" hidden>
+   <!-- 키를 꾹 누르면 그 키가 낼 수 있는 글자들이 여기 떠서 골라 넣을 수 있다 -->
+   <div id="kbPop" hidden></div>
    <div id="kbdCJ">
     <div class="kbRow">
       <button type="button" class="kbCons" data-cj="k1">ㄱㅋ</button
@@ -2681,6 +2693,7 @@
     }
 
     const kbd=$('kbd');
+    const kbPop=$('kbPop');   // 초기화 때 kbApplyMode 가 이미 쓰므로 여기서 잡아둔다
     /* ── 자판 고르기(천지인 / 두벌식) ──
        고른 값은 기억해 둔다. 바꿀 때는 조립 중이던 글자를 확정해서 두
        방식의 상태가 섞이지 않게 한다. */
@@ -2707,7 +2720,7 @@
       $('kbdPick').querySelectorAll('button').forEach(b=>{
         b.classList.toggle('on', b.getAttribute('data-kb')===kbMode);
       });
-      kbShift=false; kbPaintShift();
+      kbShift=false; kbPaintShift(); kbPopHide();
     }
     kbPaintShift();
     kbApplyMode();
@@ -2727,7 +2740,7 @@
     function kbShow(target){
       kbTarget = target || null;
       kbd.hidden = !kbTarget;
-      if(!kbTarget){ kbCycStop(); kbVCycStop(); if(kbShift){ kbShift=false; kbPaintShift(); } }
+      if(!kbTarget){ kbCycStop(); kbVCycStop(); kbPopHide(); if(kbShift){ kbShift=false; kbPaintShift(); } }
       kbApplyMode();
       const eb=$('edBottom');
       if(kbTarget){
@@ -2744,11 +2757,54 @@
     let kbHideTimer=null;
     function kbHideSoon(){ clearTimeout(kbHideTimer); kbHideTimer=setTimeout(()=>kbShow(null), 0); }
     function kbKeepOpen(){ clearTimeout(kbHideTimer); kbHideTimer=null; }
+    /* ── 꾹 눌러 고르기 ──
+       두벌식C 처럼 한 키가 여러 글자를 내는 자판에서, 키를 꾹 누르면 그
+       글자들이 위에 펼쳐진다. 몇 번 눌러야 하는지 세지 않고 바로 찍어
+       넣을 수 있고, 그 키가 뭘 낼 수 있는지도 한눈에 보인다. */
+    const KB_LONG=400;                       // 꾹 누름으로 치는 시간(ms)
+    let kbPopTimer=null, kbPopFired=false;
+    function kbPopHide(){ kbPop.hidden=true; kbPop.innerHTML=''; }
+    function kbPopShow(btn, list){
+      kbPop.innerHTML='';
+      list.forEach(ch=>{
+        const b=document.createElement('button');
+        b.type='button';
+        b.className = JUNG.indexOf(ch)>=0 ? 'kbVowel' : 'kbCons';
+        b.setAttribute('data-pick', ch);
+        b.textContent=ch;
+        kbPop.appendChild(b);
+      });
+      kbPop.hidden=false;
+      // 눌린 키 바로 위에, 자판 폭을 벗어나지 않게 놓는다
+      const kr=btn.getBoundingClientRect(), pr=kbd.getBoundingClientRect();
+      const pw=kbPop.offsetWidth;
+      let left=kr.left-pr.left+kr.width/2-pw/2;
+      left=Math.max(4, Math.min(left, pr.width-pw-4));
+      kbPop.style.left=left+'px';
+      kbPop.style.top=(kr.top-pr.top-kbPop.offsetHeight-8)+'px';
+    }
     // 자판을 눌러도 이름 칸의 포커스가 풀리지 않게 한다(풀리면 자판이 닫힌다)
-    kbd.addEventListener('pointerdown', e=>{ e.preventDefault(); });
+    kbd.addEventListener('pointerdown', e=>{
+      e.preventDefault();
+      clearTimeout(kbPopTimer); kbPopFired=false;
+      const b=e.target.closest('button');
+      if(!b || !kbPop.hidden) return;        // 이미 펼쳐져 있으면 고르는 중이다
+      const id=b.getAttribute('data-qc')||b.getAttribute('data-qv');
+      const list=id ? (CJ_CONS[id]||QW_VOW[id]) : null;
+      if(!list || list.length<2) return;     // 글자가 하나뿐인 키는 펼칠 게 없다
+      kbPopTimer=setTimeout(()=>{ kbPopFired=true; kbPopShow(b, list); }, KB_LONG);
+    });
+    kbd.addEventListener('pointerup', ()=>{ clearTimeout(kbPopTimer); });
+    kbd.addEventListener('pointercancel', ()=>{ clearTimeout(kbPopTimer); });
     kbd.addEventListener('click', e=>{
       const b=e.target.closest('button');
       if(!b || !kbd.contains(b)) return;
+      // 펼쳐진 판에서 글자를 골랐다 — 그 글자를 그대로 넣는다
+      const pick=b.getAttribute('data-pick');
+      if(pick){ kbPopHide(); kbCycStop(); kbVCycStop(); kbJamo(pick); return; }
+      // 꾹 눌러 판을 연 그 손가락의 클릭은 글자를 넣지 않는다
+      if(kbPopFired){ kbPopFired=false; return; }
+      if(!kbPop.hidden) kbPopHide();   // 판이 열린 채 다른 키를 누르면 닫고 그대로 진행
       const fn=b.getAttribute('data-fn');
       if(fn==='shift'){ kbShift=!kbShift; kbPaintShift(); return; }
       if(fn==='back'){ kbBack(); return; }
