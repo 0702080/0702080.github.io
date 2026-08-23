@@ -451,17 +451,19 @@
      두 자판 묶음 사이에만 적용돼서, 줄과 줄 사이는 붙어버렸었다. */
   #kbdCJ,#kbdQW{display:flex;flex-direction:column;gap:10px;}
   #kbdCJ[hidden],#kbdQW[hidden]{display:none;}
-  /* 두벌식은 한 줄 10칸이라 그리드 대신 flex 로 깐다(가운데 줄은 9칸이라
-     실제 키보드처럼 살짝 안으로 들인다). */
+  /* 두벌식은 한 줄 10칸이라 그리드 대신 flex 로 깐다. 줄마다 칸 수가 달라도
+     각 줄이 폭을 꽉 채우게 두면(글자만 남은 셋째 줄은 7칸) 그만큼 키가
+     넓어진다. 첫 줄 10칸은 폭을 더 늘릴 수 없으므로 높이로 키운다. */
   .qwRow{display:flex;gap:4px;}
-  .qwRow2{padding:0 5%;}
-  #kbdQW button{height:52px;font-size:20px;border-radius:8px;}
-  #kbdQW .kbVowel{font-size:20px;}
-  #kbdQW .qwWide{flex:1.45 1 0;font-size:17px;}
-  #kbdQW button{flex:1 1 0;}
-  #kbdQW .kbClear{flex:1 1 0;}
-  #kbdQW .kbNext{flex:3 1 0;}
-  #kbdQW button[data-fn="shift"].on{background:linear-gradient(180deg,#ffd98a,#efa837);color:#48310a;}
+  #kbdQW button{flex:1 1 0;height:60px;font-size:22px;}
+  #kbdQW .kbVowel{font-size:22px;}
+  #kbdQW .kbFn{font-size:18px;}
+  #kbdQW .qwNext{flex:2 1 0;}
+  #kbdQW button[data-fn="shift"].on{
+    border-color:#8a6410;color:#42300a;
+    background:linear-gradient(180deg,#ffe6a8 0%,#efa837 52%,#f6c463 84%,#ffeec2 100%);
+    text-shadow:none;
+  }
   /* 자판 고르기 — 이름 칸 바로 위 */
   #kbdPick{display:flex;gap:10px;justify-content:center;}
   #kbdPick button{
@@ -534,6 +536,9 @@
     #kbd .kbVowel{font-size:23px;}
     #kbd .kbFn{font-size:15px;}
     #kbdNum button{height:47px;font-size:23px;}
+    #kbdQW button{height:48px;font-size:19px;}
+    #kbdQW .kbVowel{font-size:19px;}
+    #kbdQW .kbFn{font-size:15px;}
     #kbd{gap:5px;}
     .kbRow{gap:5px;}
   }
@@ -722,7 +727,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v203</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v204</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -876,7 +881,7 @@
       ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ"></button
       ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ"></button>
     </div>
-    <div class="qwRow qwRow2">
+    <div class="qwRow">
       <button type="button" class="kbCons" data-k="ㅁ"></button
       ><button type="button" class="kbCons" data-k="ㄴ"></button
       ><button type="button" class="kbCons" data-k="ㅇ"></button
@@ -887,20 +892,22 @@
       ><button type="button" class="kbVowel" data-k="ㅏ"></button
       ><button type="button" class="kbVowel" data-k="ㅣ"></button>
     </div>
+    <!-- 셋째 줄은 글자만 남겨서(⇧·⌫ 는 아랫줄로) 키가 훨씬 넓어진다 -->
     <div class="qwRow">
-      <button type="button" class="kbFn qwWide" data-fn="shift">⇧</button
-      ><button type="button" class="kbCons" data-k="ㅋ"></button
+      <button type="button" class="kbCons" data-k="ㅋ"></button
       ><button type="button" class="kbCons" data-k="ㅌ"></button
       ><button type="button" class="kbCons" data-k="ㅊ"></button
       ><button type="button" class="kbCons" data-k="ㅍ"></button
       ><button type="button" class="kbVowel" data-k="ㅠ"></button
       ><button type="button" class="kbVowel" data-k="ㅜ"></button
-      ><button type="button" class="kbVowel" data-k="ㅡ"></button
-      ><button type="button" class="kbFn qwWide" data-fn="back">⌫</button>
+      ><button type="button" class="kbVowel" data-k="ㅡ"></button>
     </div>
+    <!-- 기능키는 전부 아랫줄에 모았다(글자 사이에 섞여 있지 않아 단순하다) -->
     <div class="qwRow">
-      <button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
-      ><button type="button" class="kbFn kbNext" data-fn="next">다음</button>
+      <button type="button" class="kbFn" data-fn="shift">⇧</button
+      ><button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
+      ><button type="button" class="kbFn" data-fn="back">⌫</button
+      ><button type="button" class="kbFn kbNext qwNext" data-fn="next">다음</button>
     </div>
    </div>
    <!-- 전화번호용 숫자판. 폰 기본 숫자 키보드 대신 이걸 띄워서 한글 자판과
