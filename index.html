@@ -584,7 +584,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v190</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v191</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -657,7 +657,12 @@
   <div id="edBottom">
     <div class="row">
       <div id="edNameWrap">
-        <input id="edName" type="text" placeholder="이름" autocomplete="off" enterkeyhint="next">
+        <!-- lang/inputmode 로 "한글 글자 입력"임을 알려주고, 자동완성·자동대문자·
+             맞춤법 제안을 모두 꺼서 키보드 위 추천줄 같은 군더더기를 줄인다.
+             (숫자줄·특수문자 키를 없애는 건 폰 키보드 앱 설정이라 웹에서는 불가) -->
+        <input id="edName" type="text" lang="ko" inputmode="text" placeholder="이름"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+               enterkeyhint="next">
         <button id="edMic" type="button" title="눌러서 이름을 말하면 자동으로 입력됩니다" hidden>🎤</button>
       </div>
       <div id="edTelWrap">
@@ -1203,7 +1208,11 @@
     const i=thumbViewIndex;
     if(i<0 || i>=todaysShots.length) return;
     const [removed]=todaysShots.splice(i,1);
+    // 되돌리기로 다시 들어올 수 있으니, 회수한 URL 자리는 반드시 비워둔다 —
+    // 안 비우면 recomputeAllDisplays() 가 "이미 있다"고 보고 건너뛰어
+    // 죽은 URL 그대로 남아 썸네일이 깨진다.
     if(removed.displayUrl) URL.revokeObjectURL(removed.displayUrl);
+    removed.displayBlob=null; removed.displayUrl=null;
     const thumbEl=document.querySelectorAll('#todayThumbs img')[i];
     if(thumbEl) thumbEl.remove();
     // 남은 썸네일이 한 칸씩 당겨졌으니 각자의 탭 핸들러도 새 순번으로 다시 건다
@@ -1503,44 +1512,10 @@
     await recomputeAllDisplays();
     refreshAllThumbSrcs();
   }
-  /* ───── 오전 11시 기준 A부/B부 인원수 문구 ─────
-     같은 사람이 다시 찍혀도(재촬영 등) 한 명으로 센다 — 전화번호가 있으면
-     전화번호로, 없으면 이름으로 구분한다. 여러 번 찍혔으면 그 중 가장
-     이른 시각을 그 사람의 촬영 시각으로 삼아 A/B부를 가른다.
-     이 폰이 A부인지 B부인지는 한 번 물어보고 계속 기억해 둔다 — 봉사자
-     한 명은 보통 하루 종일 같은 부에서 섬기므로, 자기 부 숫자만 보내면
-     되고 상대 부 숫자까지 같이 보일 필요가 없다. */
-  function headcountDedupKey(s){
-    const tel=(s.tel||'').trim(), nm=(s.name||'').trim();
-    if(tel) return 'tel:'+tel;
-    if(nm) return 'name:'+nm;
-    return null;
-  }
-  /* "오늘 몇 번째/전체 몇 명" 배지에 쓸 값 — 인원수 집계와 똑같은 기준
-     (전화번호 우선, 없으면 이름)으로 같은 사람을 하나로 묶는다. 이 함수는
-     "지금 이 한 장을 새로 저장하는 순간"의 스냅샷을 구할 때만 쓴다(ED의
-     compose() = 다운로드 파일에 고정으로 박히는 값). 화면 표시용은 항상
-     오늘 전체를 다시 세는 recomputeAllDisplays() 를 쓴다 — 사진이 늘거나
-     줄면 "전체 몇 명"이 매번 바뀌기 때문에, 이미 찍힌 사람들 배지도 같이
-     새로 그려야 하기 때문이다. */
-  function personIndexAndTotal(nm, tel){
-    const key=headcountDedupKey({name:nm, tel:tel});
-    const seen=new Map();
-    let next=1;
-    for(const s of todaysShots){
-      const k=headcountDedupKey(s);
-      if(!k || seen.has(k)) continue;
-      seen.set(k, next++);
-    }
-    if(!key) return {idx:null, total:next-1};
-    const isDup=seen.has(key);
-    return { idx: isDup?seen.get(key):next, total: isDup?(next-1):next };
-  }
-  /* 사진 캔버스에 이름·전화번호와 "N/전체" 배지를 그린다 — 저장 시(다운로드용,
-     ED.compose())와 화면 표시용 재합성(composeDisplay()) 둘 다 이 함수를
-     같이 쓴다. 이름·전화번호는 그대로 가운데에 두고, 순번은 별도 알약 모양
-     배지로 하단 바 오른쪽 구석에 둬서 "오늘 몇 번째/전체 몇 명"이 이름과
-     안 섞이고 한눈에 읽히게 한다. */
+  /* 사진 캔버스에 이름·전화번호를 그린다 — 저장 시(다운로드용, ED.compose())와
+     화면 표시용 합성(composeDisplay()) 둘 다 이 함수를 같이 쓴다.
+     idx/total 을 주면 순번 알약 배지도 같이 그리는데, 지금은 카톡으로
+     보낼 때(stampBatchIndex)만 배지를 쓰므로 이 두 경로에선 안 넘긴다. */
   function drawNameBar(ctx, w, h, nm, tel, idx, total){
     const barH=Math.round(h*0.16);
     ctx.fillStyle='rgba(0,0,0,.55)';
@@ -1625,24 +1600,14 @@
     const blob=await new Promise(res=>cv.toBlob(res, 'image/jpeg', 0.92));
     return { blob, url: URL.createObjectURL(blob) };
   }
-  /* 사진을 지우거나 새로 저장한 뒤(또는 앱을 다시 열 때) todaysShots
-     전체를 처음부터 다시 세어, "오늘 전체 몇 명"이 바뀐 걸 반영해서 모든
-     사진의 화면 표시용 합성본을 새로 만든다 — 사진 한 장이 늘거나 줄면
-     이미 찍힌 다른 사람들의 배지("N/전체")도 전체 값이 달라지므로 같이
-     다시 그려야 한다. */
+  /* 앱 안(썸네일·전체화면·태블릿)에 보여줄 합성본을 만든다. 순번 배지는
+     이제 안 붙이므로(카톡으로 보낼 때만 그 묶음 기준으로 새로 찍는다)
+     사진이 늘거나 줄어도 이미 만들어둔 합성본은 그대로 유효하다 — 아직
+     안 만든 것만 새로 만든다. */
   async function recomputeAllDisplays(){
-    const seen=new Map();
-    let next=1;
-    for(const s of todaysShots){
-      const k=headcountDedupKey(s);
-      if(k && !seen.has(k)) seen.set(k, next++);
-    }
-    const total=next-1;
     await Promise.all(todaysShots.map(async s=>{
-      const k=headcountDedupKey(s);
-      const idx=k?seen.get(k):null;
-      const disp=await composeDisplay(s.blob, s.name, s.tel, idx, total);
-      if(s.displayUrl) URL.revokeObjectURL(s.displayUrl);
+      if(s.displayUrl) return;
+      const disp=await composeDisplay(s.blob, s.name, s.tel, null, null);
       s.displayBlob=disp.blob; s.displayUrl=disp.url;
     }));
   }
@@ -1815,8 +1780,10 @@
       const ctx=cv.getContext('2d');
       ctx.drawImage(baseCanvas,0,0);
       const nm=nI.value.trim(), tel=fmtTel(tI.value);
-      const {idx, total}=personIndexAndTotal(nm, tel);   // 오늘 몇 번째/전체 몇 명 — 다운로드 파일엔 이 순간의 값으로 고정된다
-      drawNameBar(ctx, w, h, nm, tel, idx, total);
+      // 순번 배지는 여기서 안 붙인다 — 카톡으로 보낼 때 그 묶음 기준으로
+      // 그때그때 새로 찍는다(아래 stampBatchIndex). 저장되는 사진 자체엔
+      // 이름·전화번호만 들어간다.
+      drawNameBar(ctx, w, h, nm, tel, null, null);
       return cv;
     }
 
