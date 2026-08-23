@@ -478,7 +478,12 @@
     box-shadow:0 8px 22px rgba(0,0,0,.6);
   }
   #kbPop[hidden]{display:none;}
-  #kbPop button{width:52px;height:58px;font-size:26px;}
+  #kbPop button{width:52px;height:58px;font-size:26px;transition:transform .08s ease;}
+  /* 끌면서 지금 짚고 있는 글자 */
+  #kbPop button.hot{
+    transform:translateY(-3px);
+    box-shadow:0 0 0 3px #2fbaa8, 0 7px 16px rgba(0,0,0,.55);
+  }
   /* 세 줄뿐이라 키를 훨씬 높게 잡을 수 있다 */
   #kbdQC button{
     min-width:0;height:70px;
@@ -767,7 +772,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v211</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v212</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2763,6 +2768,7 @@
        넣을 수 있고, 그 키가 뭘 낼 수 있는지도 한눈에 보인다. */
     const KB_LONG=400;                       // 꾹 누름으로 치는 시간(ms)
     let kbPopTimer=null, kbPopFired=false;
+    let kbPopPtrId=null, kbPopHover=null;    // 꾹 누른 채 끌어서 고르는 중인 손가락
     function kbPopHide(){ kbPop.hidden=true; kbPop.innerHTML=''; }
     function kbPopShow(btn, list){
       kbPop.innerHTML='';
@@ -2784,18 +2790,49 @@
       kbPop.style.top=(kr.top-pr.top-kbPop.offsetHeight-8)+'px';
     }
     // 자판을 눌러도 이름 칸의 포커스가 풀리지 않게 한다(풀리면 자판이 닫힌다)
+    function kbPopSetHover(el){
+      if(el===kbPopHover) return;
+      if(kbPopHover) kbPopHover.classList.remove('hot');
+      kbPopHover=el;
+      if(kbPopHover) kbPopHover.classList.add('hot');
+    }
     kbd.addEventListener('pointerdown', e=>{
       e.preventDefault();
-      clearTimeout(kbPopTimer); kbPopFired=false;
+      clearTimeout(kbPopTimer); kbPopFired=false; kbPopSetHover(null);
       const b=e.target.closest('button');
       if(!b || !kbPop.hidden) return;        // 이미 펼쳐져 있으면 고르는 중이다
       const id=b.getAttribute('data-qc')||b.getAttribute('data-qv');
       const list=id ? (CJ_CONS[id]||QW_VOW[id]) : null;
       if(!list || list.length<2) return;     // 글자가 하나뿐인 키는 펼칠 게 없다
+      kbPopPtrId=e.pointerId;
+      // 손가락을 판 위로 끌고 가도 계속 따라오게 붙잡아 둔다
+      try{ b.setPointerCapture(e.pointerId); }catch(err){}
       kbPopTimer=setTimeout(()=>{ kbPopFired=true; kbPopShow(b, list); }, KB_LONG);
     });
-    kbd.addEventListener('pointerup', ()=>{ clearTimeout(kbPopTimer); });
-    kbd.addEventListener('pointercancel', ()=>{ clearTimeout(kbPopTimer); });
+    /* 판이 펼쳐진 뒤 손가락을 떼지 않고 그대로 끌면, 지금 짚고 있는 글자가
+       도드라진다. 손가락을 붙잡아 둔 상태라 좌표로 무엇을 짚었는지 찾는다. */
+    kbd.addEventListener('pointermove', e=>{
+      if(e.pointerId!==kbPopPtrId || kbPop.hidden) return;
+      const el=document.elementFromPoint(e.clientX, e.clientY);
+      kbPopSetHover(el && el.closest ? el.closest('#kbPop button[data-pick]') : null);
+    });
+    kbd.addEventListener('pointerup', e=>{
+      clearTimeout(kbPopTimer);
+      if(e.pointerId!==kbPopPtrId) return;
+      kbPopPtrId=null;
+      // 끌어서 글자를 짚은 채 뗐으면 그 글자를 넣는다
+      if(!kbPop.hidden && kbPopHover){
+        const ch=kbPopHover.getAttribute('data-pick');
+        kbPopSetHover(null);
+        kbPopHide(); kbCycStop(); kbVCycStop(); kbJamo(ch);
+        kbPopFired=true;   // 뒤따라오는 클릭이 글자를 또 넣지 않게
+      }
+      // 아무 데도 안 짚고 뗐으면 판은 그대로 둔다 — 그 다음에 눌러서 골라도 된다
+    });
+    kbd.addEventListener('pointercancel', e=>{
+      clearTimeout(kbPopTimer);
+      if(e.pointerId===kbPopPtrId){ kbPopPtrId=null; kbPopSetHover(null); }
+    });
     kbd.addEventListener('click', e=>{
       const b=e.target.closest('button');
       if(!b || !kbd.contains(b)) return;
