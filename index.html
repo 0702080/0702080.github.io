@@ -421,7 +421,11 @@
   /* 칸 수가 줄어든 줄(맨 아랫줄)도 위 줄과 세로줄이 정확히 맞아야 해서
      flex 가 아니라 5칸 그리드로 깐다 — flex 로 하면 그 줄만 사이 간격이
      하나 적어서 키가 미세하게 넓어지고 ㅜ 가 ㅗ 밑에서 어긋난다. */
-  .kbRow{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+  /* 10칸으로 깔고 글자키는 2칸씩 쓴다(= 한 줄 5개). 맨 아랫줄만 3칸짜리
+     버튼을 섞어 1.5칸 폭을 낼 수 있게 하려는 것. */
+  .kbRow{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;}
+  .kbRow>*{grid-column:span 2;}
+  #kbd .kbW3{grid-column:span 3;}
   #kbd button{
     min-width:0;height:56px;padding:0;
     border:none;border-radius:10px;
@@ -430,7 +434,6 @@
     box-shadow:0 2px 4px rgba(0,0,0,.45);
     cursor:pointer;
   }
-  .kbGap{}   /* 그리드 한 칸을 비워두기만 하는 자리(누를 수 없음) */
   /* 줄 사이 여백은 자판 묶음(#kbdCJ/#kbdQW)이 직접 준다 — #kbd 의 gap 은
      두 자판 묶음 사이에만 적용돼서, 줄과 줄 사이는 붙어버렸었다. */
   #kbdCJ,#kbdQW{display:flex;flex-direction:column;gap:10px;}
@@ -657,7 +660,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v201</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v202</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -785,13 +788,12 @@
       ><button type="button" class="kbVowel" data-vseq="ㆍㅡ" data-vseq2="ㆍㆍㅡ">ㅗ</button>
     </div>
     <div class="kbRow">
-      <!-- CLR·⌫·다음 을 모두 같은 1칸 폭으로 두고, CLR 오른쪽 한 칸은
-           비워둔다 — 그래야 ㅜ 가 위의 ㅗ 밑에 그대로 놓이고, 전체를 지우는
-           CLR 이 ⌫ 와 붙어 있지 않아 잘못 누를 일도 줄어든다. -->
+      <!-- 자주 쓰는 ⌫ 와 다음 을 넉넉하게(1.5칸씩) 두고, 전체를 지우는 CLR 은
+           1칸으로 작게 둔다 — 잘못 눌러 다 지우는 일이 줄어든다.
+           ㅜ 는 1칸이라 위의 ㅗ 밑에 그대로 놓인다. -->
       <button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
-      ><div class="kbGap"></div
-      ><button type="button" class="kbFn" data-fn="back">⌫</button
-      ><button type="button" class="kbFn kbNext" data-fn="next">다음</button
+      ><button type="button" class="kbFn kbW3" data-fn="back">⌫</button
+      ><button type="button" class="kbFn kbNext kbW3" data-fn="next">다음</button
       ><button type="button" class="kbVowel" data-vseq="ㅡㆍ" data-vseq2="ㅡㆍㆍ">ㅜ</button>
     </div>
    </div>
