@@ -449,24 +449,36 @@
   #kbd button:active::before{opacity:.3;}
   /* 줄 사이 여백은 자판 묶음(#kbdCJ/#kbdQW)이 직접 준다 — #kbd 의 gap 은
      두 자판 묶음 사이에만 적용돼서, 줄과 줄 사이는 붙어버렸었다. */
-  #kbdCJ,#kbdQW{display:flex;flex-direction:column;gap:10px;}
-  #kbdCJ[hidden],#kbdQW[hidden]{display:none;}
+  #kbdCJ,#kbdQW,#kbdQC{display:flex;flex-direction:column;gap:10px;}
+  #kbdCJ[hidden],#kbdQW[hidden],#kbdQC[hidden]{display:none;}
+  /* 원래 두벌식 — 한 줄 10칸이라 그리드 대신 flex 로 깔고, 줄마다 칸 수가
+     달라도 각 줄이 폭을 꽉 채우게 둔다. */
+  .qwoRow{display:flex;gap:4px;}
+  #kbdQW button{flex:1 1 0;height:60px;font-size:22px;}
+  #kbdQW .kbVowel{font-size:22px;}
+  #kbdQW .kbFn{font-size:18px;}
+  #kbdQW .qwoNext{flex:2 1 0;}
+  #kbdQW button[data-fn="shift"].on{
+    border-color:#8a6410;color:#42300a;
+    background:linear-gradient(180deg,#ffe6a8 0%,#efa837 52%,#f6c463 84%,#ffeec2 100%);
+    text-shadow:none;
+  }
   /* 왼쪽 4칸 자음 · 오른쪽 3칸 모음 = 한 줄 7칸. 7칸 그리드로 깔아 줄마다
      세로줄이 정확히 맞는다. */
   .qwRow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
-  #kbdQW button{
+  #kbdQC button{
     min-width:0;height:58px;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     line-height:1;
   }
-  #kbdQW b{font-size:25px;font-weight:800;}
+  #kbdQC b{font-size:25px;font-weight:800;}
   /* 거듭 눌러 나오는 글자는 작게 — 키가 뭘 낼 수 있는지 한눈에 보인다 */
-  #kbdQW i{font-style:normal;font-size:11.5px;font-weight:700;
+  #kbdQC i{font-style:normal;font-size:11.5px;font-weight:700;
            opacity:.58;margin-top:3px;letter-spacing:1.5px;}
-  #kbdQW .kbFn{font-size:19px;}
-  #kbdQW .qwW2{grid-column:span 2;}
-  #kbdQW .qwW3{grid-column:span 3;}
-  #kbdQW .qwW5{grid-column:span 5;}
+  #kbdQC .kbFn{font-size:19px;}
+  #kbdQC .qwW2{grid-column:span 2;}
+  #kbdQC .qwW3{grid-column:span 3;}
+  #kbdQC .qwW5{grid-column:span 5;}
   /* 자판 고르기 — 이름 칸 바로 위 */
   #kbdPick{display:flex;gap:10px;justify-content:center;}
   #kbdPick button{
@@ -539,10 +551,14 @@
     #kbd .kbVowel{font-size:23px;}
     #kbd .kbFn{font-size:15px;}
     #kbdNum button{height:47px;font-size:23px;}
-    #kbdQW button{height:45px;font-size:20px;}
-    #kbdQW .kbVowel{font-size:20px;}
-    #kbdQW .kbFn{font-size:16px;}
-    .qwRow{gap:4px;}
+    #kbdQW button{height:48px;font-size:19px;}
+    #kbdQW .kbVowel{font-size:19px;}
+    #kbdQW .kbFn{font-size:15px;}
+    #kbdQC button{height:46px;}
+    #kbdQC b{font-size:20px;}
+    #kbdQC i{font-size:10px;margin-top:1px;}
+    #kbdQC .kbFn{font-size:16px;}
+    .qwRow,.qwoRow{gap:4px;}
     #kbd{gap:5px;}
     .kbRow{gap:5px;}
   }
@@ -731,7 +747,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v206</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v207</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -806,7 +822,8 @@
          같은 두벌식도 쓸 수 있게 한다. 고른 값은 기억해 둔다. -->
     <div id="kbdPick">
       <button type="button" data-kb="cj">천지인</button
-      ><button type="button" data-kb="qw">두벌식</button>
+      ><button type="button" data-kb="qw">두벌식</button
+      ><button type="button" data-kb="qc">두벌식C</button>
     </div>
     <div class="row">
       <div id="edNameWrap">
@@ -870,9 +887,51 @@
       ><button type="button" class="kbVowel" data-vseq="ㅡㆍ" data-vseq2="ㅡㆍㆍ">ㅜ</button>
     </div>
    </div>
-   <!-- 폰 기본 키보드와 같은 두벌식. 자리가 익숙한 대신 한 줄에 10칸이라
-        키는 작다 — 그래서 둘 중에 고를 수 있게 했다. -->
+   <!-- 폰 기본 키보드와 자리가 똑같은 원래 두벌식. 익숙한 대신 한 줄에
+        10칸이라 키가 작다. -->
    <div id="kbdQW" hidden>
+    <div class="qwoRow">
+      <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ"></button
+      ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ"></button
+      ><button type="button" class="kbCons" data-k="ㄷ" data-sk="ㄸ"></button
+      ><button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ"></button
+      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ"></button
+      ><button type="button" class="kbVowel" data-k="ㅛ"></button
+      ><button type="button" class="kbVowel" data-k="ㅕ"></button
+      ><button type="button" class="kbVowel" data-k="ㅑ"></button
+      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ"></button
+      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ"></button>
+    </div>
+    <div class="qwoRow">
+      <button type="button" class="kbCons" data-k="ㅁ"></button
+      ><button type="button" class="kbCons" data-k="ㄴ"></button
+      ><button type="button" class="kbCons" data-k="ㅇ"></button
+      ><button type="button" class="kbCons" data-k="ㄹ"></button
+      ><button type="button" class="kbCons" data-k="ㅎ"></button
+      ><button type="button" class="kbVowel" data-k="ㅗ"></button
+      ><button type="button" class="kbVowel" data-k="ㅓ"></button
+      ><button type="button" class="kbVowel" data-k="ㅏ"></button
+      ><button type="button" class="kbVowel" data-k="ㅣ"></button>
+    </div>
+    <div class="qwoRow">
+      <button type="button" class="kbCons" data-k="ㅋ"></button
+      ><button type="button" class="kbCons" data-k="ㅌ"></button
+      ><button type="button" class="kbCons" data-k="ㅊ"></button
+      ><button type="button" class="kbCons" data-k="ㅍ"></button
+      ><button type="button" class="kbVowel" data-k="ㅠ"></button
+      ><button type="button" class="kbVowel" data-k="ㅜ"></button
+      ><button type="button" class="kbVowel" data-k="ㅡ"></button>
+    </div>
+    <div class="qwoRow">
+      <button type="button" class="kbFn" data-fn="shift">⇧</button
+      ><button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
+      ><button type="button" class="kbFn" data-fn="back">⌫</button
+      ><button type="button" class="kbFn kbNext qwoNext" data-fn="next">다음</button>
+    </div>
+   </div>
+   <!-- 두벌식C — 가나다 순 배열에 멀티탭(ㄱ→ㄲ→ㅋ)을 얹어, 한 줄 7칸으로
+        키를 크게 만든 것. -->
+   <div id="kbdQC" hidden>
     <!-- 왼쪽 4칸 자음(가나다 순) · 오른쪽 3칸 모음.
          같은 키를 거듭 누르면 된소리·거센소리, 겹모음으로 바뀌므로
          (ㄱ→ㄲ→ㅋ, ㅗ→ㅛ …) ㅋㅌㅍㅊ·ㅛㅕㅑㅠ 는 따로 키를 두지 않는다.
@@ -2600,7 +2659,17 @@
     /* ── 자판 고르기(천지인 / 두벌식) ──
        고른 값은 기억해 둔다. 바꿀 때는 조립 중이던 글자를 확정해서 두
        방식의 상태가 섞이지 않게 한다. */
-    let kbMode = (data.kbMode==='qw') ? 'qw' : 'cj';
+    let kbMode = (data.kbMode==='qw' || data.kbMode==='qc') ? data.kbMode : 'cj';
+    /* 원래 두벌식에만 있는 ⇧ — 한 글자만 적용되고 바로 풀린다 */
+    let kbShift=false;
+    function kbPaintShift(){
+      $('kbdQW').querySelectorAll('button[data-k]').forEach(b=>{
+        const sk=b.getAttribute('data-sk');
+        b.textContent=(kbShift && sk) ? sk : b.getAttribute('data-k');
+      });
+      const sh=$('kbdQW').querySelector('button[data-fn="shift"]');
+      if(sh) sh.classList.toggle('on', kbShift);
+    }
     /* 자판은 지금 어느 칸을 쓰고 있는지에 따라 달라진다 —
        이름 칸이면 한글 자판(고른 방식), 전화번호 칸이면 숫자판. */
     let kbTarget=null;   // 'name' | 'tel' | null
@@ -2608,11 +2677,14 @@
       const nameOn = kbTarget==='name';
       $('kbdCJ').hidden = !(nameOn && kbMode==='cj');
       $('kbdQW').hidden = !(nameOn && kbMode==='qw');
+      $('kbdQC').hidden = !(nameOn && kbMode==='qc');
       $('kbdNum').hidden = kbTarget!=='tel';
       $('kbdPick').querySelectorAll('button').forEach(b=>{
         b.classList.toggle('on', b.getAttribute('data-kb')===kbMode);
       });
+      kbShift=false; kbPaintShift();
     }
+    kbPaintShift();
     kbApplyMode();
     $('kbdPick').addEventListener('pointerdown', e=>{ e.preventDefault(); });
     $('kbdPick').addEventListener('click', e=>{
@@ -2630,7 +2702,7 @@
     function kbShow(target){
       kbTarget = target || null;
       kbd.hidden = !kbTarget;
-      if(!kbTarget){ kbCycStop(); kbVCycStop(); }
+      if(!kbTarget){ kbCycStop(); kbVCycStop(); if(kbShift){ kbShift=false; kbPaintShift(); } }
       kbApplyMode();
       const eb=$('edBottom');
       if(kbTarget){
@@ -2653,6 +2725,7 @@
       const b=e.target.closest('button');
       if(!b || !kbd.contains(b)) return;
       const fn=b.getAttribute('data-fn');
+      if(fn==='shift'){ kbShift=!kbShift; kbPaintShift(); return; }
       if(fn==='back'){ kbBack(); return; }
       if(fn==='clear'){ kbResetFrom(''); kbRender(); return; }
       // 숫자판으로 이어진다. focus() 만 믿지 않고 직접 띄운다 — 포커스 이벤트가
@@ -2669,11 +2742,19 @@
       if(v){ kbVowel(v); return; }
       const vs=b.getAttribute('data-vseq');
       if(vs){ kbVowelDirect(vs, b.getAttribute('data-vseq2')); return; }
-      // ── 두벌식(가나다 배열) ──
+      // ── 두벌식C(가나다 배열 + 멀티탭) ──
       const qc=b.getAttribute('data-qc');
       if(qc){ kbVCycStop(); kbCons(qc); return; }
       const qv=b.getAttribute('data-qv');
       if(qv){ kbQwVowel(qv); return; }
+      // ── 원래 두벌식(자모를 그대로 받는다) ──
+      const k=b.getAttribute('data-k');
+      if(k){
+        const sk=b.getAttribute('data-sk');
+        kbVCycStop();
+        kbJamo((kbShift && sk) ? sk : k);
+        if(kbShift){ kbShift=false; kbPaintShift(); }   // 시프트는 한 글자만
+      }
     });
     /* 숫자판은 화면에 보이는 "010-1234-5678" 이 아니라 숫자만 따로 다룬다 —
        그래야 지울 때 하이픈에 걸리지 않고 한 자씩 깔끔히 지워진다.
