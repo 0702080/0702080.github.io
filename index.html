@@ -584,7 +584,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v188</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v189</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1473,16 +1473,17 @@
      배지 값이 이미 찍힌 사람들 것도 같이 바뀌므로, 이번 한 장만이 아니라
      todaysShots 전체를 다시 합성한다(다운로드된 파일 자체는 저장 당시
      값으로 이미 고정되어 있어 영향받지 않는다). */
-  async function addTodayShot(blob, filename, name, tel, id, t){
+  async function addTodayShot(blob, filename, name, tel, id, t, dlHash){
     const isNew=!id;
     if(isNew) id=Date.now()+'_'+Math.random().toString(36).slice(2,8);
     if(!t) t=Date.now();   // 되살릴 때는 원래 찍은 시각을 그대로 넘겨받는다(안 넘기면 지금 시각)
-    const shot={blob, filename, name, tel, displayBlob:null, displayUrl:null, id, t};
+    dlHash=dlHash||null;
+    const shot={blob, filename, name, tel, displayBlob:null, displayUrl:null, id, t, dlHash};
     todaysShots.push(shot);
     appendTodayThumb(shot, todaysShots.length-1);
     $('todayWrap').classList.add('show');
     $('todayCount').textContent=todaysShots.length;
-    if(isNew) dbPutShot({id, date:todayKey(), filename, name, tel, blob, t});
+    if(isNew) dbPutShot({id, date:todayKey(), filename, name, tel, blob, t, dlHash});
 
     await recomputeAllDisplays();
     refreshAllThumbSrcs();
@@ -1494,7 +1495,7 @@
     const recs=await dbLoadTodayAndCleanup();
     if(!recs.length) return;
     for(const r of recs){
-      const shot={blob:r.blob, filename:r.filename, name:r.name, tel:r.tel, displayBlob:null, displayUrl:null, id:r.id, t:r.t};
+      const shot={blob:r.blob, filename:r.filename, name:r.name, tel:r.tel, displayBlob:null, displayUrl:null, id:r.id, t:r.t, dlHash:r.dlHash||null};
       todaysShots.push(shot);
       appendTodayThumb(shot, todaysShots.length-1);
     }
@@ -1637,10 +1638,26 @@
      사진 앱으로 보정해서 사본으로 저장하는 경우가 있는데, 그 사이 다른
      사람이 추가/삭제돼 "전체 몇 명"이 바뀌었어도 사본에는 저장하던 순간의
      낡은 번호가 그대로 박혀 있다 — 그걸 그대로 보내면 번호가 어긋난다.
-     어느 사람 것인지는 앱이 저장할 때 쓰는 파일명 규칙(fileBase())을
-     거꾸로 읽어서 알아낸다 — 보정 앱이 사본을 저장할 때 보통 원래
-     파일명 뒤에 접미사만 붙이므로(" - 사본" 등), 앞부분만 봐도 찾을 수
-     있다. */
+
+     어느 사람 것인지 알아내는 1차 방법은 "내용 자체가 똑같은가"이다 —
+     안드로이드 갤러리 앱(구글 포토 등)에서 사진을 다시 고르면 브라우저에
+     넘어오는 file.name 이 앱이 저장할 때 쓴 파일명과 전혀 다르게(갤러리
+     앱이 자체 규칙으로 새로 붙인 이름으로) 오는 경우가 많아, 파일명만
+     믿으면 실제 기기에서 거의 항상 못 찾는다. 보정 없이 그대로 다시 고른
+     사진은 바이트가 저장 당시 다운로드된 파일과 완전히 같으므로, 해시
+     비교로 100% 확실하게 찾을 수 있다. */
+  async function hashBlob(blob){
+    const buf=await blob.arrayBuffer();
+    const digest=await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  function findShotByHash(hash){
+    return todaysShots.find(s=>s.dlHash && s.dlHash===hash) || null;
+  }
+  /* 다른 앱에서 보정해서 저장하면 바이트가 달라져 해시로는 못 찾는다 —
+     이때는 차선책으로 파일명을 거꾸로 읽는다. 보정 앱이 사본을 저장할 때
+     보통 원래 파일명 뒤에 접미사만 붙이므로(" - 사본" 등), 앞부분만 봐도
+     찾을 수 있다. */
   function parseNameTelFromFilename(filename){
     const m=(filename||'').match(/^\d{8}_\d+_([^_.]+)(?:_(\d{2,4}-\d{3,4}-\d{4}))?/);
     if(!m) return null;
@@ -1725,11 +1742,19 @@
     if(!files.length) return;
     setBtn(bSendPhotos,'📤','사진 확인 중...');
     const fixed=await Promise.all(files.map(async f=>{
-      const parsed=parseNameTelFromFilename(f.name);
-      if(!parsed) return f;
-      const found=lookupTrackedIndex(parsed.nm, parsed.tel);
+      let nm, tel;
+      try{
+        const matched=findShotByHash(await hashBlob(f));
+        if(matched){ nm=matched.name; tel=matched.tel; }
+      }catch(err){}
+      if(nm===undefined){
+        const parsed=parseNameTelFromFilename(f.name);
+        if(!parsed) return f;
+        nm=parsed.nm; tel=parsed.tel;
+      }
+      const found=lookupTrackedIndex(nm, tel);
       if(!found) return f;
-      try{ return await reBadgeFile(f, parsed.nm, parsed.tel, found.idx, found.total); }
+      try{ return await reBadgeFile(f, nm, tel, found.idx, found.total); }
       catch(err){ return f; }   // 다시 그리다 실패하면 원본이라도 보낸다
     }));
     pendingResendFiles=fixed;
@@ -1865,7 +1890,10 @@
         // 나중에 사진을 지워 번호가 바뀌어도 그 자리에서 다시 합성해 보여줄 수
         // 있게 한다 — 지금 막 다운로드한 파일은 이미 고정된 번호라 못 바꾼다.
         const cleanBlob=await new Promise(res=>cleanCanvas.toBlob(res, 'image/jpeg', 0.92));
-        await addTodayShot(cleanBlob||blob, name, nm, tel);
+        // 나중에 갤러리에서 이 사진을 다시 골랐을 때(카톡 재전송 등) 알아볼
+        // 수 있도록, 실제로 다운로드된 바이트의 해시를 남겨둔다.
+        const dlHash=await hashBlob(blob).catch(()=>null);
+        await addTodayShot(cleanBlob||blob, name, nm, tel, undefined, undefined, dlHash);
 
         if(mySeq===saveSeq){
           $('homeLog').innerHTML='';   // 저장 성공 로그는 화면에 안 띄운다(파일은 그대로 저장됨)
