@@ -473,16 +473,24 @@
      보여줘서, 몇 번 눌러야 하는지 세지 않고 바로 찍어 넣을 수 있다. */
   #kbPop{
     position:absolute;z-index:5;display:flex;gap:6px;padding:7px;
-    border-radius:16px;background:rgba(22,17,29,.98);
-    border:1px solid rgba(255,255,255,.16);
-    box-shadow:0 8px 22px rgba(0,0,0,.6);
+    border-radius:16px;background:rgba(30,21,10,.98);
+    border:1.5px solid rgba(242,181,68,.55);
+    box-shadow:0 8px 22px rgba(0,0,0,.62);
   }
   #kbPop[hidden]{display:none;}
   #kbPop button{width:52px;height:58px;font-size:26px;transition:transform .08s ease;}
-  /* 끌면서 지금 짚고 있는 글자 */
+  /* 자판의 어떤 키와도 다른 호박색 — 고르는 판이라는 게 한눈에 보인다
+     (자음=푸른색, 모음=상아색, 기능키=보라색과 확실히 구분된다) */
+  #kbPop .kbPick{
+    border:1.5px solid #8a5a0e;color:#3a2705;
+    background:linear-gradient(180deg,#ffeab5 0%,#f2b544 52%,#f8d078 84%,#fff4d6 100%);
+    box-shadow:0 3px 7px rgba(10,18,30,.5),
+               inset 0 -2px 6px rgba(255,255,255,.85), inset 0 2px 3px rgba(140,95,20,.22);
+  }
+  /* 끌면서 지금 짚고 있는 글자 — 호박색 위에서 잘 보이게 청록 테두리 */
   #kbPop button.hot{
     transform:translateY(-3px);
-    box-shadow:0 0 0 3px #2fbaa8, 0 7px 16px rgba(0,0,0,.55);
+    box-shadow:0 0 0 3px #17a08f, 0 7px 16px rgba(0,0,0,.55);
   }
   /* 세 줄뿐이라 키를 훨씬 높게 잡을 수 있다 */
   #kbdQC button{
@@ -772,7 +780,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v212</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v213</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2775,7 +2783,7 @@
       list.forEach(ch=>{
         const b=document.createElement('button');
         b.type='button';
-        b.className = JUNG.indexOf(ch)>=0 ? 'kbVowel' : 'kbCons';
+        b.className='kbPick';   // 자판 키와 색이 달라야 고르는 판인 게 바로 보인다
         b.setAttribute('data-pick', ch);
         b.textContent=ch;
         kbPop.appendChild(b);
