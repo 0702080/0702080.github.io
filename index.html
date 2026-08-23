@@ -367,7 +367,8 @@
     backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
     box-shadow:0 10px 34px rgba(0,0,0,.45);
   }
-  #edBottom .row{display:flex;gap:8px;}
+  /* 이름·전화번호 사이는 좁게 붙인다(원래 8px 의 절반) */
+  #edBottom .row{display:flex;gap:4px;}
   #edBottom input{
     font-size:20px;padding:12px 14px;border-radius:12px;border:none;
     background:rgba(255,255,255,.95);color:#111;font-weight:800;
@@ -482,7 +483,10 @@
   #kbdQC .qwW3{grid-column:span 3;}
   #kbdQC .qwW5{grid-column:span 5;}
   /* 자판 고르기 — 이름 칸 바로 위 */
-  #kbdPick{display:flex;gap:10px;justify-content:center;}
+  /* 자판 고르기와 이름 칸 사이는 넉넉히 띄운다 — 판의 기본 간격 9px 에
+     27px 를 더해 36px(원래의 4배). 자판 종류를 고르는 줄과 실제로 적는
+     줄이 확실히 구분된다. */
+  #kbdPick{display:flex;gap:10px;justify-content:center;margin-bottom:27px;}
   #kbdPick button{
     position:relative;isolation:isolate;
     flex:0 0 auto;padding:11px 26px;border-radius:999px;cursor:pointer;
@@ -750,7 +754,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v208</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v209</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
