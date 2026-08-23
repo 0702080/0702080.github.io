@@ -405,44 +405,45 @@
   /* ── 앱이 직접 그리는 한글 자판 ──
      이름 적는 데 필요한 자모·공백·지움만 둔다. 숫자줄, 특수문자, 한영전환
      같은 건 아예 없어서 잘못 누를 일이 없다.
-     자음 위 / 모음 아래로 나눠 한 줄에 7개만 둔다 — 두벌식처럼 10개를
-     넣으면 폰 폭에서 키가 29px밖에 안 나와 손가락으로 치면 오타가 난다.
-     7개면 47px 넘게 확보돼서 글자도 크게 넣을 수 있다.
-     화면 아래에 폭을 꽉 채워 붙인다(입력판 안에 넣으면 그만큼 좁아진다). */
+     배치는 폰 기본 키보드와 똑같은 두벌식이라 그대로 익숙하게 칠 수 있다.
+     대신 화면 아래에 폭을 꽉 채워 붙이고(입력판 안에 넣으면 판의 좌우
+     여백만큼 키가 좁아진다) 키 높이와 글자를 키워서, 배치는 그대로 두고
+     손가락이 닿는 면적만 넓혔다. 자음/모음은 옅은 색으로만 구분한다
+     (자리는 그대로라 익숙함을 해치지 않는다). */
   #kbd{
     position:absolute;left:0;right:0;bottom:0;z-index:3;
     display:flex;flex-direction:column;gap:5px;
-    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    padding:6px 3px calc(6px + env(safe-area-inset-bottom));
     background:rgba(30,24,38,.97);
     box-shadow:0 -4px 14px rgba(0,0,0,.45);
   }
   #kbd[hidden]{display:none;}
-  .kbLabel{color:#b7abc9;font-size:11px;font-weight:800;letter-spacing:3px;
-           text-align:center;margin:2px 0 -2px;}
-  .kbRow{display:flex;gap:5px;}
+  .kbRow{display:flex;gap:4px;}
+  .kbRow2{padding:0 5%;}   /* 가운데 줄은 한 칸 적어서 실제 키보드처럼 안쪽으로 */
   #kbd button{
     flex:1 1 0;min-width:0;height:54px;padding:0;
-    border:none;border-radius:9px;
+    border:none;border-radius:8px;
     font-family:'Malgun Gothic',sans-serif;
-    font-size:24px;font-weight:800;
+    font-size:22px;font-weight:800;
     box-shadow:0 2px 3px rgba(0,0,0,.4);
     cursor:pointer;
   }
-  #kbd .kbCons{background:linear-gradient(180deg,#ffffff,#dbe4f0);color:#1e2937;}
-  #kbd .kbVowel{background:linear-gradient(180deg,#fffdf4,#efe2ca);color:#3a2d19;}
+  #kbd .kbCons{background:linear-gradient(180deg,#ffffff,#dfe6ef);color:#1e2937;}
+  #kbd .kbVowel{background:linear-gradient(180deg,#fffdf6,#efe6d5);color:#3a2d19;}
   #kbd button:active{filter:brightness(.82);}
+  #kbd .kbWide{flex:1.45 1 0;font-size:19px;}
   #kbd .kbFnRow button{height:46px;font-size:15px;font-weight:700;}
   #kbd .kbFn{background:linear-gradient(180deg,#8e82a3,#6d6283);color:#fff;}
-  #kbd .kbSpace{flex:1.5 1 0;}
+  #kbd .kbSpace{flex:2 1 0;}
   #kbd .kbNext{flex:1.4 1 0;background:linear-gradient(180deg,#7fd0c4,#2bb3a2);color:#0d3b35;}
   #kbd button[data-fn="shift"].on{background:linear-gradient(180deg,#ffd98a,#efa837);color:#48310a;}
   /* 화면이 아주 짧은 기기에서는 자판을 조금 낮춰 입력판이 위로 잘리지 않게 */
   @media (max-height:620px){
-    #kbd button{height:44px;font-size:20px;}
+    #kbd button{height:45px;font-size:19px;}
+    #kbd .kbWide{font-size:17px;}
     #kbd .kbFnRow button{height:38px;font-size:13px;}
-    .kbLabel{font-size:10px;margin:0;letter-spacing:2px;}
     #kbd{gap:4px;}
-    .kbRow{gap:4px;}
+    .kbRow{gap:3px;}
   }
 
   /* ── 촬영 멘트 모음 (전체 보기) ── */
@@ -629,7 +630,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v193</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v194</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -728,49 +729,43 @@
        입력판(#edBottom) 안이 아니라 밖에 두고 화면 폭을 꽉 채운다 —
        안에 두면 판의 좌우 여백만큼 키가 좁아져서 오타가 난다. -->
   <div id="kbd" hidden>
-    <div class="kbLabel">자 음</div>
     <div class="kbRow">
-      <button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ"></button
-      ><button type="button" class="kbCons" data-k="ㄴ"></button
+      <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ"></button
+      ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ"></button
       ><button type="button" class="kbCons" data-k="ㄷ" data-sk="ㄸ"></button
+      ><button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ"></button
+      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ"></button
+      ><button type="button" class="kbVowel" data-k="ㅛ"></button
+      ><button type="button" class="kbVowel" data-k="ㅕ"></button
+      ><button type="button" class="kbVowel" data-k="ㅑ"></button
+      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ"></button
+      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ"></button>
+    </div>
+    <div class="kbRow kbRow2">
+      <button type="button" class="kbCons" data-k="ㅁ"></button
+      ><button type="button" class="kbCons" data-k="ㄴ"></button
+      ><button type="button" class="kbCons" data-k="ㅇ"></button
       ><button type="button" class="kbCons" data-k="ㄹ"></button
-      ><button type="button" class="kbCons" data-k="ㅁ"></button
-      ><button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ"></button
-      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ"></button>
+      ><button type="button" class="kbCons" data-k="ㅎ"></button
+      ><button type="button" class="kbVowel" data-k="ㅗ"></button
+      ><button type="button" class="kbVowel" data-k="ㅓ"></button
+      ><button type="button" class="kbVowel" data-k="ㅏ"></button
+      ><button type="button" class="kbVowel" data-k="ㅣ"></button>
     </div>
     <div class="kbRow">
-      <button type="button" class="kbCons" data-k="ㅇ"></button
-      ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ"></button
-      ><button type="button" class="kbCons" data-k="ㅊ"></button
+      <button type="button" class="kbFn kbWide" data-fn="shift">⇧</button
       ><button type="button" class="kbCons" data-k="ㅋ"></button
       ><button type="button" class="kbCons" data-k="ㅌ"></button
+      ><button type="button" class="kbCons" data-k="ㅊ"></button
       ><button type="button" class="kbCons" data-k="ㅍ"></button
-      ><button type="button" class="kbCons" data-k="ㅎ"></button>
-    </div>
-    <div class="kbLabel">모 음</div>
-    <div class="kbRow">
-      <button type="button" class="kbVowel" data-k="ㅏ"></button
-      ><button type="button" class="kbVowel" data-k="ㅑ"></button
-      ><button type="button" class="kbVowel" data-k="ㅓ"></button
-      ><button type="button" class="kbVowel" data-k="ㅕ"></button
-      ><button type="button" class="kbVowel" data-k="ㅗ"></button
-      ><button type="button" class="kbVowel" data-k="ㅛ"></button
-      ><button type="button" class="kbVowel" data-k="ㅜ"></button>
-    </div>
-    <div class="kbRow">
-      <button type="button" class="kbVowel" data-k="ㅠ"></button
+      ><button type="button" class="kbVowel" data-k="ㅠ"></button
+      ><button type="button" class="kbVowel" data-k="ㅜ"></button
       ><button type="button" class="kbVowel" data-k="ㅡ"></button
-      ><button type="button" class="kbVowel" data-k="ㅣ"></button
-      ><button type="button" class="kbVowel" data-k="ㅐ"></button
-      ><button type="button" class="kbVowel" data-k="ㅒ"></button
-      ><button type="button" class="kbVowel" data-k="ㅔ"></button
-      ><button type="button" class="kbVowel" data-k="ㅖ"></button>
+      ><button type="button" class="kbFn kbWide" data-fn="back">⌫</button>
     </div>
     <div class="kbRow kbFnRow">
-      <button type="button" class="kbFn" data-fn="shift">쌍자음</button
+      <button type="button" class="kbFn" data-fn="clear">전체지움</button
       ><button type="button" class="kbFn kbSpace" data-fn="space">공백</button
-      ><button type="button" class="kbFn" data-fn="back">⌫</button
-      ><button type="button" class="kbFn" data-fn="clear">전체지움</button
       ><button type="button" class="kbFn kbNext" data-fn="next">다음 →</button>
     </div>
   </div>
