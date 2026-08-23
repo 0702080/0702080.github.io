@@ -405,45 +405,42 @@
   /* ── 앱이 직접 그리는 한글 자판 ──
      이름 적는 데 필요한 자모·공백·지움만 둔다. 숫자줄, 특수문자, 한영전환
      같은 건 아예 없어서 잘못 누를 일이 없다.
-     배치는 폰 기본 키보드와 똑같은 두벌식이라 그대로 익숙하게 칠 수 있다.
-     대신 화면 아래에 폭을 꽉 채워 붙이고(입력판 안에 넣으면 판의 좌우
-     여백만큼 키가 좁아진다) 키 높이와 글자를 키워서, 배치는 그대로 두고
-     손가락이 닿는 면적만 넓혔다. 자음/모음은 옅은 색으로만 구분한다
-     (자리는 그대로라 익숙함을 해치지 않는다). */
+     천지인 방식 12키 배열 — 한 줄에 4개뿐이라 키가 아주 크다(두벌식 10키는
+     폰 폭에서 33px이 한계라 손가락으로 치면 오타가 났다).
+     화면 아래에 폭을 꽉 채워 붙인다(입력판 안에 넣으면 그만큼 좁아진다). */
   #kbd{
     position:absolute;left:0;right:0;bottom:0;z-index:3;
-    display:flex;flex-direction:column;gap:5px;
-    padding:6px 3px calc(6px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;gap:6px;
+    padding:7px 5px calc(7px + env(safe-area-inset-bottom));
     background:rgba(30,24,38,.97);
     box-shadow:0 -4px 14px rgba(0,0,0,.45);
   }
   #kbd[hidden]{display:none;}
-  .kbRow{display:flex;gap:4px;}
-  .kbRow2{padding:0 5%;}   /* 가운데 줄은 한 칸 적어서 실제 키보드처럼 안쪽으로 */
+  .kbRow{display:flex;gap:6px;}
   #kbd button{
-    flex:1 1 0;min-width:0;height:54px;padding:0;
-    border:none;border-radius:8px;
+    flex:1 1 0;min-width:0;height:58px;padding:0;
+    border:none;border-radius:10px;
     font-family:'Malgun Gothic',sans-serif;
-    font-size:22px;font-weight:800;
-    box-shadow:0 2px 3px rgba(0,0,0,.4);
+    font-size:25px;font-weight:800;letter-spacing:1px;
+    box-shadow:0 2px 4px rgba(0,0,0,.45);
     cursor:pointer;
   }
   #kbd .kbCons{background:linear-gradient(180deg,#ffffff,#dfe6ef);color:#1e2937;}
-  #kbd .kbVowel{background:linear-gradient(180deg,#fffdf6,#efe6d5);color:#3a2d19;}
-  #kbd button:active{filter:brightness(.82);}
-  #kbd .kbWide{flex:1.45 1 0;font-size:19px;}
-  #kbd .kbFnRow button{height:46px;font-size:15px;font-weight:700;}
-  #kbd .kbFn{background:linear-gradient(180deg,#8e82a3,#6d6283);color:#fff;}
-  #kbd .kbSpace{flex:2 1 0;}
-  #kbd .kbNext{flex:1.4 1 0;background:linear-gradient(180deg,#7fd0c4,#2bb3a2);color:#0d3b35;}
-  #kbd button[data-fn="shift"].on{background:linear-gradient(180deg,#ffd98a,#efa837);color:#48310a;}
+  #kbd .kbVowel{background:linear-gradient(180deg,#fffdf6,#eee2cb);color:#3a2d19;font-size:29px;}
+  #kbd button:active{filter:brightness(.8);}
+  #kbd .kbFn{background:linear-gradient(180deg,#8e82a3,#6d6283);color:#fff;
+             font-size:17px;font-weight:700;letter-spacing:0;}
+  #kbd .kbFnRow button{height:50px;font-size:16px;}
+  #kbd .kbClear{flex:1 1 0;}
+  #kbd .kbNext{flex:3 1 0;background:linear-gradient(180deg,#7fd0c4,#2bb3a2);color:#0d3b35;}
   /* 화면이 아주 짧은 기기에서는 자판을 조금 낮춰 입력판이 위로 잘리지 않게 */
   @media (max-height:620px){
-    #kbd button{height:45px;font-size:19px;}
-    #kbd .kbWide{font-size:17px;}
-    #kbd .kbFnRow button{height:38px;font-size:13px;}
-    #kbd{gap:4px;}
-    .kbRow{gap:3px;}
+    #kbd button{height:48px;font-size:21px;}
+    #kbd .kbVowel{font-size:25px;}
+    #kbd .kbFn{font-size:15px;}
+    #kbd .kbFnRow button{height:42px;font-size:14px;}
+    #kbd{gap:5px;}
+    .kbRow{gap:5px;}
   }
 
   /* ── 촬영 멘트 모음 (전체 보기) ── */
@@ -630,7 +627,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v194</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v195</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -730,42 +727,25 @@
        안에 두면 판의 좌우 여백만큼 키가 좁아져서 오타가 난다. -->
   <div id="kbd" hidden>
     <div class="kbRow">
-      <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ"></button
-      ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ"></button
-      ><button type="button" class="kbCons" data-k="ㄷ" data-sk="ㄸ"></button
-      ><button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ"></button
-      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ"></button
-      ><button type="button" class="kbVowel" data-k="ㅛ"></button
-      ><button type="button" class="kbVowel" data-k="ㅕ"></button
-      ><button type="button" class="kbVowel" data-k="ㅑ"></button
-      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ"></button
-      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ"></button>
-    </div>
-    <div class="kbRow kbRow2">
-      <button type="button" class="kbCons" data-k="ㅁ"></button
-      ><button type="button" class="kbCons" data-k="ㄴ"></button
-      ><button type="button" class="kbCons" data-k="ㅇ"></button
-      ><button type="button" class="kbCons" data-k="ㄹ"></button
-      ><button type="button" class="kbCons" data-k="ㅎ"></button
-      ><button type="button" class="kbVowel" data-k="ㅗ"></button
-      ><button type="button" class="kbVowel" data-k="ㅓ"></button
-      ><button type="button" class="kbVowel" data-k="ㅏ"></button
-      ><button type="button" class="kbVowel" data-k="ㅣ"></button>
+      <button type="button" class="kbCons" data-cj="k1">ㄱㅋ</button
+      ><button type="button" class="kbCons" data-cj="k2">ㄴㄹ</button
+      ><button type="button" class="kbCons" data-cj="k3">ㄷㅌ</button
+      ><button type="button" class="kbVowel" data-v="ㅣ">ㅣ</button>
     </div>
     <div class="kbRow">
-      <button type="button" class="kbFn kbWide" data-fn="shift">⇧</button
-      ><button type="button" class="kbCons" data-k="ㅋ"></button
-      ><button type="button" class="kbCons" data-k="ㅌ"></button
-      ><button type="button" class="kbCons" data-k="ㅊ"></button
-      ><button type="button" class="kbCons" data-k="ㅍ"></button
-      ><button type="button" class="kbVowel" data-k="ㅠ"></button
-      ><button type="button" class="kbVowel" data-k="ㅜ"></button
-      ><button type="button" class="kbVowel" data-k="ㅡ"></button
-      ><button type="button" class="kbFn kbWide" data-fn="back">⌫</button>
+      <button type="button" class="kbCons" data-cj="k4">ㅂㅍ</button
+      ><button type="button" class="kbCons" data-cj="k5">ㅅㅎ</button
+      ><button type="button" class="kbCons" data-cj="k6">ㅈㅊ</button
+      ><button type="button" class="kbVowel" data-v="ㆍ">ㆍ</button>
+    </div>
+    <div class="kbRow">
+      <button type="button" class="kbCons" data-cj="k7">ㅇㅁ</button
+      ><button type="button" class="kbFn" data-fn="space">공백</button
+      ><button type="button" class="kbFn" data-fn="back">⌫</button
+      ><button type="button" class="kbVowel" data-v="ㅡ">ㅡ</button>
     </div>
     <div class="kbRow kbFnRow">
-      <button type="button" class="kbFn" data-fn="clear">전체지움</button
-      ><button type="button" class="kbFn kbSpace" data-fn="space">공백</button
+      <button type="button" class="kbFn kbClear" data-fn="clear">전체지움</button
       ><button type="button" class="kbFn kbNext" data-fn="next">다음 →</button>
     </div>
   </div>
@@ -2196,66 +2176,122 @@
     Object.keys(JUNG_COMB).forEach(k=>{ JUNG_SPLIT[JUNG_COMB[k]]=[k[0],k[1]]; });
     Object.keys(JONG_COMB).forEach(k=>{ JONG_SPLIT[JONG_COMB[k]]=[k[0],k[1]]; });
 
+    /* ── 천지인 방식 ──
+       자음은 한 키에 두세 글자가 묶여 있어 같은 키를 거듭 누르면 차례로
+       바뀐다(ㄱ→ㅋ→ㄲ). 잠깐(아래 CJ_HOLD) 쉬거나 다른 키를 누르면 그
+       글자로 확정돼서, "박기"처럼 같은 키가 연달아 나오는 이름도 칠 수 있다.
+       모음은 ㅣ·ㆍ·ㅡ 세 조각을 순서대로 눌러 만든다(ㅣ+ㆍ=ㅏ, ㆍ+ㅡ=ㅗ …). */
+    const CJ_CONS={
+      k1:['ㄱ','ㅋ','ㄲ'], k2:['ㄴ','ㄹ'],     k3:['ㄷ','ㅌ','ㄸ'],
+      k4:['ㅂ','ㅍ','ㅃ'], k5:['ㅅ','ㅎ','ㅆ'], k6:['ㅈ','ㅊ','ㅉ'],
+      k7:['ㅇ','ㅁ']
+    };
+    const CJ_VOW={
+      'ㅣ':'ㅣ', 'ㅡ':'ㅡ', 'ㅡㅣ':'ㅢ',
+      'ㅣㆍ':'ㅏ', 'ㅣㆍㆍ':'ㅑ', 'ㅣㆍㅣ':'ㅐ', 'ㅣㆍㆍㅣ':'ㅒ',
+      'ㆍㅣ':'ㅓ', 'ㆍㅣㅣ':'ㅔ', 'ㆍㆍㅣ':'ㅕ', 'ㆍㆍㅣㅣ':'ㅖ',
+      'ㆍㅡ':'ㅗ', 'ㆍㆍㅡ':'ㅛ', 'ㆍㅡㅣ':'ㅚ', 'ㆍㅡㅣㆍ':'ㅘ', 'ㆍㅡㅣㆍㅣ':'ㅙ',
+      'ㅡㆍ':'ㅜ', 'ㅡㆍㆍ':'ㅠ', 'ㅡㆍㅣ':'ㅟ', 'ㅡㆍㆍㅣ':'ㅝ', 'ㅡㆍㆍㅣㅣ':'ㅞ'
+    };
+    /* 아직 모음이 안 된 중간 조각도 이어붙일 수 있어야 한다 — 예를 들어
+       "ㆍㆍ" 자체는 모음이 아니지만 "ㆍㆍㅣ"(ㅕ) 로 가는 길목이라, 여기서
+       끊어버리면 ㅕ·ㅛ 를 아예 못 친다. 그래서 완성된 모음뿐 아니라
+       "앞으로 모음이 될 수 있는 조각"까지 모아둔다. */
+    const CJ_PREFIX=new Set();
+    Object.keys(CJ_VOW).forEach(k=>{ for(let i=1;i<=k.length;i++) CJ_PREFIX.add(k.slice(0,i)); });
+    const CJ_HOLD=800;   // 같은 키를 이어 눌러 글자를 바꿀 수 있는 시간(ms)
+
     let kbBase='', kbCho=-1, kbJung=-1, kbJong=0;
+    let kbVowSeq='';                       // 지금 만들고 있는 모음의 ㅣㆍㅡ 조각들
+    let kbCycKey=null, kbCycStep=0, kbCycPos=null, kbCycTimer=null;
+    function kbCycStop(){ if(kbCycTimer){ clearTimeout(kbCycTimer); kbCycTimer=null; } kbCycKey=null; kbCycPos=null; }
+    function kbCycArm(){
+      if(kbCycTimer) clearTimeout(kbCycTimer);
+      kbCycTimer=setTimeout(()=>{ kbCycTimer=null; kbCycKey=null; kbCycPos=null; }, CJ_HOLD);
+    }
+    // 아직 모음이 안 된 조각(ㆍ, ㆍㆍ)은 그대로 보여줘서 눌린 게 보이게 한다
+    function kbPending(){ return (kbJung<0 && kbVowSeq && !CJ_VOW[kbVowSeq]) ? kbVowSeq : ''; }
     function kbComposed(){
       if(kbCho>=0 && kbJung>=0) return String.fromCharCode(0xAC00+(kbCho*21+kbJung)*28+kbJong);
-      if(kbCho>=0) return CHO[kbCho];
+      if(kbCho>=0) return CHO[kbCho]+kbPending();
       if(kbJung>=0) return JUNG[kbJung];
-      return '';
+      return kbPending();
     }
     function kbRender(){
       nI.value=kbBase+kbComposed();
       nI.dispatchEvent(new Event('input',{bubbles:true}));
     }
-    function kbFlush(){ kbBase+=kbComposed(); kbCho=-1; kbJung=-1; kbJong=0; }
-    function kbResetFrom(v){ kbBase=v||''; kbCho=-1; kbJung=-1; kbJong=0; }
+    function kbFlush(){ kbBase+=kbComposed(); kbCho=-1; kbJung=-1; kbJong=0; kbVowSeq=''; }
+    function kbResetFrom(v){ kbBase=v||''; kbCho=-1; kbJung=-1; kbJong=0; kbVowSeq=''; kbCycStop(); }
     /* 마이크나 새 사진 시작처럼 자판을 거치지 않고 값이 바뀌었으면, 조립
        중이던 상태를 버리고 현재 값에서 다시 시작한다(안 그러면 다음 타건에
        옛 글자가 되살아난다). */
     function kbSync(){ if(nI.value!==kbBase+kbComposed()) kbResetFrom(nI.value); }
 
-    function kbJamo(ch){
+    function kbCons(keyId){
       kbSync();
-      const vi=JUNG.indexOf(ch);
-      if(vi>=0){                                   // ── 모음 ──
-        if(kbCho>=0 && kbJung<0){ kbJung=vi; }     // 자음 뒤 → 받쳐서 한 글자로
-        else if(kbJung>=0 && kbJong===0){          // 이미 모음이 있으면 겹모음 시도
-          const comb=JUNG_COMB[JUNG[kbJung]+ch];
-          if(comb){ kbJung=JUNG.indexOf(comb); }
-          else{ kbFlush(); kbJung=vi; }
-        }
-        else if(kbCho>=0 && kbJung>=0 && kbJong>0){
-          // 받침이 다음 글자의 첫소리로 넘어간다: "감"+"ㅏ" → "가마"
-          const jc=JONG[kbJong], sp=JONG_SPLIT[jc];
-          const moved = sp ? sp[1] : jc;
-          kbJong = sp ? JONG.indexOf(sp[0]) : 0;
-          kbFlush();
-          kbCho=CHO.indexOf(moved); kbJung=vi; kbJong=0;
-        }
-        else{ kbFlush(); kbJung=vi; }              // 홀로 선 모음
-      }else{                                       // ── 자음 ──
-        const ci=CHO.indexOf(ch);
-        if(kbCho>=0 && kbJung>=0){
-          if(kbJong===0){
-            const ji=JONG.indexOf(ch);
-            if(ji>0){ kbJong=ji; } else { kbFlush(); kbCho=ci; }
-          }else{
-            const comb=JONG_COMB[JONG[kbJong]+ch];
-            if(comb){ kbJong=JONG.indexOf(comb); }
-            else{ kbFlush(); kbCho=ci; }
-          }
-        }else{ kbFlush(); kbCho=ci; }
+      const cyc=CJ_CONS[keyId];
+      if(!cyc) return;
+      // 같은 키를 이어 눌렀으면 그 자리에서 다음 글자로 바꾼다
+      if(kbCycKey===keyId && kbCycPos){
+        const list = kbCycPos==='jong' ? cyc.filter(j=>JONG.indexOf(j)>0) : cyc;
+        kbCycStep=(kbCycStep+1)%list.length;
+        const j=list[kbCycStep];
+        if(kbCycPos==='cho') kbCho=CHO.indexOf(j); else kbJong=JONG.indexOf(j);
+        kbCycArm(); kbRender(); return;
       }
+      const j=cyc[0];
+      if(kbJung<0 && kbVowSeq) kbVowSeq='';   // 덜 만든 모음 조각은 버린다
+      if(kbCho>=0 && kbJung>=0){
+        if(kbJong===0 && JONG.indexOf(j)>0){ kbJong=JONG.indexOf(j); kbCycPos='jong'; }
+        else if(kbJong>0){
+          const comb=JONG_COMB[JONG[kbJong]+j];
+          if(comb){ kbJong=JONG.indexOf(comb); kbCycPos=null; }
+          else{ kbFlush(); kbCho=CHO.indexOf(j); kbCycPos='cho'; }
+        }
+        else{ kbFlush(); kbCho=CHO.indexOf(j); kbCycPos='cho'; }
+      }else{
+        if(kbCho>=0 || kbJung>=0) kbFlush();
+        kbCho=CHO.indexOf(j); kbCycPos='cho';
+      }
+      kbCycKey=keyId; kbCycStep=0; kbCycArm();
+      kbRender();
+    }
+    function kbVowel(part){         // part 는 'ㅣ' | 'ㆍ' | 'ㅡ'
+      kbSync();
+      kbCycStop();                  // 모음을 누르면 자음 바꾸기는 끝난다
+      // 받침이 있으면 그 받침이 다음 글자의 첫소리로 넘어간다: "감"+ㅏ → "가마"
+      if(kbCho>=0 && kbJung>=0 && kbJong>0){
+        const jc=JONG[kbJong], sp=JONG_SPLIT[jc];
+        const moved = sp ? sp[1] : jc;
+        kbJong = sp ? JONG.indexOf(sp[0]) : 0;
+        kbFlush();
+        kbCho=CHO.indexOf(moved);
+        kbVowSeq=part; kbJung = CJ_VOW[part] ? JUNG.indexOf(CJ_VOW[part]) : -1;
+        kbRender(); return;
+      }
+      // 만들던 모음에 조각을 하나 더 붙일 수 있으면 붙인다
+      if(kbVowSeq && CJ_PREFIX.has(kbVowSeq+part)){
+        kbVowSeq+=part;
+        kbJung = CJ_VOW[kbVowSeq] ? JUNG.indexOf(CJ_VOW[kbVowSeq]) : -1;
+        kbRender(); return;
+      }
+      // 더 못 붙이면 지금 글자를 확정하고 새로 시작한다
+      if(kbVowSeq){ kbFlush(); }
+      kbVowSeq=part;
+      kbJung = CJ_VOW[part] ? JUNG.indexOf(CJ_VOW[part]) : -1;
       kbRender();
     }
     function kbBack(){
-      kbSync();
-      if(kbJong>0){
+      kbSync(); kbCycStop();
+      if(kbVowSeq){                       // 모음은 조각 하나씩 되돌린다
+        kbVowSeq=kbVowSeq.slice(0,-1);
+        kbJung = (kbVowSeq && CJ_VOW[kbVowSeq]) ? JUNG.indexOf(CJ_VOW[kbVowSeq]) : -1;
+      }else if(kbJong>0){
         const sp=JONG_SPLIT[JONG[kbJong]];
         kbJong = sp ? JONG.indexOf(sp[0]) : 0;
       }else if(kbJung>=0){
-        const sp=JUNG_SPLIT[JUNG[kbJung]];
-        kbJung = sp ? JUNG.indexOf(sp[0]) : -1;
+        kbJung=-1;
       }else if(kbCho>=0){
         kbCho=-1;
       }else{
@@ -2265,21 +2301,11 @@
     }
 
     const kbd=$('kbd');
-    let kbShift=false;
-    function kbPaint(){
-      kbd.querySelectorAll('button[data-k]').forEach(b=>{
-        const sk=b.getAttribute('data-sk');
-        b.textContent=(kbShift && sk) ? sk : b.getAttribute('data-k');
-      });
-      const sh=kbd.querySelector('button[data-fn="shift"]');
-      if(sh) sh.classList.toggle('on', kbShift);
-    }
-    kbPaint();
     /* 자판이 화면 아래를 차지하므로, 떠 있는 동안엔 가운데 있던 입력판을
        자판 바로 위로 올려 가려지지 않게 한다. */
     function kbShow(on){
       kbd.hidden=!on;
-      if(!on && kbShift){ kbShift=false; kbPaint(); }
+      if(!on) kbCycStop();
       const eb=$('edBottom');
       if(on){
         eb.style.top='auto';
@@ -2295,16 +2321,14 @@
       const b=e.target.closest('button');
       if(!b || !kbd.contains(b)) return;
       const fn=b.getAttribute('data-fn');
-      if(fn==='shift'){ kbShift=!kbShift; kbPaint(); return; }
       if(fn==='back'){ kbBack(); return; }
       if(fn==='clear'){ kbResetFrom(''); kbRender(); return; }
-      if(fn==='space'){ kbSync(); kbFlush(); kbBase+=' '; kbRender(); return; }
+      if(fn==='space'){ kbSync(); kbCycStop(); kbFlush(); kbBase+=' '; kbRender(); return; }
       if(fn==='next'){ kbShow(false); tI.focus(); return; }
-      const k=b.getAttribute('data-k');
-      if(!k) return;
-      const sk=b.getAttribute('data-sk');
-      kbJamo((kbShift && sk) ? sk : k);
-      if(kbShift){ kbShift=false; kbPaint(); }   // 시프트는 한 글자만(실제 키보드와 같게)
+      const cj=b.getAttribute('data-cj');
+      if(cj){ kbCons(cj); return; }
+      const v=b.getAttribute('data-v');
+      if(v){ kbVowel(v); return; }
     });
     nI.addEventListener('focus', ()=>{ kbResetFrom(nI.value); kbShow(true); });
     nI.addEventListener('blur', ()=>{ kbShow(false); });
