@@ -584,7 +584,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v189</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v190</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1473,17 +1473,16 @@
      배지 값이 이미 찍힌 사람들 것도 같이 바뀌므로, 이번 한 장만이 아니라
      todaysShots 전체를 다시 합성한다(다운로드된 파일 자체는 저장 당시
      값으로 이미 고정되어 있어 영향받지 않는다). */
-  async function addTodayShot(blob, filename, name, tel, id, t, dlHash){
+  async function addTodayShot(blob, filename, name, tel, id, t){
     const isNew=!id;
     if(isNew) id=Date.now()+'_'+Math.random().toString(36).slice(2,8);
     if(!t) t=Date.now();   // 되살릴 때는 원래 찍은 시각을 그대로 넘겨받는다(안 넘기면 지금 시각)
-    dlHash=dlHash||null;
-    const shot={blob, filename, name, tel, displayBlob:null, displayUrl:null, id, t, dlHash};
+    const shot={blob, filename, name, tel, displayBlob:null, displayUrl:null, id, t};
     todaysShots.push(shot);
     appendTodayThumb(shot, todaysShots.length-1);
     $('todayWrap').classList.add('show');
     $('todayCount').textContent=todaysShots.length;
-    if(isNew) dbPutShot({id, date:todayKey(), filename, name, tel, blob, t, dlHash});
+    if(isNew) dbPutShot({id, date:todayKey(), filename, name, tel, blob, t});
 
     await recomputeAllDisplays();
     refreshAllThumbSrcs();
@@ -1495,7 +1494,7 @@
     const recs=await dbLoadTodayAndCleanup();
     if(!recs.length) return;
     for(const r of recs){
-      const shot={blob:r.blob, filename:r.filename, name:r.name, tel:r.tel, displayBlob:null, displayUrl:null, id:r.id, t:r.t, dlHash:r.dlHash||null};
+      const shot={blob:r.blob, filename:r.filename, name:r.name, tel:r.tel, displayBlob:null, displayUrl:null, id:r.id, t:r.t};
       todaysShots.push(shot);
       appendTodayThumb(shot, todaysShots.length-1);
     }
@@ -1560,13 +1559,27 @@
     }
     if(idx && total) drawIndexBadge(ctx, w, h, barH, idx, total, nmRightEdge);
   }
-  function drawIndexBadge(ctx, w, h, barH, idx, total, nmRightEdge){
+  /* overwrite=true 는 "이미 예전 배지가 찍혀 있는 사진에 새 번호를 덮어쓰는"
+     경우다. 이땐 두 가지가 더 필요하다.
+       1) 알약을 "99/99"가 들어갈 너비까지는 키운다 — 새 번호가 더 짧아도
+          (예: "1/15" 자리에 "1/4") 예전 알약이 옆으로 삐져나오지 않게.
+          알약은 늘 오른쪽 끝에 같은 높이로 붙으므로, 더 넓기만 하면 예전
+          알약을 완전히 품는다.
+       2) 알약 배경을 불투명하게 칠한다 — 평소 쓰는 반투명(.7) 보라색으로
+          덮으면 밑에 있던 예전 숫자가 그대로 비쳐 보여서 "1/4" 가 "1/45"
+          처럼 읽힌다. */
+  function drawIndexBadge(ctx, w, h, barH, idx, total, nmRightEdge, overwrite){
     const text=idx+'/'+total;
     const fs=Math.round(barH*0.20);   // 더 작게
     ctx.font='800 '+fs+'px "Malgun Gothic",sans-serif';
     const textW=ctx.measureText(text).width;
     const padX=Math.round(fs*0.55), padY=Math.round(fs*0.4);
-    const boxW=textW+padX*2, boxH=fs+padY*2;
+    let boxW=textW+padX*2;
+    if(overwrite){
+      const coverW=ctx.measureText('99/99').width+padX*2;
+      if(coverW>boxW) boxW=coverW;
+    }
+    const boxH=fs+padY*2;
     const marginX=Math.round(w*0.025);
     const gap=Math.round(w*0.02);
     let x=w-marginX-boxW, y=h-barH*0.60-boxH/2;   // 기본 자리: 이름과 같은 줄(바 위쪽), 우측
@@ -1575,8 +1588,8 @@
       y=h-barH-boxH-Math.round(h*0.012);
     }
     const r=boxH/2;
-    ctx.fillStyle='rgba(109,40,217,.7)';   // 보라색
-    ctx.strokeStyle='rgba(255,255,255,.85)';
+    ctx.fillStyle=overwrite?'rgb(97,37,168)':'rgba(109,40,217,.7)';   // 보라색(덮어쓸 땐 불투명)
+    ctx.strokeStyle=overwrite?'rgb(255,255,255)':'rgba(255,255,255,.85)';
     ctx.lineWidth=Math.max(1, Math.round(fs*0.08));
     if(ctx.roundRect){
       ctx.beginPath(); ctx.roundRect(x,y,boxW,boxH,r); ctx.fill(); ctx.stroke();
@@ -1633,74 +1646,46 @@
       s.displayBlob=disp.blob; s.displayUrl=disp.url;
     }));
   }
-  /* 갤러리에서 고른 사진을 다시 보낼 때, 그 사진이 오늘 찍은 사람 것이면
-     "N/전체" 배지를 지금 기준으로 다시 그려서 내보낸다. 찍은 뒤에 다른
-     사진 앱으로 보정해서 사본으로 저장하는 경우가 있는데, 그 사이 다른
-     사람이 추가/삭제돼 "전체 몇 명"이 바뀌었어도 사본에는 저장하던 순간의
-     낡은 번호가 그대로 박혀 있다 — 그걸 그대로 보내면 번호가 어긋난다.
+  /* 갤러리에서 고른 사진에 "이번에 보내는 것 중 N번째 / 전부 몇 장" 배지를
+     새로 찍어서 내보낸다.
 
-     어느 사람 것인지 알아내는 1차 방법은 "내용 자체가 똑같은가"이다 —
-     안드로이드 갤러리 앱(구글 포토 등)에서 사진을 다시 고르면 브라우저에
-     넘어오는 file.name 이 앱이 저장할 때 쓴 파일명과 전혀 다르게(갤러리
-     앱이 자체 규칙으로 새로 붙인 이름으로) 오는 경우가 많아, 파일명만
-     믿으면 실제 기기에서 거의 항상 못 찾는다. 보정 없이 그대로 다시 고른
-     사진은 바이트가 저장 당시 다운로드된 파일과 완전히 같으므로, 해시
-     비교로 100% 확실하게 찾을 수 있다. */
-  async function hashBlob(blob){
-    const buf=await blob.arrayBuffer();
-    const digest=await crypto.subtle.digest('SHA-256', buf);
-    return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
-  function findShotByHash(hash){
-    return todaysShots.find(s=>s.dlHash && s.dlHash===hash) || null;
-  }
-  /* 다른 앱에서 보정해서 저장하면 바이트가 달라져 해시로는 못 찾는다 —
-     이때는 차선책으로 파일명을 거꾸로 읽는다. 보정 앱이 사본을 저장할 때
-     보통 원래 파일명 뒤에 접미사만 붙이므로(" - 사본" 등), 앞부분만 봐도
-     찾을 수 있다. */
-  function parseNameTelFromFilename(filename){
-    const m=(filename||'').match(/^\d{8}_\d+_([^_.]+)(?:_(\d{2,4}-\d{3,4}-\d{4}))?/);
-    if(!m) return null;
-    return { nm: m[1]==='이름없음'?'':m[1], tel: m[2]||'' };
-  }
-  /* 이름·전화번호로 "오늘 이미 찍힌 사람"이 맞는지 확인하고, 맞으면 지금
-     기준의 idx/total 을 돌려준다. 오늘 찍은 사람이 아니면(파일명을 잘못
-     읽었거나 다른 날 사진이면) null — 이땐 엉뚱한 번호를 억지로 붙이지
-     않고 원본을 그대로 보낸다. */
-  function lookupTrackedIndex(nm, tel){
-    const key=headcountDedupKey({name:nm, tel:tel});
-    if(!key) return null;
-    const seen=new Map();
-    let next=1;
-    for(const s of todaysShots){
-      const k=headcountDedupKey(s);
-      if(!k || seen.has(k)) continue;
-      seen.set(k, next++);
+     예전엔 고른 사진이 "오늘 찍은 어느 사람 것인지" 되찾아서(파일명 파싱,
+     내용 해시 비교) 그 사람의 번호를 다시 계산하려 했는데, 실제 안드로이드
+     기기에서는 갤러리 앱이 파일명도 바꿔서 주고 사진 자체도 다시 인코딩해
+     넘기는 경우가 많아 어느 방법으로도 못 찾아 배지가 아예 안 붙었다.
+
+     그래서 "되찾기"를 아예 그만두고, 고른 순서 그대로 1/N, 2/N, ... 을
+     매긴다. 되찾을 게 없으니 갤러리 앱이 파일명이나 내용을 어떻게 바꿔
+     넘기든 항상 확실히 동작하고, 받는 쪽에서도 "전부 몇 장 중 몇 번째"가
+     바로 보여서 빠진 사진이 있는지 확인하기 좋다. */
+  async function decodeToCanvas(file){
+    let bmp=null;
+    if(window.createImageBitmap){
+      // 갤러리 원본은 EXIF 회전 정보가 남아 있을 수 있어, 지원하면 그걸 반영해 편다
+      try{ bmp=await createImageBitmap(file,{imageOrientation:'from-image'}); }
+      catch(e){ try{ bmp=await createImageBitmap(file); }catch(e2){} }
     }
-    if(!seen.has(key)) return null;
-    return { idx: seen.get(key), total: next-1 };
-  }
-  /* 이미 이름표(옛 번호 포함)가 박혀 있는 사진 위에 새 이름표를 덮어
-     그린다 — 반투명 바를 그대로 덧그리면 옛 글자가 비쳐 보이므로, 먼저
-     그 자리를 완전히 불투명하게 지운 뒤 drawNameBar() 로 새로 그린다. */
-  async function reBadgeFile(file, nm, tel, idx, total){
-    const bmp = await (window.createImageBitmap
-      ? createImageBitmap(file)
-      : new Promise((res,rej)=>{
-          const im=new Image(); const u=URL.createObjectURL(file);
-          im.onload=()=>{ URL.revokeObjectURL(u); res(im); };
-          im.onerror=()=>{ URL.revokeObjectURL(u); rej(); };
-          im.src=u;
-        }));
+    if(!bmp){
+      bmp=await new Promise((res,rej)=>{
+        const im=new Image(); const u=URL.createObjectURL(file);
+        im.onload=()=>{ URL.revokeObjectURL(u); res(im); };
+        im.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error('decode')); };
+        im.src=u;
+      });
+    }
     const w=bmp.width||bmp.naturalWidth, h=bmp.height||bmp.naturalHeight;
     const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-    const ctx=cv.getContext('2d');
-    ctx.drawImage(bmp,0,0,w,h);
+    cv.getContext('2d').drawImage(bmp,0,0,w,h);
     if(bmp.close) bmp.close();
-    const barH=Math.round(h*0.16);
-    ctx.fillStyle='#000';
-    ctx.fillRect(0,h-barH,w,barH);
-    drawNameBar(ctx, w, h, nm, tel, idx, total);
+    return cv;
+  }
+  /* 사진에 이미 예전 배지가 찍혀 있으면 그 자리에 그대로 덮어쓴다
+     (drawIndexBadge 의 overwrite 모드 — 넓게 + 불투명하게). */
+  async function stampBatchIndex(file, idx, total){
+    const cv=await decodeToCanvas(file);
+    const w=cv.width, h=cv.height;
+    const ctx=cv.getContext('2d');
+    drawIndexBadge(ctx, w, h, Math.round(h*0.16), idx, total, null, true);
     const blob=await new Promise(res=>cv.toBlob(res, 'image/jpeg', 0.92));
     return new File([blob], file.name, {type:'image/jpeg'});
   }
@@ -1740,21 +1725,10 @@
     const files=Array.prototype.slice.call(e.target.files||[]).filter(f=>f && f.type.indexOf('image')===0);
     e.target.value='';
     if(!files.length) return;
-    setBtn(bSendPhotos,'📤','사진 확인 중...');
-    const fixed=await Promise.all(files.map(async f=>{
-      let nm, tel;
-      try{
-        const matched=findShotByHash(await hashBlob(f));
-        if(matched){ nm=matched.name; tel=matched.tel; }
-      }catch(err){}
-      if(nm===undefined){
-        const parsed=parseNameTelFromFilename(f.name);
-        if(!parsed) return f;
-        nm=parsed.nm; tel=parsed.tel;
-      }
-      const found=lookupTrackedIndex(nm, tel);
-      if(!found) return f;
-      try{ return await reBadgeFile(f, nm, tel, found.idx, found.total); }
+    setBtn(bSendPhotos,'📤','번호 매기는 중...');
+    // 고른 순서 그대로 1/N, 2/N ... 을 새로 찍는다
+    const fixed=await Promise.all(files.map(async (f,i)=>{
+      try{ return await stampBatchIndex(f, i+1, files.length); }
       catch(err){ return f; }   // 다시 그리다 실패하면 원본이라도 보낸다
     }));
     pendingResendFiles=fixed;
@@ -1890,10 +1864,7 @@
         // 나중에 사진을 지워 번호가 바뀌어도 그 자리에서 다시 합성해 보여줄 수
         // 있게 한다 — 지금 막 다운로드한 파일은 이미 고정된 번호라 못 바꾼다.
         const cleanBlob=await new Promise(res=>cleanCanvas.toBlob(res, 'image/jpeg', 0.92));
-        // 나중에 갤러리에서 이 사진을 다시 골랐을 때(카톡 재전송 등) 알아볼
-        // 수 있도록, 실제로 다운로드된 바이트의 해시를 남겨둔다.
-        const dlHash=await hashBlob(blob).catch(()=>null);
-        await addTodayShot(cleanBlob||blob, name, nm, tel, undefined, undefined, dlHash);
+        await addTodayShot(cleanBlob||blob, name, nm, tel);
 
         if(mySeq===saveSeq){
           $('homeLog').innerHTML='';   // 저장 성공 로그는 화면에 안 띄운다(파일은 그대로 저장됨)
