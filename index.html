@@ -584,7 +584,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v187</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v188</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1632,6 +1632,61 @@
       s.displayBlob=disp.blob; s.displayUrl=disp.url;
     }));
   }
+  /* 갤러리에서 고른 사진을 다시 보낼 때, 그 사진이 오늘 찍은 사람 것이면
+     "N/전체" 배지를 지금 기준으로 다시 그려서 내보낸다. 찍은 뒤에 다른
+     사진 앱으로 보정해서 사본으로 저장하는 경우가 있는데, 그 사이 다른
+     사람이 추가/삭제돼 "전체 몇 명"이 바뀌었어도 사본에는 저장하던 순간의
+     낡은 번호가 그대로 박혀 있다 — 그걸 그대로 보내면 번호가 어긋난다.
+     어느 사람 것인지는 앱이 저장할 때 쓰는 파일명 규칙(fileBase())을
+     거꾸로 읽어서 알아낸다 — 보정 앱이 사본을 저장할 때 보통 원래
+     파일명 뒤에 접미사만 붙이므로(" - 사본" 등), 앞부분만 봐도 찾을 수
+     있다. */
+  function parseNameTelFromFilename(filename){
+    const m=(filename||'').match(/^\d{8}_\d+_([^_.]+)(?:_(\d{2,4}-\d{3,4}-\d{4}))?/);
+    if(!m) return null;
+    return { nm: m[1]==='이름없음'?'':m[1], tel: m[2]||'' };
+  }
+  /* 이름·전화번호로 "오늘 이미 찍힌 사람"이 맞는지 확인하고, 맞으면 지금
+     기준의 idx/total 을 돌려준다. 오늘 찍은 사람이 아니면(파일명을 잘못
+     읽었거나 다른 날 사진이면) null — 이땐 엉뚱한 번호를 억지로 붙이지
+     않고 원본을 그대로 보낸다. */
+  function lookupTrackedIndex(nm, tel){
+    const key=headcountDedupKey({name:nm, tel:tel});
+    if(!key) return null;
+    const seen=new Map();
+    let next=1;
+    for(const s of todaysShots){
+      const k=headcountDedupKey(s);
+      if(!k || seen.has(k)) continue;
+      seen.set(k, next++);
+    }
+    if(!seen.has(key)) return null;
+    return { idx: seen.get(key), total: next-1 };
+  }
+  /* 이미 이름표(옛 번호 포함)가 박혀 있는 사진 위에 새 이름표를 덮어
+     그린다 — 반투명 바를 그대로 덧그리면 옛 글자가 비쳐 보이므로, 먼저
+     그 자리를 완전히 불투명하게 지운 뒤 drawNameBar() 로 새로 그린다. */
+  async function reBadgeFile(file, nm, tel, idx, total){
+    const bmp = await (window.createImageBitmap
+      ? createImageBitmap(file)
+      : new Promise((res,rej)=>{
+          const im=new Image(); const u=URL.createObjectURL(file);
+          im.onload=()=>{ URL.revokeObjectURL(u); res(im); };
+          im.onerror=()=>{ URL.revokeObjectURL(u); rej(); };
+          im.src=u;
+        }));
+    const w=bmp.width||bmp.naturalWidth, h=bmp.height||bmp.naturalHeight;
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    const ctx=cv.getContext('2d');
+    ctx.drawImage(bmp,0,0,w,h);
+    if(bmp.close) bmp.close();
+    const barH=Math.round(h*0.16);
+    ctx.fillStyle='#000';
+    ctx.fillRect(0,h-barH,w,barH);
+    drawNameBar(ctx, w, h, nm, tel, idx, total);
+    const blob=await new Promise(res=>cv.toBlob(res, 'image/jpeg', 0.92));
+    return new File([blob], file.name, {type:'image/jpeg'});
+  }
   /* "카톡 사진 전송"과 "갤러리 사진 전송"을 버튼 하나로 합쳤다 — 오늘 찍은
      사진이 있든 없든 항상 갤러리에서 사진을 골라 그대로 보낸다. 오늘 찍은
      사진도 이미 다운로드 폴더(갤러리)에 저장돼 있으므로 거기서 같이 고르면
@@ -1664,12 +1719,21 @@
     }
     $('fResend').click();
   };
-  $('fResend').addEventListener('change', e=>{
+  $('fResend').addEventListener('change', async e=>{
     const files=Array.prototype.slice.call(e.target.files||[]).filter(f=>f && f.type.indexOf('image')===0);
     e.target.value='';
     if(!files.length) return;
-    pendingResendFiles=files;
-    setBtn(bSendPhotos,'📤',files.length+'장 선택됨 · 눌러서 전송');
+    setBtn(bSendPhotos,'📤','사진 확인 중...');
+    const fixed=await Promise.all(files.map(async f=>{
+      const parsed=parseNameTelFromFilename(f.name);
+      if(!parsed) return f;
+      const found=lookupTrackedIndex(parsed.nm, parsed.tel);
+      if(!found) return f;
+      try{ return await reBadgeFile(f, parsed.nm, parsed.tel, found.idx, found.total); }
+      catch(err){ return f; }   // 다시 그리다 실패하면 원본이라도 보낸다
+    }));
+    pendingResendFiles=fixed;
+    setBtn(bSendPhotos,'📤',fixed.length+'장 선택됨 · 눌러서 전송');
   });
 
   /* ───── 사진 편집기 ─────
