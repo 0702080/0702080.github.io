@@ -451,14 +451,14 @@
      두 자판 묶음 사이에만 적용돼서, 줄과 줄 사이는 붙어버렸었다. */
   #kbdCJ,#kbdQW{display:flex;flex-direction:column;gap:10px;}
   #kbdCJ[hidden],#kbdQW[hidden]{display:none;}
-  /* 두벌식은 한 줄 10칸이라 그리드 대신 flex 로 깐다. 줄마다 칸 수가 달라도
-     각 줄이 폭을 꽉 채우게 두면(글자만 남은 셋째 줄은 7칸) 그만큼 키가
-     넓어진다. 첫 줄 10칸은 폭을 더 늘릴 수 없으므로 높이로 키운다. */
-  .qwRow{display:flex;gap:4px;}
-  #kbdQW button{flex:1 1 0;height:60px;font-size:22px;}
-  #kbdQW .kbVowel{font-size:22px;}
-  #kbdQW .kbFn{font-size:18px;}
-  #kbdQW .qwNext{flex:2 1 0;}
+  /* 왼쪽 4칸 자음 · 오른쪽 3칸 모음 = 한 줄 7칸. 7칸 그리드로 깔아 줄마다
+     세로줄이 정확히 맞는다. */
+  .qwRow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  #kbdQW button{min-width:0;height:56px;font-size:24px;}
+  #kbdQW .kbVowel{font-size:24px;}
+  #kbdQW .kbFn{font-size:19px;}
+  #kbdQW .qwW2{grid-column:span 2;}
+  #kbdQW .qwW5{grid-column:span 5;}
   #kbdQW button[data-fn="shift"].on{
     border-color:#8a6410;color:#42300a;
     background:linear-gradient(180deg,#ffe6a8 0%,#efa837 52%,#f6c463 84%,#ffeec2 100%);
@@ -536,9 +536,10 @@
     #kbd .kbVowel{font-size:23px;}
     #kbd .kbFn{font-size:15px;}
     #kbdNum button{height:47px;font-size:23px;}
-    #kbdQW button{height:48px;font-size:19px;}
-    #kbdQW .kbVowel{font-size:19px;}
-    #kbdQW .kbFn{font-size:15px;}
+    #kbdQW button{height:45px;font-size:20px;}
+    #kbdQW .kbVowel{font-size:20px;}
+    #kbdQW .kbFn{font-size:16px;}
+    .qwRow{gap:4px;}
     #kbd{gap:5px;}
     .kbRow{gap:5px;}
   }
@@ -727,7 +728,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v204</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v205</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -869,45 +870,50 @@
    <!-- 폰 기본 키보드와 같은 두벌식. 자리가 익숙한 대신 한 줄에 10칸이라
         키는 작다 — 그래서 둘 중에 고를 수 있게 했다. -->
    <div id="kbdQW" hidden>
+    <!-- 왼쪽 4칸은 자음, 오른쪽 3칸은 모음. 두벌식 글자 순서(ㅂㅈㄷㄱㅅ /
+         ㅁㄴㅇㄹㅎ / ㅋㅌㅊㅍ, ㅛㅕㅑㅐㅔ / ㅗㅓㅏㅣ / ㅠㅜㅡ)는 그대로 두고
+         줄만 4개·3개씩 다시 감쌌다 — 한 줄이 10칸에서 7칸으로 줄어 키가
+         33px 에서 49px 로 넓어진다. -->
     <div class="qwRow">
       <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ"></button
       ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ"></button
       ><button type="button" class="kbCons" data-k="ㄷ" data-sk="ㄸ"></button
       ><button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ"></button
-      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ"></button
       ><button type="button" class="kbVowel" data-k="ㅛ"></button
       ><button type="button" class="kbVowel" data-k="ㅕ"></button
-      ><button type="button" class="kbVowel" data-k="ㅑ"></button
-      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ"></button
-      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ"></button>
+      ><button type="button" class="kbVowel" data-k="ㅑ"></button>
     </div>
     <div class="qwRow">
-      <button type="button" class="kbCons" data-k="ㅁ"></button
+      <button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ"></button
+      ><button type="button" class="kbCons" data-k="ㅁ"></button
       ><button type="button" class="kbCons" data-k="ㄴ"></button
       ><button type="button" class="kbCons" data-k="ㅇ"></button
-      ><button type="button" class="kbCons" data-k="ㄹ"></button
+      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ"></button
+      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ"></button
+      ><button type="button" class="kbVowel" data-k="ㅗ"></button>
+    </div>
+    <div class="qwRow">
+      <button type="button" class="kbCons" data-k="ㄹ"></button
       ><button type="button" class="kbCons" data-k="ㅎ"></button
-      ><button type="button" class="kbVowel" data-k="ㅗ"></button
+      ><button type="button" class="kbCons" data-k="ㅋ"></button
+      ><button type="button" class="kbCons" data-k="ㅌ"></button
       ><button type="button" class="kbVowel" data-k="ㅓ"></button
       ><button type="button" class="kbVowel" data-k="ㅏ"></button
       ><button type="button" class="kbVowel" data-k="ㅣ"></button>
     </div>
-    <!-- 셋째 줄은 글자만 남겨서(⇧·⌫ 는 아랫줄로) 키가 훨씬 넓어진다 -->
+    <!-- 자음이 두 칸 남아 그 자리에 ⇧·⌫ 를 넣었다 -->
     <div class="qwRow">
-      <button type="button" class="kbCons" data-k="ㅋ"></button
-      ><button type="button" class="kbCons" data-k="ㅌ"></button
-      ><button type="button" class="kbCons" data-k="ㅊ"></button
+      <button type="button" class="kbCons" data-k="ㅊ"></button
       ><button type="button" class="kbCons" data-k="ㅍ"></button
+      ><button type="button" class="kbFn" data-fn="shift">⇧</button
+      ><button type="button" class="kbFn" data-fn="back">⌫</button
       ><button type="button" class="kbVowel" data-k="ㅠ"></button
       ><button type="button" class="kbVowel" data-k="ㅜ"></button
       ><button type="button" class="kbVowel" data-k="ㅡ"></button>
     </div>
-    <!-- 기능키는 전부 아랫줄에 모았다(글자 사이에 섞여 있지 않아 단순하다) -->
     <div class="qwRow">
-      <button type="button" class="kbFn" data-fn="shift">⇧</button
-      ><button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
-      ><button type="button" class="kbFn" data-fn="back">⌫</button
-      ><button type="button" class="kbFn kbNext qwNext" data-fn="next">다음</button>
+      <button type="button" class="kbFn kbClear qwW2" data-fn="clear">CLR</button
+      ><button type="button" class="kbFn kbNext qwW5" data-fn="next">다음</button>
     </div>
    </div>
    <!-- 전화번호용 숫자판. 폰 기본 숫자 키보드 대신 이걸 띄워서 한글 자판과
