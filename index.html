@@ -426,14 +426,27 @@
   .kbRow{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;}
   .kbRow>*{grid-column:span 2;}
   #kbd .kbW3{grid-column:span 3;}
+  /* 키도 위 버튼들과 같은 아쿠아(유리알) 스타일 — 배경은 위가 밝고 아래가
+     진한 그라데이션, 그 위에 ::before 광택판을 z-index:-1 로 띄운다.
+     (.go/.sub 와 같은 방식이라 화면 전체가 한 결로 보인다) */
   #kbd button{
+    position:relative;isolation:isolate;
     min-width:0;height:56px;padding:0;
-    border:none;border-radius:10px;
+    border-radius:14px;
     font-family:'Malgun Gothic',sans-serif;
     font-size:23px;font-weight:800;letter-spacing:1px;
-    box-shadow:0 2px 4px rgba(0,0,0,.45);
     cursor:pointer;
   }
+  #kbd button::before{
+    content:'';position:absolute;z-index:-1;pointer-events:none;
+    left:4px;right:4px;top:3px;height:44%;
+    border-radius:12px 12px 50% 50% / 9px 9px 13px 13px;
+    background:linear-gradient(180deg,
+      rgba(255,255,255,.96) 0%, rgba(255,255,255,.58) 56%, rgba(255,255,255,.14) 100%);
+    transition:opacity .12s ease;
+  }
+  #kbd button:active{filter:brightness(.9);}
+  #kbd button:active::before{opacity:.3;}
   /* 줄 사이 여백은 자판 묶음(#kbdCJ/#kbdQW)이 직접 준다 — #kbd 의 gap 은
      두 자판 묶음 사이에만 적용돼서, 줄과 줄 사이는 붙어버렸었다. */
   #kbdCJ,#kbdQW{display:flex;flex-direction:column;gap:10px;}
@@ -450,28 +463,77 @@
   #kbdQW .kbNext{flex:3 1 0;}
   #kbdQW button[data-fn="shift"].on{background:linear-gradient(180deg,#ffd98a,#efa837);color:#48310a;}
   /* 자판 고르기 — 이름 칸 바로 위 */
-  #kbdPick{display:flex;gap:6px;justify-content:center;}
+  #kbdPick{display:flex;gap:10px;justify-content:center;}
   #kbdPick button{
-    flex:0 0 auto;padding:5px 16px;border-radius:999px;cursor:pointer;
-    border:1.5px solid rgba(255,255,255,.35);
-    background:rgba(255,255,255,.10);color:#efe9f5;
-    font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:.5px;
+    position:relative;isolation:isolate;
+    flex:0 0 auto;padding:11px 26px;border-radius:999px;cursor:pointer;
+    border:1.5px solid rgba(255,255,255,.30);
+    background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.05));
+    color:#e9e2f3;
+    font-family:inherit;font-size:16px;font-weight:800;letter-spacing:1px;
+    box-shadow:0 2px 6px rgba(0,0,0,.30), inset 0 1px 1px rgba(255,255,255,.25);
+  }
+  #kbdPick button::before{
+    content:'';position:absolute;z-index:-1;pointer-events:none;
+    left:5px;right:5px;top:3px;height:44%;border-radius:999px;
+    background:linear-gradient(180deg,
+      rgba(255,255,255,.85) 0%, rgba(255,255,255,.35) 60%, rgba(255,255,255,0) 100%);
+    opacity:.35;transition:opacity .12s ease;
   }
   #kbdPick button.on{
-    background:linear-gradient(180deg,#7fd0c4,#2bb3a2);
-    border-color:#1c8e80;color:#0d3b35;
+    border-color:#0f7768;color:#06322c;
+    background:linear-gradient(180deg,#9aeadd 0%,#2fbaa8 52%,#66d5c5 84%,#b6f2ea 100%);
+    box-shadow:0 3px 9px rgba(0,0,0,.34),
+               inset 0 -2px 6px rgba(255,255,255,.75), inset 0 2px 3px rgba(10,90,80,.18);
   }
-  #kbd .kbCons{background:linear-gradient(180deg,#ffffff,#dfe6ef);color:#1e2937;}
-  #kbd .kbVowel{background:linear-gradient(180deg,#fffdf6,#eee2cb);color:#3a2d19;font-size:27px;}
-  #kbd button:active{filter:brightness(.8);}
-  #kbd .kbFn{background:linear-gradient(180deg,#8e82a3,#6d6283);color:#fff;
-             font-size:17px;font-weight:700;letter-spacing:0;}
-  #kbd .kbNext{background:linear-gradient(180deg,#7fd0c4,#2bb3a2);color:#0d3b35;}
+  #kbdPick button.on::before{opacity:1;}
+  #kbdPick button:active{filter:brightness(.92);}
+  /* 자음 = 푸른 유리, 모음 = 따뜻한 상아색 유리, 기능키 = 보라 유리 */
+  #kbd .kbCons{
+    border:1.5px solid #3f6382;color:#132635;
+    background:linear-gradient(180deg,#eef6fd 0%,#bed5ea 52%,#d6e8f6 84%,#f4faff 100%);
+    box-shadow:0 3px 7px rgba(10,18,30,.42),
+               inset 0 -2px 6px rgba(255,255,255,.9), inset 0 2px 3px rgba(30,60,90,.20);
+  }
+  #kbd .kbVowel{
+    border:1.5px solid #8a7345;color:#382b12;font-size:27px;
+    background:linear-gradient(180deg,#fefaee 0%,#ecd9ad 52%,#f6e9c9 84%,#fffcf4 100%);
+    box-shadow:0 3px 7px rgba(10,18,30,.42),
+               inset 0 -2px 6px rgba(255,255,255,.9), inset 0 2px 3px rgba(120,95,45,.20);
+  }
+  #kbd .kbFn{
+    border:1.5px solid #493a61;color:#fff;
+    font-size:17px;font-weight:800;letter-spacing:0;
+    background:linear-gradient(180deg,#a698c0 0%,#786697 52%,#9080b0 84%,#c3b6d9 100%);
+    box-shadow:0 3px 7px rgba(10,18,30,.42),
+               inset 0 -2px 6px rgba(255,255,255,.35), inset 0 2px 3px rgba(0,0,0,.24);
+    text-shadow:0 1px 2px rgba(0,0,0,.45);
+  }
+  #kbd .kbNext{
+    border-color:#0f7768;color:#06322c;text-shadow:none;
+    background:linear-gradient(180deg,#9aeadd 0%,#2fbaa8 52%,#66d5c5 84%,#b6f2ea 100%);
+    box-shadow:0 3px 7px rgba(10,18,30,.42),
+               inset 0 -2px 6px rgba(255,255,255,.75), inset 0 2px 3px rgba(10,90,80,.20);
+  }
+  /* 전체를 지우는 키만 붉은 계열로 — 눌러도 되는 키와 한눈에 구분된다 */
+  #kbd .kbClear{
+    border-color:#6d3746;color:#fff;
+    background:linear-gradient(180deg,#d3a3b0 0%,#9c5f70 52%,#b87f8e 84%,#e0b9c3 100%);
+    box-shadow:0 3px 7px rgba(10,18,30,.42),
+               inset 0 -2px 6px rgba(255,255,255,.40), inset 0 2px 3px rgba(0,0,0,.24);
+  }
+  /* ── 전화번호용 숫자판(아쿠아) ── */
+  #kbdNum{display:flex;flex-direction:column;gap:10px;}
+  #kbdNum[hidden]{display:none;}
+  .numRow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  #kbdNum button{height:56px;font-size:27px;letter-spacing:2px;}
+  #kbdNum .kbFn{font-size:20px;letter-spacing:0;}
   /* 화면이 아주 짧은 기기에서는 자판을 조금 낮춰 입력판이 위로 잘리지 않게 */
   @media (max-height:620px){
     #kbd button{height:47px;font-size:20px;}
     #kbd .kbVowel{font-size:23px;}
     #kbd .kbFn{font-size:15px;}
+    #kbdNum button{height:47px;font-size:23px;}
     #kbd{gap:5px;}
     .kbRow{gap:5px;}
   }
@@ -660,7 +722,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v202</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v203</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -750,7 +812,9 @@
         <button id="edMic" type="button" title="눌러서 이름을 말하면 자동으로 입력됩니다" hidden>🎤</button>
       </div>
       <div id="edTelWrap">
-        <input id="edTel"  type="tel" inputmode="numeric" placeholder="전화번호(8자리)" autocomplete="off" enterkeyhint="done">
+        <!-- 이름 칸과 마찬가지로 폰 기본 키보드는 안 띄우고(inputmode="none")
+             앱이 그리는 숫자판을 쓴다 — 모양이 통일되고 키가 훨씬 크다. -->
+        <input id="edTel"  type="tel" inputmode="none" placeholder="전화번호(8자리)" autocomplete="off" enterkeyhint="done">
         <button id="edTelMic" type="button" title="눌러서 전화번호를 말하면 자동으로 입력됩니다" hidden>🎤</button>
       </div>
     </div>
@@ -837,6 +901,30 @@
     <div class="qwRow">
       <button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
       ><button type="button" class="kbFn kbNext" data-fn="next">다음</button>
+    </div>
+   </div>
+   <!-- 전화번호용 숫자판. 폰 기본 숫자 키보드 대신 이걸 띄워서 한글 자판과
+        같은 아쿠아 모양으로 통일하고, 키도 훨씬 크게 쓴다. -->
+   <div id="kbdNum" hidden>
+    <div class="numRow">
+      <button type="button" class="kbCons" data-n="1">1</button
+      ><button type="button" class="kbCons" data-n="2">2</button
+      ><button type="button" class="kbCons" data-n="3">3</button>
+    </div>
+    <div class="numRow">
+      <button type="button" class="kbCons" data-n="4">4</button
+      ><button type="button" class="kbCons" data-n="5">5</button
+      ><button type="button" class="kbCons" data-n="6">6</button>
+    </div>
+    <div class="numRow">
+      <button type="button" class="kbCons" data-n="7">7</button
+      ><button type="button" class="kbCons" data-n="8">8</button
+      ><button type="button" class="kbCons" data-n="9">9</button>
+    </div>
+    <div class="numRow">
+      <button type="button" class="kbFn kbClear" data-fn="numclear">CLR</button
+      ><button type="button" class="kbCons" data-n="0">0</button
+      ><button type="button" class="kbFn" data-fn="numback">⌫</button>
     </div>
    </div>
   </div>
@@ -2063,7 +2151,8 @@
        그리는 한글 자판이든) 남아 있으면 안 된다. */
     function edDropInputFocus(){
       try{ nI.blur(); tI.blur(); }catch(e){}
-      kbShow(false);
+      kbKeepOpen();   // 아래에서 바로 닫으므로 예약된 닫기는 취소
+      kbShow(null);
     }
     /* 사진을 안 보여주는 대신, 그 배경(입력판 바깥)을 탭하면 저장하지 않고 닫힌다.
        여러 장을 고른 경우엔 "전부 취소"가 아니라 "이 한 장만 건너뛰기"로 동작해서
@@ -2478,9 +2567,14 @@
       const sh=$('kbdQW').querySelector('button[data-fn="shift"]');
       if(sh) sh.classList.toggle('on', kbShift);
     }
+    /* 자판은 지금 어느 칸을 쓰고 있는지에 따라 달라진다 —
+       이름 칸이면 한글 자판(고른 방식), 전화번호 칸이면 숫자판. */
+    let kbTarget=null;   // 'name' | 'tel' | null
     function kbApplyMode(){
-      $('kbdCJ').hidden = kbMode!=='cj';
-      $('kbdQW').hidden = kbMode!=='qw';
+      const nameOn = kbTarget==='name';
+      $('kbdCJ').hidden = !(nameOn && kbMode==='cj');
+      $('kbdQW').hidden = !(nameOn && kbMode==='qw');
+      $('kbdNum').hidden = kbTarget!=='tel';
       $('kbdPick').querySelectorAll('button').forEach(b=>{
         b.classList.toggle('on', b.getAttribute('data-kb')===kbMode);
       });
@@ -2496,16 +2590,18 @@
       if(!m || m===kbMode) return;
       kbSync(); kbCycStop(); kbFlush(); kbRender();   // 조립 중이던 글자는 확정하고 넘어간다
       kbMode=m; data.kbMode=m; save();
-      kbApplyMode();
-      if(!kbd.hidden) kbShow(true);   // 자판 높이가 달라졌으니 입력판 위치를 다시 잡는다
+      if(kbTarget) kbShow(kbTarget);   // 자판 높이가 달라졌으니 입력판 위치를 다시 잡는다
+      else kbApplyMode();
     });
     /* 자판이 화면 아래를 차지하므로, 떠 있는 동안엔 가운데 있던 입력판을
        자판 바로 위로 올려 가려지지 않게 한다. */
-    function kbShow(on){
-      kbd.hidden=!on;
-      if(!on){ kbCycStop(); if(kbShift){ kbShift=false; kbPaintShift(); } }
+    function kbShow(target){
+      kbTarget = target || null;
+      kbd.hidden = !kbTarget;
+      if(!kbTarget){ kbCycStop(); if(kbShift){ kbShift=false; kbPaintShift(); } }
+      kbApplyMode();
       const eb=$('edBottom');
-      if(on){
+      if(kbTarget){
         eb.style.top='auto';
         eb.style.bottom=(kbd.offsetHeight+22)+'px';   // 입력판과 자판 사이 여백
         eb.style.transform='translateX(-50%)';
@@ -2513,6 +2609,12 @@
         eb.style.top=''; eb.style.bottom=''; eb.style.transform='';
       }
     }
+    /* 이름→전화번호로 넘어갈 때 잠깐 둘 다 포커스가 없는 순간이 생긴다.
+       그때 자판이 깜빡 닫혔다 열리지 않게, 닫기는 한 박자 미뤘다가
+       그 사이 다른 칸이 포커스를 받으면 취소한다. */
+    let kbHideTimer=null;
+    function kbHideSoon(){ clearTimeout(kbHideTimer); kbHideTimer=setTimeout(()=>kbShow(null), 0); }
+    function kbKeepOpen(){ clearTimeout(kbHideTimer); kbHideTimer=null; }
     // 자판을 눌러도 이름 칸의 포커스가 풀리지 않게 한다(풀리면 자판이 닫힌다)
     kbd.addEventListener('pointerdown', e=>{ e.preventDefault(); });
     kbd.addEventListener('click', e=>{
@@ -2522,7 +2624,14 @@
       if(fn==='shift'){ kbShift=!kbShift; kbPaintShift(); return; }
       if(fn==='back'){ kbBack(); return; }
       if(fn==='clear'){ kbResetFrom(''); kbRender(); return; }
-      if(fn==='next'){ kbShow(false); tI.focus(); return; }
+      // 숫자판으로 이어진다. focus() 만 믿지 않고 직접 띄운다 — 포커스 이벤트가
+      // 안 오는 경우가 있어서 숫자판이 안 뜨는 일이 있었다.
+      if(fn==='next'){ kbKeepOpen(); tI.focus(); kbShow('tel'); return; }
+      // ── 전화번호 숫자판 ──
+      if(fn==='numback'){ telSetDigits(telDigits().slice(0,-1)); return; }
+      if(fn==='numclear'){ telSetDigits(''); return; }
+      const nd=b.getAttribute('data-n');
+      if(nd){ telSetDigits(telDigits()+nd); return; }
       const cj=b.getAttribute('data-cj');
       if(cj){ kbCons(cj); return; }
       const v=b.getAttribute('data-v');
@@ -2536,9 +2645,18 @@
         if(kbShift){ kbShift=false; kbPaintShift(); }   // 시프트는 한 글자만
       }
     });
-    nI.addEventListener('focus', ()=>{ kbResetFrom(nI.value); kbShow(true); });
-    nI.addEventListener('blur', ()=>{ kbShow(false); });
-    tI.addEventListener('focus', ()=>{ kbShow(false); });
+    /* 숫자판은 화면에 보이는 "010-1234-5678" 이 아니라 숫자만 따로 다룬다 —
+       그래야 지울 때 하이픈에 걸리지 않고 한 자씩 깔끔히 지워진다.
+       모양 맞추기(fmtTel)는 기존 input 처리기가 그대로 해준다. */
+    function telDigits(){ return (tI.value||'').replace(/\D/g,''); }
+    function telSetDigits(d){
+      tI.value=d;
+      tI.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+    nI.addEventListener('focus', ()=>{ kbKeepOpen(); kbResetFrom(nI.value); kbShow('name'); });
+    nI.addEventListener('blur', kbHideSoon);
+    tI.addEventListener('focus', ()=>{ kbKeepOpen(); kbShow('tel'); });
+    tI.addEventListener('blur', kbHideSoon);
 
     /* 아이폰 사파리엔 이 API 자체가 없다 — 그런 폰에서는 버튼이 아예 안 나타나서
        지금처럼 손으로 입력하면 되고, 안드로이드(크롬 계열)에서만 마이크가 뜬다.
