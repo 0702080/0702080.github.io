@@ -405,8 +405,10 @@
   /* ── 앱이 직접 그리는 한글 자판 ──
      이름 적는 데 필요한 자모·공백·지움만 둔다. 숫자줄, 특수문자, 한영전환
      같은 건 아예 없어서 잘못 누를 일이 없다.
-     천지인 방식 12키 배열 — 한 줄에 4개뿐이라 키가 아주 크다(두벌식 10키는
-     폰 폭에서 33px이 한계라 손가락으로 치면 오타가 났다).
+     천지인 방식 — 왼쪽 3칸은 자음, 오른쪽 2칸은 모음이다. 오른쪽 안쪽 줄은
+     천지인 조각(ㅣ·ㆍ·ㅡ), 바깥쪽 줄은 자주 쓰는 모음(ㅏ·ㅓ·ㅗ·ㅜ)을 한 번에
+     넣는 키다 — 두 번 눌러야 했던 ㅓ 같은 게 한 번에 들어간다.
+     한 줄에 5개라 키가 68px로, 두벌식 10키(33px)의 두 배가 넘는다.
      화면 아래에 폭을 꽉 채워 붙인다(입력판 안에 넣으면 그만큼 좁아진다). */
   #kbd{
     position:absolute;left:0;right:0;bottom:0;z-index:3;
@@ -418,29 +420,26 @@
   #kbd[hidden]{display:none;}
   .kbRow{display:flex;gap:6px;}
   #kbd button{
-    flex:1 1 0;min-width:0;height:58px;padding:0;
+    flex:1 1 0;min-width:0;height:56px;padding:0;
     border:none;border-radius:10px;
     font-family:'Malgun Gothic',sans-serif;
-    font-size:25px;font-weight:800;letter-spacing:1px;
+    font-size:23px;font-weight:800;letter-spacing:1px;
     box-shadow:0 2px 4px rgba(0,0,0,.45);
     cursor:pointer;
   }
+  #kbd .kbW2{flex:2 1 0;}
+  #kbd .kbW3{flex:3 1 0;}
   #kbd .kbCons{background:linear-gradient(180deg,#ffffff,#dfe6ef);color:#1e2937;}
-  #kbd .kbVowel{background:linear-gradient(180deg,#fffdf6,#eee2cb);color:#3a2d19;font-size:29px;}
+  #kbd .kbVowel{background:linear-gradient(180deg,#fffdf6,#eee2cb);color:#3a2d19;font-size:27px;}
   #kbd button:active{filter:brightness(.8);}
   #kbd .kbFn{background:linear-gradient(180deg,#8e82a3,#6d6283);color:#fff;
              font-size:17px;font-weight:700;letter-spacing:0;}
-  #kbd .kbFnRow button{height:50px;font-size:16px;}
-  #kbd .kbClear{flex:1 1 0;}
-  #kbd .kbSpace{flex:1.2 1 0;}
-  #kbd .kbNext{flex:1.6 1 0;background:linear-gradient(180deg,#7fd0c4,#2bb3a2);color:#0d3b35;}
-  #kbd .kbDbl{background:linear-gradient(180deg,#a99ac0,#7f7398);font-size:16px;}
+  #kbd .kbNext{background:linear-gradient(180deg,#7fd0c4,#2bb3a2);color:#0d3b35;}
   /* 화면이 아주 짧은 기기에서는 자판을 조금 낮춰 입력판이 위로 잘리지 않게 */
   @media (max-height:620px){
-    #kbd button{height:48px;font-size:21px;}
-    #kbd .kbVowel{font-size:25px;}
+    #kbd button{height:47px;font-size:20px;}
+    #kbd .kbVowel{font-size:23px;}
     #kbd .kbFn{font-size:15px;}
-    #kbd .kbFnRow button{height:42px;font-size:14px;}
     #kbd{gap:5px;}
     .kbRow{gap:5px;}
   }
@@ -629,7 +628,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v196</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v197</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -732,24 +731,26 @@
       <button type="button" class="kbCons" data-cj="k1">ㄱㅋ</button
       ><button type="button" class="kbCons" data-cj="k2">ㄴㄹ</button
       ><button type="button" class="kbCons" data-cj="k3">ㄷㅌ</button
-      ><button type="button" class="kbVowel" data-v="ㅣ">ㅣ</button>
+      ><button type="button" class="kbVowel" data-v="ㅣ">ㅣ</button
+      ><button type="button" class="kbVowel" data-vseq="ㅣㆍ">ㅏ</button>
     </div>
     <div class="kbRow">
       <button type="button" class="kbCons" data-cj="k4">ㅂㅍ</button
       ><button type="button" class="kbCons" data-cj="k5">ㅅㅎ</button
       ><button type="button" class="kbCons" data-cj="k6">ㅈㅊ</button
-      ><button type="button" class="kbVowel" data-v="ㆍ">ㆍ</button>
+      ><button type="button" class="kbVowel" data-v="ㆍ">ㆍ</button
+      ><button type="button" class="kbVowel" data-vseq="ㆍㅣ">ㅓ</button>
     </div>
     <div class="kbRow">
       <button type="button" class="kbCons" data-cj="k7">ㅇㅁ</button
-      ><button type="button" class="kbFn kbDbl" data-fn="double">쌍자음</button
-      ><button type="button" class="kbFn" data-fn="back">⌫</button
-      ><button type="button" class="kbVowel" data-v="ㅡ">ㅡ</button>
+      ><button type="button" class="kbFn kbW2" data-fn="back">⌫</button
+      ><button type="button" class="kbVowel" data-v="ㅡ">ㅡ</button
+      ><button type="button" class="kbVowel" data-vseq="ㆍㅡ">ㅗ</button>
     </div>
-    <div class="kbRow kbFnRow">
+    <div class="kbRow">
       <button type="button" class="kbFn kbClear" data-fn="clear">전체지움</button
-      ><button type="button" class="kbFn kbSpace" data-fn="space">공백</button
-      ><button type="button" class="kbFn kbNext" data-fn="next">다음 →</button>
+      ><button type="button" class="kbFn kbNext kbW3" data-fn="next">다음 →</button
+      ><button type="button" class="kbVowel" data-vseq="ㅡㆍ">ㅜ</button>
     </div>
   </div>
 </div>
@@ -2285,21 +2286,6 @@
       kbJung = CJ_VOW[part] ? JUNG.indexOf(CJ_VOW[part]) : -1;
       kbRender();
     }
-    /* 쌍자음 키 — 방금 넣은 자음을 된소리로 바꾼다(ㄱ→ㄲ). 같은 키를 세 번
-       누르는 대신 한 번에 되고, 세 번 누르기도 그대로 쓸 수 있다. */
-    const CJ_DOUBLE={'ㄱ':'ㄲ','ㄷ':'ㄸ','ㅂ':'ㅃ','ㅅ':'ㅆ','ㅈ':'ㅉ'};
-    function kbDouble(){
-      kbSync(); kbCycStop();   // 바꾼 뒤 같은 키를 또 눌러 되돌아가는 일이 없게
-      if(kbJong>0){
-        const d=CJ_DOUBLE[JONG[kbJong]];
-        if(d && JONG.indexOf(d)>0){ kbJong=JONG.indexOf(d); kbRender(); }
-        return;                // ㄸ·ㅃ·ㅉ 은 받침이 될 수 없어 그냥 둔다
-      }
-      if(kbCho>=0){
-        const d=CJ_DOUBLE[CHO[kbCho]];
-        if(d){ kbCho=CHO.indexOf(d); kbRender(); }
-      }
-    }
     function kbBack(){
       kbSync(); kbCycStop();
       if(kbVowSeq){                       // 모음은 조각 하나씩 되돌린다
@@ -2340,14 +2326,17 @@
       if(!b || !kbd.contains(b)) return;
       const fn=b.getAttribute('data-fn');
       if(fn==='back'){ kbBack(); return; }
-      if(fn==='double'){ kbDouble(); return; }
       if(fn==='clear'){ kbResetFrom(''); kbRender(); return; }
-      if(fn==='space'){ kbSync(); kbCycStop(); kbFlush(); kbBase+=' '; kbRender(); return; }
       if(fn==='next'){ kbShow(false); tI.focus(); return; }
       const cj=b.getAttribute('data-cj');
       if(cj){ kbCons(cj); return; }
       const v=b.getAttribute('data-v');
       if(v){ kbVowel(v); return; }
+      /* ㅏ·ㅓ·ㅗ·ㅜ 처럼 자주 쓰는 모음은 따로 키를 뒀다. ㅣ·ㆍ·ㅡ 를 두 번
+         누르는 것과 똑같이 처리해서(조각을 차례로 넣는다), 뒤이어 다른
+         조각을 눌렀을 때 ㅘ·ㅐ 같은 겹모음도 그대로 만들어진다. */
+      const vs=b.getAttribute('data-vseq');
+      if(vs){ for(const p of vs) kbVowel(p); return; }
     });
     nI.addEventListener('focus', ()=>{ kbResetFrom(nI.value); kbShow(true); });
     nI.addEventListener('blur', ()=>{ kbShow(false); });
