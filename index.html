@@ -417,6 +417,13 @@
     padding:10px 5px calc(10px + env(safe-area-inset-bottom));
     background:rgba(30,24,38,.97);
     box-shadow:0 -4px 14px rgba(0,0,0,.45);
+    /* 실제 폰에서 손가락을 붙인 채 끌면, 이게 없으면 브라우저가 그 움직임을
+       스크롤로 가로채면서 pointercancel 을 던진다 — 그 순간 붙잡아 둔 손가락을
+       놓쳐서 "꾹 눌러 판을 펼친 뒤 끌어서 고르기"가 통째로 안 먹혔다.
+       (합성 이벤트로 하는 시험에서는 브라우저가 안 가로채서 안 드러났다) */
+    touch-action:none;
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;   /* 꾹 누를 때 뜨는 기본 메뉴·글자선택 막기 */
   }
   #kbd[hidden]{display:none;}
   /* 칸 수가 줄어든 줄(맨 아랫줄)도 위 줄과 세로줄이 정확히 맞아야 해서
@@ -780,7 +787,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v213</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v214</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2798,6 +2805,24 @@
       kbPop.style.top=(kr.top-pr.top-kbPop.offsetHeight-8)+'px';
     }
     // 자판을 눌러도 이름 칸의 포커스가 풀리지 않게 한다(풀리면 자판이 닫힌다)
+    /* 손가락이 짚은 글자를 찾는다. 정확히 그 위가 아니어도, 판보다 위로
+       올라갔거나 좌우로 조금 빗나간 정도면 가장 가까운 글자로 쳐준다 —
+       손가락은 굵고 짚는 점이 손톱 끝과 달라서 딱 맞히기 어렵다.
+       아직 누른 키 위에 있으면(판 아래) 고른 게 아니다. */
+    function kbPopOptionAt(x,y){
+      const el=document.elementFromPoint(x,y);
+      const direct=el && el.closest ? el.closest('#kbPop button[data-pick]') : null;
+      if(direct) return direct;
+      const pr=kbPop.getBoundingClientRect();
+      if(y>pr.bottom+6 || y<pr.top-60) return null;
+      let best=null, bestD=Infinity;
+      kbPop.querySelectorAll('button[data-pick]').forEach(b=>{
+        const r=b.getBoundingClientRect();
+        const d = x<r.left ? r.left-x : (x>r.right ? x-r.right : 0);
+        if(d<bestD){ bestD=d; best=b; }
+      });
+      return bestD<=28 ? best : null;
+    }
     function kbPopSetHover(el){
       if(el===kbPopHover) return;
       if(kbPopHover) kbPopHover.classList.remove('hot');
@@ -2821,13 +2846,15 @@
        도드라진다. 손가락을 붙잡아 둔 상태라 좌표로 무엇을 짚었는지 찾는다. */
     kbd.addEventListener('pointermove', e=>{
       if(e.pointerId!==kbPopPtrId || kbPop.hidden) return;
-      const el=document.elementFromPoint(e.clientX, e.clientY);
-      kbPopSetHover(el && el.closest ? el.closest('#kbPop button[data-pick]') : null);
+      kbPopSetHover(kbPopOptionAt(e.clientX, e.clientY));
     });
     kbd.addEventListener('pointerup', e=>{
       clearTimeout(kbPopTimer);
       if(e.pointerId!==kbPopPtrId) return;
       kbPopPtrId=null;
+      // 뗀 자리를 한 번 더 확인한다 — 끌던 도중 pointermove 가 끊겨도
+      // 뗀 지점이 글자 위라면 그 글자를 골라준다
+      if(!kbPop.hidden) kbPopSetHover(kbPopOptionAt(e.clientX, e.clientY) || kbPopHover);
       // 끌어서 글자를 짚은 채 뗐으면 그 글자를 넣는다
       if(!kbPop.hidden && kbPopHover){
         const ch=kbPopHover.getAttribute('data-pick');
