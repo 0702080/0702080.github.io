@@ -432,7 +432,9 @@
              font-size:17px;font-weight:700;letter-spacing:0;}
   #kbd .kbFnRow button{height:50px;font-size:16px;}
   #kbd .kbClear{flex:1 1 0;}
-  #kbd .kbNext{flex:3 1 0;background:linear-gradient(180deg,#7fd0c4,#2bb3a2);color:#0d3b35;}
+  #kbd .kbSpace{flex:1.2 1 0;}
+  #kbd .kbNext{flex:1.6 1 0;background:linear-gradient(180deg,#7fd0c4,#2bb3a2);color:#0d3b35;}
+  #kbd .kbDbl{background:linear-gradient(180deg,#a99ac0,#7f7398);font-size:16px;}
   /* 화면이 아주 짧은 기기에서는 자판을 조금 낮춰 입력판이 위로 잘리지 않게 */
   @media (max-height:620px){
     #kbd button{height:48px;font-size:21px;}
@@ -627,7 +629,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v195</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v196</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -740,12 +742,13 @@
     </div>
     <div class="kbRow">
       <button type="button" class="kbCons" data-cj="k7">ㅇㅁ</button
-      ><button type="button" class="kbFn" data-fn="space">공백</button
+      ><button type="button" class="kbFn kbDbl" data-fn="double">쌍자음</button
       ><button type="button" class="kbFn" data-fn="back">⌫</button
       ><button type="button" class="kbVowel" data-v="ㅡ">ㅡ</button>
     </div>
     <div class="kbRow kbFnRow">
       <button type="button" class="kbFn kbClear" data-fn="clear">전체지움</button
+      ><button type="button" class="kbFn kbSpace" data-fn="space">공백</button
       ><button type="button" class="kbFn kbNext" data-fn="next">다음 →</button>
     </div>
   </div>
@@ -2282,6 +2285,21 @@
       kbJung = CJ_VOW[part] ? JUNG.indexOf(CJ_VOW[part]) : -1;
       kbRender();
     }
+    /* 쌍자음 키 — 방금 넣은 자음을 된소리로 바꾼다(ㄱ→ㄲ). 같은 키를 세 번
+       누르는 대신 한 번에 되고, 세 번 누르기도 그대로 쓸 수 있다. */
+    const CJ_DOUBLE={'ㄱ':'ㄲ','ㄷ':'ㄸ','ㅂ':'ㅃ','ㅅ':'ㅆ','ㅈ':'ㅉ'};
+    function kbDouble(){
+      kbSync(); kbCycStop();   // 바꾼 뒤 같은 키를 또 눌러 되돌아가는 일이 없게
+      if(kbJong>0){
+        const d=CJ_DOUBLE[JONG[kbJong]];
+        if(d && JONG.indexOf(d)>0){ kbJong=JONG.indexOf(d); kbRender(); }
+        return;                // ㄸ·ㅃ·ㅉ 은 받침이 될 수 없어 그냥 둔다
+      }
+      if(kbCho>=0){
+        const d=CJ_DOUBLE[CHO[kbCho]];
+        if(d){ kbCho=CHO.indexOf(d); kbRender(); }
+      }
+    }
     function kbBack(){
       kbSync(); kbCycStop();
       if(kbVowSeq){                       // 모음은 조각 하나씩 되돌린다
@@ -2322,6 +2340,7 @@
       if(!b || !kbd.contains(b)) return;
       const fn=b.getAttribute('data-fn');
       if(fn==='back'){ kbBack(); return; }
+      if(fn==='double'){ kbDouble(); return; }
       if(fn==='clear'){ kbResetFrom(''); kbRender(); return; }
       if(fn==='space'){ kbSync(); kbCycStop(); kbFlush(); kbBase+=' '; kbRender(); return; }
       if(fn==='next'){ kbShow(false); tI.focus(); return; }
