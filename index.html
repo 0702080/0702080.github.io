@@ -605,19 +605,19 @@
     border:1.5px solid var(--kBd);color:var(--kTx);
     background:linear-gradient(180deg,var(--kA) 0%,var(--kB) 52%,var(--kC) 84%,var(--kD) 100%);
     box-shadow:0 3px 7px rgba(10,18,30,.42),
-               inset 0 -2px 6px rgba(255,255,255,.7), inset 0 2px 3px rgba(0,0,0,.20);
-    text-shadow:0 1px 1px rgba(255,255,255,.45);
+               inset 0 -2px 6px rgba(255,255,255,.75), inset 0 2px 3px rgba(0,0,0,.13);
+    text-shadow:0 1px 1px rgba(255,255,255,.55);
   }
-  #kbdNum [data-n="1"]{--kA:#ffdcd8;--kB:#e8564a;--kC:#f08a80;--kD:#ffe9e6;--kBd:#9c2a20;--kTx:#4a1310;}
-  #kbdNum [data-n="2"]{--kA:#ffe6cc;--kB:#ef8a2c;--kC:#f5ac63;--kD:#fff0dd;--kBd:#9c5510;--kTx:#4a2a06;}
-  #kbdNum [data-n="3"]{--kA:#fff0c4;--kB:#eeb01a;--kC:#f4c956;--kD:#fff7dd;--kBd:#94690a;--kTx:#453005;}
-  #kbdNum [data-n="4"]{--kA:#e8f7c8;--kB:#8fc22a;--kC:#b2d962;--kD:#f2fbe0;--kBd:#4f7310;--kTx:#24350a;}
-  #kbdNum [data-n="5"]{--kA:#d5f5e0;--kB:#2fb567;--kC:#66cf92;--kD:#e8fbf0;--kBd:#146b3a;--kTx:#0a331c;}
-  #kbdNum [data-n="6"]{--kA:#d2f5f0;--kB:#22b3a4;--kC:#5ecdc2;--kD:#e6fbf8;--kBd:#0e6b63;--kTx:#06332f;}
-  #kbdNum [data-n="7"]{--kA:#d6effc;--kB:#2ba0d8;--kC:#63c0e8;--kD:#e9f7fe;--kBd:#0d5f83;--kTx:#062c3d;}
-  #kbdNum [data-n="8"]{--kA:#dbe4fb;--kB:#4a6fd8;--kC:#7f9ae8;--kD:#ecf1fe;--kBd:#263f8c;--kTx:#101c40;}
-  #kbdNum [data-n="9"]{--kA:#e2ddfb;--kB:#6f52d6;--kC:#9a85e6;--kD:#f0edfe;--kBd:#3a2884;--kTx:#19113c;}
-  #kbdNum [data-n="0"]{--kA:#fbdcf2;--kB:#cc47a5;--kC:#de7cc2;--kD:#fdecf8;--kBd:#7d2262;--kTx:#39102c;}
+  #kbdNum [data-n="1"]{--kA:#ffe8e5;--kB:#f1968f;--kC:#f4ada6;--kD:#fff2f0;--kBd:#b8564d;--kTx:#5a1e19;}
+  #kbdNum [data-n="2"]{--kA:#fff0e0;--kB:#f5b77c;--kC:#f8c592;--kD:#fff7ee;--kBd:#b87c3c;--kTx:#5a3510;}
+  #kbdNum [data-n="3"]{--kA:#fff7dd;--kB:#f4ce71;--kC:#f7d989;--kD:#fffbee;--kBd:#b08a30;--kTx:#54400c;}
+  #kbdNum [data-n="4"]{--kA:#f0fada;--kB:#bad97b;--kC:#c9e491;--kD:#f8fdec;--kBd:#7d9b40;--kTx:#35470f;}
+  #kbdNum [data-n="5"]{--kA:#e4faec;--kB:#7ed1a1;--kC:#94ddb3;--kD:#f2fdf6;--kBd:#3f9464;--kTx:#154529;}
+  #kbdNum [data-n="6"]{--kA:#e2faf6;--kB:#76d0c7;--kC:#8edcd4;--kD:#f1fdfb;--kBd:#3a9389;--kTx:#0f4540;}
+  #kbdNum [data-n="7"]{--kA:#e6f5fd;--kB:#7cc4e7;--kC:#92d3ef;--kD:#f2fbff;--kBd:#3a86ab;--kTx:#0e3d52;}
+  #kbdNum [data-n="8"]{--kA:#eaeffd;--kB:#8fa6e7;--kC:#a5b8ef;--kD:#f5f8ff;--kBd:#5069ac;--kTx:#1e2d5c;}
+  #kbdNum [data-n="9"]{--kA:#efebfd;--kB:#a694e6;--kC:#b8aaed;--kD:#f8f6ff;--kBd:#6553a4;--kTx:#2b1f57;}
+  #kbdNum [data-n="0"]{--kA:#fdeaf7;--kB:#df8dc7;--kC:#e8a3d4;--kD:#fef5fb;--kBd:#a25287;--kTx:#511c3f;}
   #kbdNum .kbFn{font-size:20px;letter-spacing:0;}
   /* 화면이 아주 짧은 기기에서는 자판을 조금 낮춰 입력판이 위로 잘리지 않게 */
   @media (max-height:620px){
@@ -822,7 +822,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v221</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v222</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
