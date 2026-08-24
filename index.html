@@ -485,7 +485,8 @@
   #kbd #kbdQW .kbVowel{font-size:21px;}
   #kbdQW .kbFn{font-size:18px;}
   #kbdQW .qwoWide{flex:1.45 1 0;font-size:18px;}
-  #kbdQW .qwoNext{flex:3 1 0;}
+  #kbdQW .qwoNext{flex:1.4 1 0;}
+  #kbdQW .qwoBack{flex:1 1 0;}
   #kbdQW button[data-fn="shift"].on{
     border-color:#8a6410;color:#42300a;
     background:linear-gradient(180deg,#ffe6a8 0%,#efa837 52%,#f6c463 84%,#ffeec2 100%);
@@ -825,7 +826,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v223</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v224</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1010,9 +1011,12 @@
       ><button type="button" class="kbVowel" data-k="ㅡ"></button
       ><button type="button" class="kbFn qwoWide" data-fn="back">⌫</button>
     </div>
+    <!-- 셋째 줄 오른쪽 ⌫ 는 폰 키보드와 같은 자리라 그대로 두고, 여기에
+         글자로 적힌 "이전" 을 하나 더 뒀다 — 두벌식C 아랫줄과 같은 구성. -->
     <div class="qwoRow">
       <button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
-      ><button type="button" class="kbFn kbNext qwoNext" data-fn="next">다음</button>
+      ><button type="button" class="kbFn kbNext qwoNext" data-fn="next">다음</button
+      ><button type="button" class="kbFn qwoBack" data-fn="back">이전</button>
     </div>
    </div>
    <!-- 두벌식C — 가나다 순 배열에 멀티탭(ㄱ→ㄲ→ㅋ)을 얹어, 한 줄 7칸으로
