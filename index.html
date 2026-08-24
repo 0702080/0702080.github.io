@@ -403,6 +403,52 @@
   #edHint{color:#fff;font-size:12.5px;text-align:center;opacity:.95;min-height:16px;
           text-shadow:0 1px 3px rgba(0,0,0,.9);}
 
+  /* ── 앱 안 촬영 화면 ──
+     폰 카메라 앱은 자기 확인 버튼을 하단 제스처바에 겹치게 그리는데,
+     웹에서는 그걸 못 옮긴다. 그래서 앱 안에서 찍는 길을 따로 두고,
+     여기서는 버튼을 제스처바 위로 넉넉히(28px + 안전영역) 띄운다. */
+  #cam{
+    position:fixed;inset:0;z-index:60;display:none;background:#000;
+    -webkit-user-select:none;user-select:none;
+  }
+  #cam.on{display:block;}
+  #camVideo,#camShot{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;
+  }
+  #camVideo[hidden],#camShot[hidden]{display:none;}
+  #camMsg{
+    position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);
+    text-align:center;color:#fff;font-size:15px;line-height:1.5;
+    text-shadow:0 1px 3px rgba(0,0,0,.9);
+  }
+  .camBar{
+    position:absolute;left:0;right:0;
+    bottom:calc(28px + env(safe-area-inset-bottom));   /* 제스처바와 안 겹치게 */
+    display:flex;align-items:center;justify-content:space-around;gap:14px;
+    padding:0 18px;
+  }
+  .camBar[hidden]{display:none;}
+  .camBar button{
+    font-family:inherit;font-size:16px;font-weight:800;cursor:pointer;
+    padding:14px 20px;border-radius:999px;
+    border:1.5px solid rgba(255,255,255,.35);
+    background:rgba(0,0,0,.55);color:#fff;
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  }
+  .camBar button:active{background:rgba(0,0,0,.75);}
+  /* 가운데 셔터는 크게, 한 손으로 눌러도 빗나가지 않게 */
+  #camShutter{
+    width:76px;height:76px;padding:0;border-radius:50%;
+    border:4px solid rgba(255,255,255,.9);
+    background:radial-gradient(circle at 50% 38%, #ffffff 0%, #e6e0ee 62%, #b9afc6 100%);
+  }
+  #camShutter:active{background:radial-gradient(circle at 50% 38%, #d9d2e4 0%, #b9afc6 70%, #8f8499 100%);}
+  #camOk{
+    border-color:#0f7768;color:#06322c;
+    background:linear-gradient(180deg,#9aeadd 0%,#2fbaa8 52%,#66d5c5 84%,#b6f2ea 100%);
+  }
+  #camRetry,#camOk{flex:1 1 0;padding:16px 12px;font-size:17px;}
+
   /* ── 앱이 직접 그리는 한글 자판 ──
      이름 적는 데 필요한 자모·공백·지움만 둔다. 숫자줄, 특수문자, 한영전환
      같은 건 아예 없어서 잘못 누를 일이 없다.
@@ -787,7 +833,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v214</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v215</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -811,6 +857,10 @@
   <button class="go share enter" id="bResendGallery" style="animation-delay:.32s"><span class="ico">📤</span>사진 카톡 전송</button>
 
   <button class="go enter" id="bShoot" style="animation-delay:.36s"><span class="ico">📷</span>카메라로 찍기</button>
+  <!-- 폰 카메라 앱을 안 거치고 앱 안에서 바로 찍는다. 확인 버튼 자리를
+       우리가 정할 수 있어서 하단 제스처바에 안 가린다. 대신 폰 기본 앱의
+       1x 광각 렌즈에는 접근이 안 돼 화각이 좀 좁을 수 있다. -->
+  <button class="sub enter" id="bShootIn" style="animation-delay:.40s"><span class="ico">🎥</span><span class="tlabel">앱에서 찍기</span></button>
   <button id="mentLine" type="button" title="눌러서 다른 멘트 보기"></button>
 
   <div id="todayWrap">
@@ -1063,6 +1113,23 @@
 </div>
 
 <!-- 기본 카메라 앱 호출 / 갤러리 선택 -->
+<!-- 앱 안 촬영 화면 — 폰 카메라 앱 대신 여기서 찍는다. 확인 버튼을
+     하단 제스처바에서 넉넉히 띄워 두는 게 이걸 만든 이유다. -->
+<div id="cam">
+  <video id="camVideo" playsinline autoplay muted></video>
+  <img id="camShot" alt="">
+  <div id="camMsg"></div>
+  <div class="camBar" id="camBar">
+    <button type="button" id="camClose">닫기</button>
+    <button type="button" id="camShutter" aria-label="촬영"></button>
+    <button type="button" id="camFlip">앞뒤</button>
+  </div>
+  <div class="camBar" id="camBar2" hidden>
+    <button type="button" id="camRetry">다시 찍기</button>
+    <button type="button" id="camOk">확인</button>
+  </div>
+</div>
+
 <input type="file" id="fCam"  accept="image/*" capture="environment" style="display:none">
 <input type="file" id="fPick" accept="image/*" multiple style="display:none">
 <input type="file" id="fResend" accept="image/*" multiple style="display:none">
@@ -3140,6 +3207,86 @@
 
   $('fCam').addEventListener('change', e=>{ ED.start(e.target.files); e.target.value=''; });
   $('fPick').addEventListener('change', e=>{ ED.start(e.target.files); e.target.value=''; });
+
+  /* ───── 앱 안 촬영 ─────
+     폰 카메라 앱은 자기 "다시 시도 / 확인" 줄을 하단 제스처바에 겹치게
+     그리는데 웹에서는 그걸 못 옮긴다. 그래서 앱 안에서 찍는 길을 따로 뒀다.
+     화각은 폰 기본 앱(1x 광각)보다 좁을 수 있어 기본 촬영은 그대로 두고,
+     필요할 때 골라 쓰게 한다. */
+  const CAM = (function(){
+    const box=$('cam'), v=$('camVideo'), shot=$('camShot'), msg=$('camMsg');
+    let stream=null, facing='environment', lastBlob=null;
+    function live(){
+      v.hidden=false; shot.hidden=true;
+      $('camBar').hidden=false; $('camBar2').hidden=true;
+    }
+    function frozen(){
+      v.hidden=true; shot.hidden=false;
+      $('camBar').hidden=true; $('camBar2').hidden=false;
+    }
+    function stopStream(){
+      if(stream){ stream.getTracks().forEach(t=>{ try{ t.stop(); }catch(e){} }); stream=null; }
+      try{ v.srcObject=null; }catch(e){}
+    }
+    function dropShot(){
+      if(shot.getAttribute('src')){ URL.revokeObjectURL(shot.src); shot.removeAttribute('src'); }
+      lastBlob=null;
+    }
+    async function open(){
+      box.classList.add('on');
+      live(); dropShot();
+      msg.textContent='카메라를 켜는 중…';
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        msg.textContent='이 브라우저에서는 앱 안 촬영을 쓸 수 없습니다.\n"카메라로 찍기"를 이용해주세요.';
+        return;
+      }
+      try{
+        stream=await navigator.mediaDevices.getUserMedia({
+          video:{ facingMode:{ideal:facing}, width:{ideal:1920}, height:{ideal:1440} },
+          audio:false
+        });
+        v.srcObject=stream;
+        try{ await v.play(); }catch(e){}
+        msg.textContent='';
+      }catch(e){
+        msg.textContent='카메라를 열지 못했습니다.\n브라우저의 카메라 권한을 확인해주세요.';
+      }
+    }
+    function close(){ stopStream(); dropShot(); live(); box.classList.remove('on'); }
+    async function capture(){
+      const w=v.videoWidth, h=v.videoHeight;
+      if(!w || !h){ msg.textContent='아직 화면이 준비되지 않았습니다. 잠시 후 다시 눌러주세요.'; return; }
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(v,0,0,w,h);
+      const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.92));
+      if(!blob){ msg.textContent='사진을 만들지 못했습니다. 다시 시도해주세요.'; return; }
+      dropShot();
+      lastBlob=blob;
+      shot.src=URL.createObjectURL(blob);
+      frozen();
+    }
+    function accept(){
+      if(!lastBlob) return;
+      // 파일로 넘겨서, 폰 카메라로 찍었을 때와 똑같은 편집·저장 흐름을 탄다
+      const f=new File([lastBlob], 'shot.jpg', {type:'image/jpeg', lastModified:Date.now()});
+      const blobRef=lastBlob;
+      lastBlob=null;                 // close() 가 되돌리지 않게 먼저 뗀다
+      close();
+      ED.start([f]);
+      return blobRef;
+    }
+    $('camShutter').onclick=capture;
+    $('camRetry').onclick=()=>{ dropShot(); live(); msg.textContent=''; };
+    $('camOk').onclick=accept;
+    $('camClose').onclick=close;
+    $('camFlip').onclick=async ()=>{
+      facing = (facing==='environment') ? 'user' : 'environment';
+      stopStream();
+      await open();
+    };
+    return {open, close};
+  })();
+  $('bShootIn').onclick=()=>CAM.open();
 
   /* ───── 폰: 태블릿과 짝 맺기 (최초 1회) ───── */
   const isTvMode = location.hash.toLowerCase().indexOf('tv')>=0;
