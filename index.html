@@ -379,8 +379,17 @@
      전화번호는 글자를 살짝 줄이고 가운데 정렬해서 항상 다 보이게 한다. */
   #edNameWrap{position:relative;flex:0.85;display:flex;}
   #edTelWrap{position:relative;flex:1.15;display:flex;}
-  /* #edBottom input 규칙(20px)보다 확실히 우선하도록 특정도를 높인다 */
-  #edBottom #edTel{font-size:17px;text-align:center;}
+  /* #edBottom input 규칙(20px)보다 확실히 우선하도록 특정도를 높인다.
+     "010-0000-0000" 열세 글자가 끝까지 다 보여야 해서 글자를 조금 줄이고,
+     마이크가 왼쪽으로 간 뒤로 쓸모없어진 오른쪽 여백도 줄여 폭을 벌었다. */
+  #edBottom #edTel{font-size:15px;letter-spacing:-.2px;text-align:center;padding-right:8px;}
+  #edTelWrap.hasMic #edTel{padding-left:36px;}
+  /* 아주 좁은 폰(320px대)에서는 이 크기로도 뒷자리가 잘린다 — 번호가 한 자
+     빠진 걸 못 보고 지나칠 수 있어서, 그런 화면에서만 더 줄인다. */
+  @media (max-width:340px){
+    #edBottom #edTel{font-size:12.5px;}
+    #edTelWrap.hasMic #edTel{padding-left:34px;}
+  }
   /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 각 칸 왼쪽에
      자리를 비워둔다 — 버튼이 없는(아이폰) 경우엔 이 여백도 필요 없다. */
   #edNameWrap.hasMic #edName, #edTelWrap.hasMic #edTel{padding-left:38px;}
@@ -787,7 +796,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v218</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v219</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
