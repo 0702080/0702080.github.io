@@ -381,11 +381,11 @@
   #edTelWrap{position:relative;flex:1.15;display:flex;}
   /* #edBottom input 규칙(20px)보다 확실히 우선하도록 특정도를 높인다 */
   #edBottom #edTel{font-size:17px;text-align:center;}
-  /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 각 칸 오른쪽에
+  /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 각 칸 왼쪽에
      자리를 비워둔다 — 버튼이 없는(아이폰) 경우엔 이 여백도 필요 없다. */
-  #edNameWrap.hasMic #edName, #edTelWrap.hasMic #edTel{padding-right:38px;}
+  #edNameWrap.hasMic #edName, #edTelWrap.hasMic #edTel{padding-left:38px;}
   #edMic, #edTelMic{
-    position:absolute;right:3px;top:50%;transform:translateY(-50%);
+    position:absolute;left:3px;top:50%;transform:translateY(-50%);
     width:30px;height:30px;border:none;border-radius:50%;padding:0;
     background:transparent;font-size:16px;line-height:1;color:#555;
     display:flex;align-items:center;justify-content:center;cursor:pointer;
@@ -582,14 +582,14 @@
   #kbdNum{display:flex;flex-direction:column;gap:10px;}
   #kbdNum[hidden]{display:none;}
   .numRow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-  #kbdNum button{height:59px;font-size:27px;letter-spacing:2px;}
+  #kbdNum button{height:66px;font-size:28px;letter-spacing:2px;}
   #kbdNum .kbFn{font-size:20px;letter-spacing:0;}
   /* 화면이 아주 짧은 기기에서는 자판을 조금 낮춰 입력판이 위로 잘리지 않게 */
   @media (max-height:620px){
     #kbd button{height:47px;font-size:20px;}
     #kbd .kbVowel{font-size:23px;}
     #kbd .kbFn{font-size:15px;}
-    #kbdNum button{height:50px;font-size:23px;}
+    #kbdNum button{height:55px;font-size:24px;}
     #kbdQW button{height:47px;font-size:18px;}
     #kbdQW .kbVowel{font-size:18px;}
     #kbdQW .kbFn{font-size:15px;}
@@ -787,7 +787,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v217</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v218</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2885,10 +2885,10 @@
       // 안 오는 경우가 있어서 숫자판이 안 뜨는 일이 있었다.
       if(fn==='next'){ kbKeepOpen(); tI.focus(); kbShow('tel'); return; }
       // ── 전화번호 숫자판 ──
-      if(fn==='numback'){ telSetDigits(telDigits().slice(0,-1)); return; }
-      if(fn==='numclear'){ telSetDigits(''); return; }
+      if(fn==='numback'){ speak('지움'); telSetDigits(telDigits().slice(0,-1)); return; }
+      if(fn==='numclear'){ speak('전체 지움'); telSetDigits(''); return; }
       const nd=b.getAttribute('data-n');
-      if(nd){ telSetDigits(telDigits()+nd); return; }
+      if(nd){ speak(nd); telSetDigits(telDigits()+nd); return; }
       const cj=b.getAttribute('data-cj');
       if(cj){ kbCons(cj); return; }
       const v=b.getAttribute('data-v');
@@ -2912,6 +2912,31 @@
     /* 숫자판은 화면에 보이는 "010-1234-5678" 이 아니라 숫자만 따로 다룬다 —
        그래야 지울 때 하이픈에 걸리지 않고 한 자씩 깔끔히 지워진다.
        모양 맞추기(fmtTel)는 기존 input 처리기가 그대로 해준다. */
+    /* 숫자판을 누를 때마다 그 숫자를 소리로 읽어준다 — 전화번호를 불러주는
+       사람과 맞춰보기 좋다. 빨리 여러 번 누르면 앞의 소리를 끊고 방금 누른
+       것만 읽는다(안 끊으면 줄줄이 밀려서 한참 뒤처진다).
+       음성 기능이 없는 기기에서는 조용히 넘어간다. */
+    const TTS = window.speechSynthesis || null;
+    let ttsVoice=null;
+    function pickVoice(){
+      if(!TTS) return;
+      const vs=TTS.getVoices()||[];
+      ttsVoice = vs.find(v=>/^ko/i.test(v.lang)) || null;
+    }
+    if(TTS){
+      pickVoice();
+      if(typeof TTS.addEventListener==='function') TTS.addEventListener('voiceschanged', pickVoice);
+    }
+    function speak(text){
+      if(!TTS || !window.SpeechSynthesisUtterance) return;
+      try{
+        TTS.cancel();
+        const u=new SpeechSynthesisUtterance(String(text));
+        u.lang='ko-KR'; u.rate=1.15; u.volume=1;
+        if(ttsVoice) u.voice=ttsVoice;
+        TTS.speak(u);
+      }catch(e){}
+    }
     function telDigits(){ return (tI.value||'').replace(/\D/g,''); }
     function telSetDigits(d){
       tI.value=d;
