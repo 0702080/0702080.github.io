@@ -479,7 +479,10 @@
   .qwoRow{display:flex;gap:4px;}
   .qwoRow2{padding:0 5%;}   /* 9칸 줄을 반 칸씩 들여쓰기 */
   #kbdQW button{flex:1 1 0;height:58px;font-size:21px;}
-  #kbdQW .kbVowel{font-size:21px;}
+  /* 자음·모음 글자 크기를 같게 — 아래쪽 공통 규칙(#kbd .kbVowel, 27px)이
+     특정도가 같으면서 더 뒤에 있어 모음만 커져 보였다. #kbd 를 앞에 붙여
+     특정도를 올려서 이 값이 이기게 한다. */
+  #kbd #kbdQW .kbVowel{font-size:21px;}
   #kbdQW .kbFn{font-size:18px;}
   #kbdQW .qwoWide{flex:1.45 1 0;font-size:18px;}
   #kbdQW .qwoNext{flex:3 1 0;}
@@ -626,7 +629,7 @@
     #kbd .kbFn{font-size:15px;}
     #kbdNum button{height:55px;font-size:24px;}
     #kbdQW button{height:47px;font-size:18px;}
-    #kbdQW .kbVowel{font-size:18px;}
+    #kbd #kbdQW .kbVowel{font-size:18px;}
     #kbdQW .kbFn{font-size:15px;}
     #kbdQW .qwoWide{font-size:15px;}
     #kbdQC button{height:46px;}
@@ -822,7 +825,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v222</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v223</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
