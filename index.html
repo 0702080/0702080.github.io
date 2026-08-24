@@ -561,16 +561,16 @@
   #kbdPick button:active{filter:brightness(.92);}
   /* 자음 = 푸른 유리, 모음 = 따뜻한 상아색 유리, 기능키 = 보라 유리 */
   #kbd .kbCons{
-    border:1.5px solid #3f6382;color:#132635;
-    background:linear-gradient(180deg,#eef6fd 0%,#bed5ea 52%,#d6e8f6 84%,#f4faff 100%);
-    box-shadow:0 3px 7px rgba(10,18,30,.42),
-               inset 0 -2px 6px rgba(255,255,255,.9), inset 0 2px 3px rgba(30,60,90,.20);
+    border:1.5px solid #2c4d68;color:#0e1e2b;
+    background:linear-gradient(180deg,#dcecfa 0%,#7fa8cc 52%,#a4c6e2 84%,#e6f3ff 100%);
+    box-shadow:0 3px 8px rgba(10,18,30,.5),
+               inset 0 -2px 7px rgba(255,255,255,.85), inset 0 2px 4px rgba(20,45,72,.28);
   }
   #kbd .kbVowel{
-    border:1.5px solid #8a7345;color:#382b12;font-size:27px;
-    background:linear-gradient(180deg,#fefaee 0%,#ecd9ad 52%,#f6e9c9 84%,#fffcf4 100%);
-    box-shadow:0 3px 7px rgba(10,18,30,.42),
-               inset 0 -2px 6px rgba(255,255,255,.9), inset 0 2px 3px rgba(120,95,45,.20);
+    border:1.5px solid #715a2c;color:#2e2410;font-size:27px;
+    background:linear-gradient(180deg,#fbf3dd 0%,#d9b76a 52%,#e9d2a0 84%,#fdf8ea 100%);
+    box-shadow:0 3px 8px rgba(10,18,30,.5),
+               inset 0 -2px 7px rgba(255,255,255,.85), inset 0 2px 4px rgba(95,74,32,.28);
   }
   #kbd .kbFn{
     border:1.5px solid #493a61;color:#fff;
@@ -598,6 +598,26 @@
   #kbdNum[hidden]{display:none;}
   .numRow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
   #kbdNum button{height:66px;font-size:28px;letter-spacing:2px;}
+  /* 숫자마다 무지개 색을 하나씩 준다 — 자리를 색으로 기억하게 되고,
+     눌린 숫자가 뭔지도 한눈에 보인다. 색만 다를 뿐 유리알 만드는 방식은
+     다른 키와 같다(위는 밝게, 가운데는 진하게, 아래로 다시 밝게). */
+  #kbdNum .kbNum{
+    border:1.5px solid var(--kBd);color:var(--kTx);
+    background:linear-gradient(180deg,var(--kA) 0%,var(--kB) 52%,var(--kC) 84%,var(--kD) 100%);
+    box-shadow:0 3px 7px rgba(10,18,30,.42),
+               inset 0 -2px 6px rgba(255,255,255,.7), inset 0 2px 3px rgba(0,0,0,.20);
+    text-shadow:0 1px 1px rgba(255,255,255,.45);
+  }
+  #kbdNum [data-n="1"]{--kA:#ffdcd8;--kB:#e8564a;--kC:#f08a80;--kD:#ffe9e6;--kBd:#9c2a20;--kTx:#4a1310;}
+  #kbdNum [data-n="2"]{--kA:#ffe6cc;--kB:#ef8a2c;--kC:#f5ac63;--kD:#fff0dd;--kBd:#9c5510;--kTx:#4a2a06;}
+  #kbdNum [data-n="3"]{--kA:#fff0c4;--kB:#eeb01a;--kC:#f4c956;--kD:#fff7dd;--kBd:#94690a;--kTx:#453005;}
+  #kbdNum [data-n="4"]{--kA:#e8f7c8;--kB:#8fc22a;--kC:#b2d962;--kD:#f2fbe0;--kBd:#4f7310;--kTx:#24350a;}
+  #kbdNum [data-n="5"]{--kA:#d5f5e0;--kB:#2fb567;--kC:#66cf92;--kD:#e8fbf0;--kBd:#146b3a;--kTx:#0a331c;}
+  #kbdNum [data-n="6"]{--kA:#d2f5f0;--kB:#22b3a4;--kC:#5ecdc2;--kD:#e6fbf8;--kBd:#0e6b63;--kTx:#06332f;}
+  #kbdNum [data-n="7"]{--kA:#d6effc;--kB:#2ba0d8;--kC:#63c0e8;--kD:#e9f7fe;--kBd:#0d5f83;--kTx:#062c3d;}
+  #kbdNum [data-n="8"]{--kA:#dbe4fb;--kB:#4a6fd8;--kC:#7f9ae8;--kD:#ecf1fe;--kBd:#263f8c;--kTx:#101c40;}
+  #kbdNum [data-n="9"]{--kA:#e2ddfb;--kB:#6f52d6;--kC:#9a85e6;--kD:#f0edfe;--kBd:#3a2884;--kTx:#19113c;}
+  #kbdNum [data-n="0"]{--kA:#fbdcf2;--kB:#cc47a5;--kC:#de7cc2;--kD:#fdecf8;--kBd:#7d2262;--kTx:#39102c;}
   #kbdNum .kbFn{font-size:20px;letter-spacing:0;}
   /* 화면이 아주 짧은 기기에서는 자판을 조금 낮춰 입력판이 위로 잘리지 않게 */
   @media (max-height:620px){
@@ -802,7 +822,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v220</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v221</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1031,24 +1051,24 @@
         같은 아쿠아 모양으로 통일하고, 키도 훨씬 크게 쓴다. -->
    <div id="kbdNum" hidden>
     <div class="numRow">
-      <button type="button" class="kbCons" data-n="1">1</button
-      ><button type="button" class="kbCons" data-n="2">2</button
-      ><button type="button" class="kbCons" data-n="3">3</button>
+      <button type="button" class="kbNum" data-n="1">1</button
+      ><button type="button" class="kbNum" data-n="2">2</button
+      ><button type="button" class="kbNum" data-n="3">3</button>
     </div>
     <div class="numRow">
-      <button type="button" class="kbCons" data-n="4">4</button
-      ><button type="button" class="kbCons" data-n="5">5</button
-      ><button type="button" class="kbCons" data-n="6">6</button>
+      <button type="button" class="kbNum" data-n="4">4</button
+      ><button type="button" class="kbNum" data-n="5">5</button
+      ><button type="button" class="kbNum" data-n="6">6</button>
     </div>
     <div class="numRow">
-      <button type="button" class="kbCons" data-n="7">7</button
-      ><button type="button" class="kbCons" data-n="8">8</button
-      ><button type="button" class="kbCons" data-n="9">9</button>
+      <button type="button" class="kbNum" data-n="7">7</button
+      ><button type="button" class="kbNum" data-n="8">8</button
+      ><button type="button" class="kbNum" data-n="9">9</button>
     </div>
     <div class="numRow">
       <button type="button" class="kbFn kbClear" data-fn="numclear">CLR</button
-      ><button type="button" class="kbCons" data-n="0">0</button
-      ><button type="button" class="kbFn" data-fn="numback">⌫</button>
+      ><button type="button" class="kbNum" data-n="0">0</button
+      ><button type="button" class="kbFn" data-fn="numback">이전</button>
     </div>
    </div>
   </div>
@@ -2900,7 +2920,7 @@
       // 안 오는 경우가 있어서 숫자판이 안 뜨는 일이 있었다.
       if(fn==='next'){ kbKeepOpen(); tI.focus(); kbShow('tel'); return; }
       // ── 전화번호 숫자판 ──
-      if(fn==='numback'){ speak('지움'); telSetDigits(telDigits().slice(0,-1)); return; }
+      if(fn==='numback'){ speak('이전'); telSetDigits(telDigits().slice(0,-1)); return; }
       if(fn==='numclear'){ speak('전체 지움'); telSetDigits(''); return; }
       const nd=b.getAttribute('data-n');
       if(nd){ speak(nd); telSetDigits(telDigits()+nd); return; }
