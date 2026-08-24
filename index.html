@@ -628,14 +628,14 @@
   #kbdNum{display:flex;flex-direction:column;gap:10px;}
   #kbdNum[hidden]{display:none;}
   .numRow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-  #kbdNum button{height:56px;font-size:27px;letter-spacing:2px;}
+  #kbdNum button{height:59px;font-size:27px;letter-spacing:2px;}
   #kbdNum .kbFn{font-size:20px;letter-spacing:0;}
   /* 화면이 아주 짧은 기기에서는 자판을 조금 낮춰 입력판이 위로 잘리지 않게 */
   @media (max-height:620px){
     #kbd button{height:47px;font-size:20px;}
     #kbd .kbVowel{font-size:23px;}
     #kbd .kbFn{font-size:15px;}
-    #kbdNum button{height:47px;font-size:23px;}
+    #kbdNum button{height:50px;font-size:23px;}
     #kbdQW button{height:47px;font-size:18px;}
     #kbdQW .kbVowel{font-size:18px;}
     #kbdQW .kbFn{font-size:15px;}
@@ -833,7 +833,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v215</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v216</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1057,9 +1057,9 @@
     <div class="qwRow">
       <button type="button" class="kbVowel" data-qv="v7"><b>ㅐ</b><i>ㅒ</i></button
       ><button type="button" class="kbVowel" data-qv="v8"><b>ㅔ</b><i>ㅖ</i></button
-      ><button type="button" class="kbFn qwW2" data-fn="back">⌫</button
+      ><button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
       ><button type="button" class="kbFn kbNext qwW2" data-fn="next">다음</button
-      ><button type="button" class="kbFn kbClear" data-fn="clear">CLR</button>
+      ><button type="button" class="kbFn qwW2" data-fn="back">이전</button>
     </div>
    </div>
    <!-- 전화번호용 숫자판. 폰 기본 숫자 키보드 대신 이걸 띄워서 한글 자판과
