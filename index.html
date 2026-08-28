@@ -847,7 +847,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v233</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v234</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2595,10 +2595,10 @@
        복잡해지지 않는다. 성이 한 번에 들어가서 "김" 이 3타에서 1번이 된다. */
     const KB_SURNAME={
       q1:['김','강','고','권','구','곽'],
-      q5:['문','민','명','마','맹','모'],
+      q5:['문','민','명','마','모'],
       q6:['박','배','백','변','방','반'],
       q2:['남','노','나'],
-      q3:['도','동','두','태'],
+      q3:['도','태'],
       q4:['류','라']
     };
     const CJ_HOLD=1200;        // 자음
@@ -2970,7 +2970,14 @@
       e.preventDefault();
       clearTimeout(kbPopTimer); kbPopFired=false; kbPopSetHover(null);
       const b=e.target.closest('button');
-      if(!b || !kbPop.hidden) return;        // 이미 펼쳐져 있으면 고르는 중이다
+      if(!b) return;
+      // 판에 있는 글자를 누르는 중이면 그대로 둔다 — 고르는 참이다
+      if(b.hasAttribute('data-pick')) return;
+      /* 자판 키를 눌렀는데 판이 열려 있다면 앞서 띄워 둔 판이다(손을 떼도
+         남겨 두므로). 닫고 이 키의 차례로 넘어간다 — 예전엔 여기서 그냥
+         돌아가 버려서, ㄱ 을 꾹 눌러 판을 본 뒤에는 ㄴ·ㄷ 를 아무리 꾹
+         눌러도 성씨가 안 나왔다. */
+      if(!kbPop.hidden) kbPopHide();
       const id=b.getAttribute('data-qc')||b.getAttribute('data-qv');
       const list=id ? (CJ_CONS[id]||QW_VOW[id]) : null;
       if(!list) return;
