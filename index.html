@@ -832,7 +832,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v227</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v228</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2561,7 +2561,16 @@
       'ㅣㆍㆍ':'ㅣㆍ', 'ㆍㆍㅣ':'ㆍㅣ', 'ㆍㆍㅡ':'ㆍㅡ', 'ㅡㆍㆍ':'ㅡㆍ',
       'ㅣㆍㆍㅣ':'ㅣㆍㅣ', 'ㆍㆍㅣㅣ':'ㆍㅣㅣ'
     };
-    const CJ_HOLD=800;   // 같은 키를 이어 눌러 글자를 바꿀 수 있는 시간(ms)
+    /* 같은 키를 이어 눌러 글자를 바꿀 수 있는 시간(ms).
+       자음과 모음을 따로 잡는다 — 사정이 다르다.
+       · 모음은 길게 줘도 잃는 게 없다. 한글은 음절 사이에 반드시 자음이
+         끼므로("아아" 도 ㅇㅏㅇㅏ) 같은 모음 키를 잇따라 누르는 건 사실상
+         "차례를 넘기려는 것" 뿐이다. 게다가 다른 키를 누르면 그 순간
+         차례가 끝나므로, 시간이 길다고 걸리적거릴 일이 없다.
+       · 자음은 받침 뒤에 같은 자음이 오는 말이 있어서("박기" 의 ㄱㄱ)
+         너무 길면 그게 된소리로 바뀌어 버린다. 그래서 덜 늘렸다. */
+    const CJ_HOLD=1200;        // 자음
+    const CJ_HOLD_VOWEL=1600;  // 모음
 
     let kbBase='', kbCho=-1, kbJung=-1, kbJong=0;
     let kbVowSeq='';                       // 지금 만들고 있는 모음의 ㅣㆍㅡ 조각들
@@ -2705,7 +2714,7 @@
     function kbVCycStop(){ if(kbVCycTimer){ clearTimeout(kbVCycTimer); kbVCycTimer=null; } kbVCycKey=null; }
     function kbVCycArm(){
       if(kbVCycTimer) clearTimeout(kbVCycTimer);
-      kbVCycTimer=setTimeout(()=>{ kbVCycTimer=null; kbVCycKey=null; }, CJ_HOLD);
+      kbVCycTimer=setTimeout(()=>{ kbVCycTimer=null; kbVCycKey=null; }, CJ_HOLD_VOWEL);
     }
     function kbQwVowel(keyId){
       kbSync();
