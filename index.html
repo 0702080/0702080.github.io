@@ -832,7 +832,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v226</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v227</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1037,8 +1037,8 @@
       ><button type="button" class="kbCons" data-qc="q3"><b>ㄷ</b><i>ㄸㅌ</i></button
       ><button type="button" class="kbCons" data-qc="q4"><b>ㄹ</b></button
       ><button type="button" class="kbVowel" data-qv="v1"><b>ㅣ</b></button
-      ><button type="button" class="kbVowel" data-qv="v3"><b>ㅓ</b><i>ㅕㅔㅖ</i></button
-      ><button type="button" class="kbVowel" data-qv="v2"><b>ㅏ</b><i>ㅑㅐㅒ</i></button>
+      ><button type="button" class="kbVowel" data-qv="v3"><b>ㅓ</b><i>ㅔㅕㅖ</i></button
+      ><button type="button" class="kbVowel" data-qv="v2"><b>ㅏ</b><i>ㅐㅑㅒ</i></button>
     </div>
     <div class="qwRow">
       <button type="button" class="kbCons" data-qc="q5"><b>ㅁ</b></button
@@ -2529,12 +2529,13 @@
       q5:['ㅁ'],          q6:['ㅂ','ㅃ','ㅍ'],
       q7:['ㅅ','ㅈ','ㅊ','ㅆ','ㅉ'],           q8:['ㅇ','ㅎ']
     };
-    /* 두벌식C 모음 — 거듭 누르면 다음 모음이 된다(ㅗ→ㅛ, ㅏ→ㅑ→ㅐ→ㅒ).
-       ㅐ·ㅔ 는 따로 키도 있지만 ㅏ·ㅓ 키에서도 이어서 나오게 해 뒀다 —
-       손을 아래줄까지 옮기지 않고 "개·세" 같은 흔한 이름을 칠 수 있다.
+    /* 두벌식C 모음 — 거듭 누르면 다음 모음이 된다(ㅗ→ㅛ, ㅏ→ㅐ→ㅑ→ㅒ).
+       ㅐ·ㅔ 는 따로 키도 있지만 ㅏ·ㅓ 키에서 두 번째로도 나오게 해 뒀다 —
+       이름에는 ㅑ·ㅕ 보다 ㅐ·ㅔ 가 훨씬 자주 나오므로(재·세·태·혜) 두 번
+       만에 닿게 한 것이다. 손을 아래줄 ㅐ·ㅔ 키로 옮겨도 물론 된다.
        겹모음 합치기(ㅗ+ㅏ=ㅘ)는 다른 키를 눌렀을 때 그대로 동작한다. */
     const QW_VOW={
-      v1:['ㅣ'], v2:['ㅏ','ㅑ','ㅐ','ㅒ'], v3:['ㅓ','ㅕ','ㅔ','ㅖ'], v4:['ㅗ','ㅛ'],
+      v1:['ㅣ'], v2:['ㅏ','ㅐ','ㅑ','ㅒ'], v3:['ㅓ','ㅔ','ㅕ','ㅖ'], v4:['ㅗ','ㅛ'],
       v5:['ㅜ','ㅠ'], v6:['ㅡ'], v7:['ㅐ','ㅒ'], v8:['ㅔ','ㅖ']
     };
     /* 지울 때 되돌릴 짝 — 거듭 눌러 바뀐 모음은 한 단계만 되돌린다
