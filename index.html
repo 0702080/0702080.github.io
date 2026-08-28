@@ -832,7 +832,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v230</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v232</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2596,6 +2596,7 @@
     function kbRender(){
       nI.value=kbBase+kbComposed();
       nI.dispatchEvent(new Event('input',{bubbles:true}));
+      if(kbTarget==='name') nameSaySoon();   // 손을 멈추면 읽어준다
     }
     function kbFlush(){ kbBase+=kbComposed(); kbCho=-1; kbJung=-1; kbJong=0; kbVowSeq=''; }
     function kbResetFrom(v){ kbBase=v||''; kbCho=-1; kbJung=-1; kbJong=0; kbVowSeq=''; kbCycStop(); }
@@ -2611,10 +2612,17 @@
       // 같은 키를 이어 눌렀으면 그 자리에서 다음 글자로 바꾼다
       if(kbCycKey===keyId && kbCycPos){
         const list = kbCycPos==='jong' ? cyc.filter(j=>JONG.indexOf(j)>0) : cyc;
-        kbCycStep=(kbCycStep+1)%list.length;
-        const j=list[kbCycStep];
-        if(kbCycPos==='cho') kbCho=CHO.indexOf(j); else kbJong=JONG.indexOf(j);
-        kbCycArm(); kbRender(); return;
+        /* 글자가 하나뿐인 키(ㄴ·ㄹ·ㅁ)는 거듭 눌러도 바뀔 게 없다. 그런 키를
+           또 눌렀다면 "김민" 의 ㅁㅁ, "한나" 의 ㄴㄴ 처럼 받침을 놓고 다음
+           글자를 치려는 것이다. 아래로 내려보내 새 글자로 받는다.
+           이 갈래가 없을 때는 두 번째 타건이 삼켜져 "기민"·"하나" 가 됐다. */
+        if(list.length>1){
+          kbCycStep=(kbCycStep+1)%list.length;
+          const j=list[kbCycStep];
+          if(kbCycPos==='cho') kbCho=CHO.indexOf(j); else kbJong=JONG.indexOf(j);
+          kbCycArm(); kbRender(); return;
+        }
+        kbCycStop();
       }
       const j=cyc[0];
       if(kbJung<0 && kbVowSeq) kbVowSeq='';   // 덜 만든 모음 조각은 버린다
@@ -2945,10 +2953,10 @@
       const fn=b.getAttribute('data-fn');
       if(fn==='shift'){ kbShift=!kbShift; kbPaintShift(); return; }
       if(fn==='back'){ kbBack(); return; }
-      if(fn==='clear'){ kbResetFrom(''); kbRender(); return; }
+      if(fn==='clear'){ kbResetFrom(''); kbRender(); nameSayReset(''); return; }
       // 숫자판으로 이어진다. focus() 만 믿지 않고 직접 띄운다 — 포커스 이벤트가
       // 안 오는 경우가 있어서 숫자판이 안 뜨는 일이 있었다.
-      if(fn==='next'){ kbKeepOpen(); tI.focus(); kbShow('tel'); return; }
+      if(fn==='next'){ nameSayNow(true); kbKeepOpen(); tI.focus(); kbShow('tel'); return; }
       // ── 전화번호 숫자판 ──
       if(fn==='numback'){ speak('이전'); telSetDigits(telDigits().slice(0,-1)); return; }
       if(fn==='numclear'){ speak('전체 지움'); telSetDigits(''); return; }
@@ -3002,12 +3010,42 @@
         TTS.speak(u);
       }catch(e){}
     }
+
+    /* ── 이름 읽어주기 ──
+       촬영 현장에서는 찍히는 사람 얼굴을 보면서 이름을 치게 된다. 화면을
+       안 봐도 맞게 들어갔는지 귀로 확인할 수 있게, 다 친 이름을 읽어준다.
+       숫자판이 숫자를 읽어주는 것과 같은 결이다.
+
+       타건이 멈춘 뒤에 읽는다. 한 글자씩 읽으면 같은 키를 거듭 눌러 글자를
+       바꾸는 동안(ㅅ→ㅈ→ㅊ) 아직 확정도 안 된 글자를 계속 읽어대서
+       시끄럽다. 그래서 차례가 살아 있는 동안에는 읽지 않고 짧게 되물으며
+       기다린다 — 차례가 끝나자마자 읽으므로 늦어져도 0.25초 안쪽이다. */
+    const NAME_SAY_WAIT=800;    // 손을 뗀 뒤 이만큼 조용하면 읽는다
+    const NAME_SAY_RETRY=250;   // 아직 차례가 살아 있을 때 되물어보는 간격
+    let nameSayTimer=null, nameSaid='';
+    function nameSaySoon(ms){
+      clearTimeout(nameSayTimer);
+      nameSayTimer=setTimeout(nameSayNow, ms||NAME_SAY_WAIT);
+    }
+    /* 읽어준 말을 기억해 두고 같은 말을 두 번 읽지 않는다. 새 사람으로
+       넘어가거나 이미 적힌 이름에 포커스가 갔을 때는 이걸 지금 값으로
+       맞춰 둬서, 치지도 않은 이름을 읽지 않게 한다. */
+    function nameSayReset(v){ clearTimeout(nameSayTimer); nameSayTimer=null; nameSaid=v||''; }
+    /* force: "다음" 을 누른 때처럼 더 기다릴 까닭이 없을 때. 이름을 다
+       썼다는 뜻이므로 차례가 살아 있어도 화면에 보이는 그대로 읽는다. */
+    function nameSayNow(force){
+      clearTimeout(nameSayTimer); nameSayTimer=null;
+      if(!force && (kbCycKey || kbVCycKey)){ nameSaySoon(NAME_SAY_RETRY); return; }  // 아직 바뀌는 중
+      const cur=(nI.value||'').trim();
+      if(!cur || cur===nameSaid) return;
+      nameSaid=cur; speak(cur);
+    }
     function telDigits(){ return (tI.value||'').replace(/\D/g,''); }
     function telSetDigits(d){
       tI.value=d;
       tI.dispatchEvent(new Event('input',{bubbles:true}));
     }
-    nI.addEventListener('focus', ()=>{ kbKeepOpen(); kbResetFrom(nI.value); kbShow('name'); });
+    nI.addEventListener('focus', ()=>{ kbKeepOpen(); kbResetFrom(nI.value); nameSayReset(nI.value); kbShow('name'); });
     nI.addEventListener('blur', kbHideSoon);
     tI.addEventListener('focus', ()=>{ kbKeepOpen(); kbShow('tel'); });
     tI.addEventListener('blur', kbHideSoon);
