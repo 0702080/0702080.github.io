@@ -847,7 +847,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v234</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v235</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2599,7 +2599,13 @@
       q6:['박','배','백','변','방','반'],
       q2:['남','노','나'],
       q3:['도','태'],
-      q4:['류','라']
+      q4:['류','라'],
+      /* ㅅ 키에는 ㅈ·ㅊ 이, ㅇ 키에는 ㅎ 이 함께 들어 있어서 성씨가 유난히
+         많다. 한 줄에 여섯 칸이 한계(320px 폰 기준)라 인구가 많은 순으로
+         여섯씩만 뒀다. 빠진 것들도 다 흔한 성이라 자리를 바꿔 달라면
+         바꾸면 된다 — ㅅ: 송 전 손 심 성 차, ㅇ: 안 유 홍 양 허 하 */
+      q7:['최','정','조','장','신','서'],
+      q8:['이','윤','임','오','한','황']
     };
     const CJ_HOLD=1200;        // 자음
     const CJ_HOLD_VOWEL=1600;  // 모음
