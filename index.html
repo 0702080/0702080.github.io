@@ -832,7 +832,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v229</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v230</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1036,7 +1036,7 @@
       ><button type="button" class="kbCons" data-qc="q2"><b>ㄴ</b></button
       ><button type="button" class="kbCons" data-qc="q3"><b>ㄷ</b><i>ㄸㅌ</i></button
       ><button type="button" class="kbCons" data-qc="q4"><b>ㄹ</b></button
-      ><button type="button" class="kbVowel" data-qv="v1"><b>ㅣ</b></button
+      ><button type="button" class="kbVowel" data-qv="v1"><b>ㅣ</b><i>ㅡ</i></button
       ><button type="button" class="kbVowel" data-qv="v3"><b>ㅓ</b><i>ㅔㅕㅖ</i></button
       ><button type="button" class="kbVowel" data-qv="v2"><b>ㅏ</b><i>ㅐㅑㅒ</i></button>
     </div>
@@ -2533,11 +2533,13 @@
        ㅐ·ㅔ 는 따로 키도 있지만 ㅏ·ㅓ 키에서 두 번째로도 나오게 해 뒀다 —
        이름에는 ㅑ·ㅕ 보다 ㅐ·ㅔ 가 훨씬 자주 나오므로(재·세·태·혜) 두 번
        만에 닿게 한 것이다. 손을 아래줄 ㅐ·ㅔ 키로 옮겨도 물론 된다.
-       ㅗ 키도 마찬가지로 ㅗ→ㅛ→ㅜ→ㅠ 넉 자를 다 낸다. ㅜ 전용 키는 그대로
-       두었으니 손을 옮기든 그 자리에서 더 누르든 둘 다 된다.
+       ㅗ 키도 마찬가지로 ㅗ→ㅛ→ㅜ→ㅠ 넉 자를, ㅣ 키는 ㅣ→ㅡ 를 낸다.
+       ㅜ·ㅡ 전용 키는 그대로 두었으니 손을 옮기든 그 자리에서 더 누르든
+       둘 다 된다. 다만 "의" 처럼 ㅡ 와 ㅣ 를 잇대는 글자는 ㅡ 전용 키를
+       써야 한다 — ㅣ 를 세 번 누르면 합쳐지지 않고 차례가 ㅣ 로 돌아온다.
        겹모음 합치기(ㅗ+ㅏ=ㅘ)는 다른 키를 눌렀을 때 그대로 동작한다. */
     const QW_VOW={
-      v1:['ㅣ'], v2:['ㅏ','ㅐ','ㅑ','ㅒ'], v3:['ㅓ','ㅔ','ㅕ','ㅖ'],
+      v1:['ㅣ','ㅡ'], v2:['ㅏ','ㅐ','ㅑ','ㅒ'], v3:['ㅓ','ㅔ','ㅕ','ㅖ'],
       v4:['ㅗ','ㅛ','ㅜ','ㅠ'],
       v5:['ㅜ','ㅠ'], v6:['ㅡ'], v7:['ㅐ','ㅒ'], v8:['ㅔ','ㅖ']
     };
