@@ -513,7 +513,9 @@
   }
   /* 성씨는 통글자라 자모와 다른 것임이 한눈에 보여야 한다 — 같은 아쿠아
      결을 지키되 색만 녹색으로 나눈다. */
-  #kbPop .kbPickSur{
+  /* 클래스를 둘 겹쳐 특정도를 올린다 — 이 규칙이 아래쪽 .kbPick(호박색)보다
+     앞줄에 있어서, 특정도가 같을 때는 뒤가 이겨 성씨까지 호박색이 됐다. */
+  #kbPop .kbPick.kbPickSur{
     border:1.5px solid #1f5c39;color:#07200f;
     background:linear-gradient(180deg,#d3f3df 0%,#57b47d 52%,#8ed0a9 84%,#e4f8ec 100%);
     box-shadow:0 3px 7px rgba(10,18,30,.5),
@@ -850,7 +852,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v236</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v237</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2929,11 +2931,9 @@
            자판 폭에서 먼저 구한다. 그 수에 맞춰 접히고, 폭도 거기에 맞춘다. */
         const room=kbd.clientWidth-8-extra0;
         const fit=Math.max(1, Math.floor((room+gap)/(cell.offsetWidth+gap)));
-        /* 줄 수를 먼저 정하고 고르게 나눈다 — 들어가는 대로 채우면 열두 개가
-           "일곱 / 다섯" 으로 갈려 어긋나 보인다. 두 줄이면 여섯씩이 낫다. */
-        const surN=(sur||[]).length;
-        const surCols = surN ? Math.ceil(surN/Math.ceil(surN/fit)) : 0;
-        const cols=Math.min(fit, Math.max(surCols, list.length));
+        /* 한 줄을 끝까지 채운다. 줄 수를 맞춰 고르게 나눠 봤더니 ㄱ 이
+           "김강고권 / 구곽공길" 넉 칸으로 좁아져 오른쪽이 휑하게 남았다. */
+        const cols=Math.min(fit, Math.max((sur||[]).length, list.length));
         const inner=cols*cell.offsetWidth + (cols-1)*gap;
         // width 가 테두리·안쪽여백까지 포함하는 셈법이면 그만큼 더해 준다.
         // 안 더하면 칸 하나가 밀려나 "김강고권구 / 곽" 처럼 한 줄 더 접힌다.
@@ -2946,7 +2946,19 @@
       let left=kr.left-pr.left+kr.width/2-pw/2;
       left=Math.max(4, Math.min(left, pr.width-pw-4));
       kbPop.style.left=left+'px';
-      kbPop.style.top=(kr.top-pr.top-kbPop.offsetHeight-8)+'px';
+      /* 세로 자리 — 원래는 누른 키 바로 위. 다만 판이 세 줄까지 커지면서
+         위쪽 입력판(다시찍기·저장)을 덮는 일이 생겼다. 그럴 땐 입력판
+         아래로 내린다.
+         내리더라도 판 아래끝은 짚고 있는 손가락보다 넉넉히 위여야 한다.
+         손가락 자리까지 내려오면 고르는 자리로 쳐서, 끌지 않고 그냥 떼도
+         글자가 들어가 버린다(짧은 화면에서 "ㄱ" 이 저절로 찍혔다). */
+      const ph=kbPop.offsetHeight;
+      const keyTop=kr.top-pr.top, keyMid=keyTop+kr.height/2;
+      const eb=$('edBottom').getBoundingClientRect();
+      const below=eb.bottom-pr.top+6;                 // 입력판 바로 아래
+      let top=keyTop-ph-8;
+      if(top<below) top=Math.min(below, keyMid-ph-12); // 손가락 위로 12px 여유
+      kbPop.style.top=top+'px';
     }
     // 자판을 눌러도 이름 칸의 포커스가 풀리지 않게 한다(풀리면 자판이 닫힌다)
     /* 손가락이 짚은 글자를 찾는다. 정확히 그 위가 아니어도, 판보다 위로
