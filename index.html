@@ -507,12 +507,15 @@
   #kbd #kbPop button{width:50px;height:58px;font-size:26px;transition:transform .08s ease;}
   /* 성씨 줄과 자모 줄 사이를 강제로 끊는다. 폭에 맡겨 두면 "도 동 두 태 ㄷ ㄸ /
      ㅌ" 처럼 두 무리가 섞여 접힌다. */
-  #kbPop .kbPopBreak{flex-basis:100%;height:0;padding:0;margin:0;border:0;background:none;}
+  #kbPop .kbPopBreak{
+    flex-basis:100%;height:1px;padding:0;margin:1px 0;border:0;
+    background:rgba(255,255,255,.22);
+  }
   /* 성씨는 통글자라 자모와 다른 것임이 한눈에 보여야 한다 — 같은 아쿠아
      결을 지키되 색만 녹색으로 나눈다. */
   #kbPop .kbPickSur{
-    border:1.5px solid #2f6b46;color:#0d2a1a;
-    background:linear-gradient(180deg,#ddf6e7 0%,#79c294 52%,#a3daba 84%,#e9faf0 100%);
+    border:1.5px solid #1f5c39;color:#07200f;
+    background:linear-gradient(180deg,#d3f3df 0%,#57b47d 52%,#8ed0a9 84%,#e4f8ec 100%);
     box-shadow:0 3px 7px rgba(10,18,30,.5),
                inset 0 -2px 6px rgba(255,255,255,.85), inset 0 2px 3px rgba(25,80,50,.22);
   }
@@ -847,7 +850,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v235</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v236</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2594,18 +2597,17 @@
        글자부터는 지금까지처럼 자모만 나온다 — 늘 붙어 있지 않으니 화면이
        복잡해지지 않는다. 성이 한 번에 들어가서 "김" 이 3타에서 1번이 된다. */
     const KB_SURNAME={
-      q1:['김','강','고','권','구','곽'],
+      q1:['김','강','고','권','구','곽','공','길'],
       q5:['문','민','명','마','모'],
-      q6:['박','배','백','변','방','반'],
+      q6:['박','배','백','변','방','반','표'],
       q2:['남','노','나'],
       q3:['도','태'],
       q4:['류','라'],
-      /* ㅅ 키에는 ㅈ·ㅊ 이, ㅇ 키에는 ㅎ 이 함께 들어 있어서 성씨가 유난히
-         많다. 한 줄에 여섯 칸이 한계(320px 폰 기준)라 인구가 많은 순으로
-         여섯씩만 뒀다. 빠진 것들도 다 흔한 성이라 자리를 바꿔 달라면
-         바꾸면 된다 — ㅅ: 송 전 손 심 성 차, ㅇ: 안 유 홍 양 허 하 */
-      q7:['최','정','조','장','신','서'],
-      q8:['이','윤','임','오','한','황']
+      /* ㅅ 키에는 ㅈ·ㅊ 이, ㅇ 키에는 ㅎ 이 함께 들어 있어 성씨가 유난히
+         많다. 판이 여러 줄로 접히므로 흔한 성은 다 넣었다. 인구가 많은
+         순이라 왼쪽 위가 손가락에서 가깝다. */
+      q7:['최','정','조','장','신','서','송','전','손','심','성','차'],
+      q8:['이','윤','임','오','한','황','안','유','홍','양','허','하']
     };
     const CJ_HOLD=1200;        // 자음
     const CJ_HOLD_VOWEL=1600;  // 모음
@@ -2870,8 +2872,12 @@
       kbApplyMode();
       const eb=$('edBottom');
       if(kbTarget){
-        eb.style.top='auto';
-        eb.style.bottom=(kbd.offsetHeight+22)+'px';   // 입력판과 자판 사이 여백
+        /* 자판이 떠 있는 동안은 화면 맨 위로 올린다. 자판 바로 위에 두면
+           성씨 판이 두세 줄로 커졌을 때 입력칸을 덮어 버려서, 무엇을 치고
+           있는지 안 보인다. 위로 올려 두면 가운데가 통째로 비어 판이
+           아무리 커져도 이름·전화번호가 늘 보인다. */
+        eb.style.top='calc(env(safe-area-inset-top) + 10px)';
+        eb.style.bottom='auto';
         eb.style.transform='translateX(-50%)';
       }else{
         eb.style.top=''; eb.style.bottom=''; eb.style.transform='';
@@ -2913,18 +2919,25 @@
       /* 두 줄 중 긴 쪽에 맞춰 폭을 못박는다. 안 그러면 절대위치 상자가 남은
          자리를 다 차지해서(가로 접기라 최대폭이 한 줄 기준으로 잡힌다) 판이
          내용보다 넓어지고 오른쪽이 휑하게 빈다. */
-      const cols=Math.max((sur||[]).length, list.length);
       const cell=kbPop.querySelector('button');
       if(cell){
         const cst=getComputedStyle(kbPop);
         const gap=parseFloat(cst.columnGap||cst.gap)||6;
+        const extra0=(parseFloat(cst.paddingLeft)||0)+(parseFloat(cst.paddingRight)||0)
+                    +(parseFloat(cst.borderLeftWidth)||0)+(parseFloat(cst.borderRightWidth)||0);
+        /* 성씨가 열 개를 넘는 키(ㅅ·ㅇ)가 있으므로 한 줄에 몇 칸이 들어가는지
+           자판 폭에서 먼저 구한다. 그 수에 맞춰 접히고, 폭도 거기에 맞춘다. */
+        const room=kbd.clientWidth-8-extra0;
+        const fit=Math.max(1, Math.floor((room+gap)/(cell.offsetWidth+gap)));
+        /* 줄 수를 먼저 정하고 고르게 나눈다 — 들어가는 대로 채우면 열두 개가
+           "일곱 / 다섯" 으로 갈려 어긋나 보인다. 두 줄이면 여섯씩이 낫다. */
+        const surN=(sur||[]).length;
+        const surCols = surN ? Math.ceil(surN/Math.ceil(surN/fit)) : 0;
+        const cols=Math.min(fit, Math.max(surCols, list.length));
         const inner=cols*cell.offsetWidth + (cols-1)*gap;
         // width 가 테두리·안쪽여백까지 포함하는 셈법이면 그만큼 더해 준다.
-        // 안 더하면 칸 하나가 밀려나 "김강고권구 / 곽" 처럼 세 줄이 됐다.
-        const extra = cst.boxSizing==='border-box'
-          ? (parseFloat(cst.paddingLeft)||0)+(parseFloat(cst.paddingRight)||0)
-            +(parseFloat(cst.borderLeftWidth)||0)+(parseFloat(cst.borderRightWidth)||0)
-          : 0;
+        // 안 더하면 칸 하나가 밀려나 "김강고권구 / 곽" 처럼 한 줄 더 접힌다.
+        const extra = cst.boxSizing==='border-box' ? extra0 : 0;
         kbPop.style.width=(inner+extra+1)+'px';   // 반올림 여유 1px
       }
       // 눌린 키 바로 위에, 자판 폭을 벗어나지 않게 놓는다
