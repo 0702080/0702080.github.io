@@ -526,9 +526,10 @@
   }
   #kbdQC b{font-size:27px;font-weight:800;}
   /* 거듭 눌러 나오는 글자는 작게 — 키가 뭘 낼 수 있는지 한눈에 보인다.
-     ㅅ 처럼 네 글자까지 붙는 키가 있어 자간은 두지 않는다. */
+     ㅅ 키는 네 글자(ㅈㅊㅆㅉ)가 붙어서 320px 폰에서는 키 폭과 딱 맞아
+     떨어졌다. 자간을 살짝 좁혀 여유를 둔다 — 11px 글자라 티가 안 난다. */
   #kbdQC i{font-style:normal;font-size:11px;font-weight:700;
-           opacity:.58;margin-top:4px;letter-spacing:0;
+           opacity:.58;margin-top:4px;letter-spacing:-.4px;
            max-width:100%;overflow:hidden;}
   #kbdQC .kbFn{font-size:19px;}
   #kbdQC .qwW2{grid-column:span 2;}
@@ -640,6 +641,11 @@
     .qwRow,.qwoRow{gap:4px;}
     #kbd{gap:5px;}
     .kbRow{gap:5px;}
+  }
+  /* 폭이 좁은 폰에서는 ㅅ 키의 작은 글자 넉 자(ㅈㅊㅆㅉ)가 키보다 넓어져
+     끝의 ㅉ 이 잘렸다(320px 에서 42.4px vs 키 안쪽 38px). 좁을 때만 줄인다. */
+  @media (max-width:374px){
+    #kbdQC i{font-size:9px;}
   }
 
   /* ── 촬영 멘트 모음 (전체 보기) ── */
@@ -826,7 +832,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v225</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v226</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1031,13 +1037,13 @@
       ><button type="button" class="kbCons" data-qc="q3"><b>ㄷ</b><i>ㄸㅌ</i></button
       ><button type="button" class="kbCons" data-qc="q4"><b>ㄹ</b></button
       ><button type="button" class="kbVowel" data-qv="v1"><b>ㅣ</b></button
-      ><button type="button" class="kbVowel" data-qv="v3"><b>ㅓ</b><i>ㅕㅖ</i></button
-      ><button type="button" class="kbVowel" data-qv="v2"><b>ㅏ</b><i>ㅑㅒ</i></button>
+      ><button type="button" class="kbVowel" data-qv="v3"><b>ㅓ</b><i>ㅕㅔㅖ</i></button
+      ><button type="button" class="kbVowel" data-qv="v2"><b>ㅏ</b><i>ㅑㅐㅒ</i></button>
     </div>
     <div class="qwRow">
       <button type="button" class="kbCons" data-qc="q5"><b>ㅁ</b></button
       ><button type="button" class="kbCons" data-qc="q6"><b>ㅂ</b><i>ㅃㅍ</i></button
-      ><button type="button" class="kbCons" data-qc="q7"><b>ㅅ</b><i>ㅆㅈㅉㅊ</i></button
+      ><button type="button" class="kbCons" data-qc="q7"><b>ㅅ</b><i>ㅈㅊㅆㅉ</i></button
       ><button type="button" class="kbCons" data-qc="q8"><b>ㅇ</b><i>ㅎ</i></button
       ><button type="button" class="kbVowel" data-qv="v4"><b>ㅗ</b><i>ㅛ</i></button
       ><button type="button" class="kbVowel" data-qv="v5"><b>ㅜ</b><i>ㅠ</i></button
@@ -2515,17 +2521,20 @@
       k1:['ㄱ','ㅋ','ㄲ'], k2:['ㄴ','ㄹ'],     k3:['ㄷ','ㅌ','ㄸ'],
       k4:['ㅂ','ㅍ','ㅃ'], k5:['ㅅ','ㅎ','ㅆ'], k6:['ㅈ','ㅊ','ㅉ'],
       k7:['ㅇ','ㅁ'],
-      /* 두벌식(가나다 배열)용 자음 — 같은 키를 거듭 누르면
-         본소리 → 된소리 → 거센소리 순으로 바뀐다. 같은 자리 바꾸기
-         처리를 천지인과 그대로 함께 쓴다. */
+      /* 두벌식(가나다 배열)용 자음 — 같은 키를 거듭 누르면 다음 글자로
+         바뀐다. 차례는 "이름에 자주 나오는 것부터" 로 잡았다. ㅅ 키가
+         ㅅ→ㅈ→ㅊ→ㅆ→ㅉ 인 것도 그래서다(ㅆ·ㅉ 은 이름에 거의 안 쓰여
+         맨 뒤로 뺐다). 같은 자리 바꾸기 처리는 천지인과 함께 쓴다. */
       q1:['ㄱ','ㄲ','ㅋ'], q2:['ㄴ'],          q3:['ㄷ','ㄸ','ㅌ'], q4:['ㄹ'],
       q5:['ㅁ'],          q6:['ㅂ','ㅃ','ㅍ'],
-      q7:['ㅅ','ㅆ','ㅈ','ㅉ','ㅊ'],           q8:['ㅇ','ㅎ']
+      q7:['ㅅ','ㅈ','ㅊ','ㅆ','ㅉ'],           q8:['ㅇ','ㅎ']
     };
-    /* 두벌식C 모음 — 거듭 누르면 겹모음이 된다(ㅗ→ㅛ, ㅏ→ㅑ→ㅒ …).
+    /* 두벌식C 모음 — 거듭 누르면 다음 모음이 된다(ㅗ→ㅛ, ㅏ→ㅑ→ㅐ→ㅒ).
+       ㅐ·ㅔ 는 따로 키도 있지만 ㅏ·ㅓ 키에서도 이어서 나오게 해 뒀다 —
+       손을 아래줄까지 옮기지 않고 "개·세" 같은 흔한 이름을 칠 수 있다.
        겹모음 합치기(ㅗ+ㅏ=ㅘ)는 다른 키를 눌렀을 때 그대로 동작한다. */
     const QW_VOW={
-      v1:['ㅣ'], v2:['ㅏ','ㅑ','ㅒ'], v3:['ㅓ','ㅕ','ㅖ'], v4:['ㅗ','ㅛ'],
+      v1:['ㅣ'], v2:['ㅏ','ㅑ','ㅐ','ㅒ'], v3:['ㅓ','ㅕ','ㅔ','ㅖ'], v4:['ㅗ','ㅛ'],
       v5:['ㅜ','ㅠ'], v6:['ㅡ'], v7:['ㅐ','ㅒ'], v8:['ㅔ','ㅖ']
     };
     /* 지울 때 되돌릴 짝 — 거듭 눌러 바뀐 모음은 한 단계만 되돌린다
