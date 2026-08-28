@@ -475,8 +475,8 @@
   #kbd button:active::before{opacity:.3;}
   /* 줄 사이 여백은 자판 묶음(#kbdCJ/#kbdQW)이 직접 준다 — #kbd 의 gap 은
      두 자판 묶음 사이에만 적용돼서, 줄과 줄 사이는 붙어버렸었다. */
-  #kbdCJ,#kbdQW,#kbdQC{display:flex;flex-direction:column;gap:10px;}
-  #kbdCJ[hidden],#kbdQW[hidden],#kbdQC[hidden]{display:none;}
+  #kbdCJ,#kbdQW,#kbdQC,#kbdFK{display:flex;flex-direction:column;gap:10px;}
+  #kbdCJ[hidden],#kbdQW[hidden],#kbdQC[hidden],#kbdFK[hidden]{display:none;}
   /* 원래 두벌식 — 한 줄 10칸이라 그리드 대신 flex 로 깔고, 줄마다 칸 수가
      달라도 각 줄이 폭을 꽉 채우게 둔다. */
   .qwoRow{display:flex;gap:4px;}
@@ -554,6 +554,32 @@
   #kbdQC i{font-style:normal;font-size:11px;font-weight:700;
            opacity:.58;margin-top:4px;letter-spacing:-.4px;
            max-width:100%;overflow:hidden;}
+  /* ── 플릭 자판 ──
+     배치·글자는 두벌식C 와 똑같이 두고, 고르는 방법만 "밀기" 로 바꾼다.
+     가운데 큰 글자가 그냥 톡 눌렀을 때 나오는 것이고, 가장자리 작은
+     글자가 그쪽으로 밀었을 때 나오는 것이다. */
+  #kbdFK button{
+    position:relative;min-width:0;height:70px;
+    display:flex;align-items:center;justify-content:center;line-height:1;
+  }
+  #kbdFK b{font-size:27px;font-weight:800;}
+  #kbdFK i{
+    position:absolute;font-style:normal;font-size:11px;font-weight:700;
+    opacity:.5;line-height:1;pointer-events:none;
+    transition:opacity .08s ease, transform .08s ease;
+  }
+  #kbdFK i.fu{top:4px;left:50%;transform:translateX(-50%);}
+  #kbdFK i.fd{bottom:4px;left:50%;transform:translateX(-50%);}
+  #kbdFK i.fl{left:4px;top:50%;transform:translateY(-50%);}
+  #kbdFK i.fr{right:4px;top:50%;transform:translateY(-50%);}
+  /* 지금 그쪽으로 밀고 있다 — 그 글자만 도드라지게 */
+  #kbdFK i.hot{opacity:1;font-size:17px;color:#0b3f36;}
+  #kbdFK i.fu.hot{transform:translateX(-50%) scale(1.12);}
+  #kbdFK i.fd.hot{transform:translateX(-50%) scale(1.12);}
+  #kbdFK i.fl.hot,#kbdFK i.fr.hot{transform:translateY(-50%) scale(1.12);}
+  #kbdFK button.fkOn{box-shadow:0 0 0 3px #17a08f, 0 4px 10px rgba(0,0,0,.5);}
+  #kbdFK .kbFn{font-size:19px;}
+  #kbdFK .qwW2{grid-column:span 2;}
   #kbdQC .kbFn{font-size:19px;}
   #kbdQC .qwW2{grid-column:span 2;}
   #kbdQC .qwW3{grid-column:span 3;}
@@ -562,14 +588,16 @@
   /* 자판 고르기와 이름 칸 사이는 넉넉히 띄운다 — 판의 기본 간격 9px 에
      27px 를 더해 36px(원래의 4배). 자판 종류를 고르는 줄과 실제로 적는
      줄이 확실히 구분된다. */
-  #kbdPick{display:flex;gap:10px;justify-content:center;margin-bottom:27px;}
+  /* 넷이 되면서 한 줄에 안 들어가 접히므로 틈과 안쪽 여백을 줄였다 */
+  #kbdPick{display:flex;gap:6px;justify-content:center;margin-bottom:27px;}
   #kbdPick button{
     position:relative;isolation:isolate;
-    flex:0 0 auto;padding:11px 26px;border-radius:999px;cursor:pointer;
+    flex:0 0 auto;padding:11px 14px;border-radius:999px;cursor:pointer;
     border:1.5px solid rgba(255,255,255,.30);
     background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.05));
     color:#e9e2f3;
-    font-family:inherit;font-size:16px;font-weight:800;letter-spacing:1px;
+    font-family:inherit;font-size:15px;font-weight:800;letter-spacing:0;
+    white-space:nowrap;
     box-shadow:0 2px 6px rgba(0,0,0,.30), inset 0 1px 1px rgba(255,255,255,.25);
   }
   #kbdPick button::before{
@@ -661,6 +689,11 @@
     #kbdQC b{font-size:20px;}
     #kbdQC i{font-size:10px;margin-top:1px;}
     #kbdQC .kbFn{font-size:16px;}
+    #kbdFK button{height:46px;}
+    #kbdFK b{font-size:20px;}
+    #kbdFK i{font-size:10px;}
+    #kbdFK i.hot{font-size:14px;}
+    #kbdFK .kbFn{font-size:16px;}
     .qwRow,.qwoRow{gap:4px;}
     #kbd{gap:5px;}
     .kbRow{gap:5px;}
@@ -855,7 +888,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v238</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v239</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -931,7 +964,8 @@
     <div id="kbdPick">
       <button type="button" data-kb="cj">천지인</button
       ><button type="button" data-kb="qw">두벌식</button
-      ><button type="button" data-kb="qc">두벌식C</button>
+      ><button type="button" data-kb="qc">두벌식C</button
+      ><button type="button" data-kb="fk">플릭</button>
     </div>
     <div class="row">
       <div id="edNameWrap">
@@ -1080,6 +1114,38 @@
       ><button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
       ><button type="button" class="kbFn kbNext qwW2" data-fn="next">다음</button
       ><button type="button" class="kbFn qwW2" data-fn="back">이전</button>
+    </div>
+   </div>
+   <div id="kbdFK" hidden>
+    <!-- 두벌식C 와 배치·글자가 같다. 다른 건 고르는 방법뿐 —
+         그냥 톡 누르면 가운데 큰 글자, 누른 채 그쪽으로 살짝 밀면
+         가장자리 작은 글자가 들어간다. 기다릴 것도, 몇 번 눌렀는지
+         셀 것도 없다. 미는 차례는 두벌식C 의 누르는 차례와 같게
+         맞췄다(위 → 왼쪽 → 오른쪽 → 아래). -->
+    <div class="qwRow">
+      <button type="button" class="kbCons" data-fc="q1"><i class="fu">ㄲ</i><i class="fl">ㅋ</i><b>ㄱ</b></button>
+      <button type="button" class="kbCons" data-fc="q2"><b>ㄴ</b></button>
+      <button type="button" class="kbCons" data-fc="q3"><i class="fu">ㄸ</i><i class="fl">ㅌ</i><b>ㄷ</b></button>
+      <button type="button" class="kbCons" data-fc="q4"><b>ㄹ</b></button>
+      <button type="button" class="kbVowel" data-fv="v1"><i class="fu">ㅡ</i><b>ㅣ</b></button>
+      <button type="button" class="kbVowel" data-fv="v3"><i class="fu">ㅔ</i><i class="fl">ㅕ</i><i class="fr">ㅖ</i><b>ㅓ</b></button>
+      <button type="button" class="kbVowel" data-fv="v2"><i class="fu">ㅐ</i><i class="fl">ㅑ</i><i class="fr">ㅒ</i><b>ㅏ</b></button>
+    </div>
+    <div class="qwRow">
+      <button type="button" class="kbCons" data-fc="q5"><b>ㅁ</b></button>
+      <button type="button" class="kbCons" data-fc="q6"><i class="fu">ㅃ</i><i class="fl">ㅍ</i><b>ㅂ</b></button>
+      <button type="button" class="kbCons" data-fc="q7"><i class="fu">ㅈ</i><i class="fl">ㅊ</i><i class="fr">ㅆ</i><i class="fd">ㅉ</i><b>ㅅ</b></button>
+      <button type="button" class="kbCons" data-fc="q8"><i class="fu">ㅎ</i><b>ㅇ</b></button>
+      <button type="button" class="kbVowel" data-fv="v4"><i class="fu">ㅛ</i><i class="fl">ㅜ</i><i class="fr">ㅠ</i><b>ㅗ</b></button>
+      <button type="button" class="kbVowel" data-fv="v5"><i class="fu">ㅠ</i><b>ㅜ</b></button>
+      <button type="button" class="kbVowel" data-fv="v6"><b>ㅡ</b></button>
+    </div>
+    <div class="qwRow">
+      <button type="button" class="kbVowel" data-fv="v7"><i class="fu">ㅒ</i><b>ㅐ</b></button>
+      <button type="button" class="kbVowel" data-fv="v8"><i class="fu">ㅖ</i><b>ㅔ</b></button>
+      <button type="button" class="kbFn kbClear" data-fn="clear">CLR</button>
+      <button type="button" class="kbFn kbNext qwW2" data-fn="next">다음</button>
+      <button type="button" class="kbFn qwW2" data-fn="back">이전</button>
     </div>
    </div>
    <!-- 전화번호용 숫자판. 폰 기본 숫자 키보드 대신 이걸 띄워서 한글 자판과
@@ -2830,7 +2896,7 @@
     /* ── 자판 고르기(천지인 / 두벌식) ──
        고른 값은 기억해 둔다. 바꿀 때는 조립 중이던 글자를 확정해서 두
        방식의 상태가 섞이지 않게 한다. */
-    let kbMode = (data.kbMode==='qw' || data.kbMode==='qc') ? data.kbMode : 'cj';
+    let kbMode = (data.kbMode==='qw' || data.kbMode==='qc' || data.kbMode==='fk') ? data.kbMode : 'cj';
     /* 원래 두벌식에만 있는 ⇧ — 한 글자만 적용되고 바로 풀린다 */
     let kbShift=false;
     function kbPaintShift(){
@@ -2849,6 +2915,7 @@
       $('kbdCJ').hidden = !(nameOn && kbMode==='cj');
       $('kbdQW').hidden = !(nameOn && kbMode==='qw');
       $('kbdQC').hidden = !(nameOn && kbMode==='qc');
+      $('kbdFK').hidden = !(nameOn && kbMode==='fk');
       $('kbdNum').hidden = kbTarget!=='tel';
       $('kbdPick').querySelectorAll('button').forEach(b=>{
         b.classList.toggle('on', b.getAttribute('data-kb')===kbMode);
@@ -2999,6 +3066,39 @@
       if(ch>='가' && ch<='힣'){ kbSync(); kbFlush(); kbBase+=ch; kbRender(); }
       else kbJamo(ch);
     }
+    /* ── 플릭(밀어서 고르기) ──
+       키를 누른 채 살짝 밀면 그 방향의 글자가 들어간다. 안 밀고 떼면
+       가운데 글자다. 기다림도 셈도 없어 이름 치기가 한결 빠르다.
+       방향은 그 키의 글자 차례와 같게 맞췄다 —
+         0 톡 · 1 위 · 2 왼쪽 · 3 오른쪽 · 4 아래
+       두벌식C 에서 두 번 눌러 나오던 글자가 플릭에선 "위" 다. */
+    const FK_MIN=14;            // 이만큼(px) 밀어야 방향으로 친다
+    let fkBtn=null, fkList=null, fkX=0, fkY=0, fkDirNow=0;
+    function fkDirOf(dx,dy){
+      if(Math.abs(dx)<FK_MIN && Math.abs(dy)<FK_MIN) return 0;
+      if(Math.abs(dy)>=Math.abs(dx)) return dy<0 ? 1 : 4;
+      return dx<0 ? 2 : 3;
+    }
+    // 지금 짚고 있는 방향의 글자를 도드라지게
+    function fkPaint(d){
+      if(!fkBtn) return;
+      fkDirNow=d;
+      const cls=[null,'fu','fl','fr','fd'][d];
+      fkBtn.querySelectorAll('i').forEach(i=>i.classList.remove('hot'));
+      if(cls){ const el=fkBtn.querySelector('i.'+cls); if(el) el.classList.add('hot'); }
+      fkBtn.classList.toggle('fkOn', d>0);
+    }
+    function fkEnd(commit){
+      if(!fkBtn) return;
+      const b=fkBtn, list=fkList, d=fkDirNow;
+      fkBtn=null; fkList=null; fkDirNow=0;
+      b.querySelectorAll('i').forEach(i=>i.classList.remove('hot'));
+      b.classList.remove('fkOn');
+      if(!commit) return;
+      // 그쪽에 글자가 없으면 가운데 글자로 쳐준다 — 손이 살짝 미끄러진 것뿐이다
+      const ch = list[d] || list[0];
+      kbCycStop(); kbVCycStop(); kbJamo(ch);
+    }
     function kbPopSetHover(el){
       if(el===kbPopHover) return;
       if(kbPopHover) kbPopHover.classList.remove('hot');
@@ -3012,12 +3112,21 @@
       if(!b) return;
       // 판에 있는 글자를 누르는 중이면 그대로 둔다 — 고르는 참이다
       if(b.hasAttribute('data-pick')) return;
+      /* 플릭 자판이면 여기서 시작점을 잡아 둔다. 꾹 눌러 성씨 보기는
+         그대로 살려 둔다 — 가만히 누르면 성씨 판, 밀면 플릭이라 서로
+         부딪히지 않는다. */
+      const fid=b.getAttribute('data-fc')||b.getAttribute('data-fv');
+      if(fid){
+        fkBtn=b; fkList=CJ_CONS[fid]||QW_VOW[fid]||[]; fkX=e.clientX; fkY=e.clientY; fkDirNow=0;
+        try{ b.setPointerCapture(e.pointerId); }catch(err){}
+      }
       /* 자판 키를 눌렀는데 판이 열려 있다면 앞서 띄워 둔 판이다(손을 떼도
          남겨 두므로). 닫고 이 키의 차례로 넘어간다 — 예전엔 여기서 그냥
          돌아가 버려서, ㄱ 을 꾹 눌러 판을 본 뒤에는 ㄴ·ㄷ 를 아무리 꾹
          눌러도 성씨가 안 나왔다. */
       if(!kbPop.hidden) kbPopHide();
-      const id=b.getAttribute('data-qc')||b.getAttribute('data-qv');
+      const id=b.getAttribute('data-qc')||b.getAttribute('data-qv')
+               ||b.getAttribute('data-fc')||b.getAttribute('data-fv');
       const list=id ? (CJ_CONS[id]||QW_VOW[id]) : null;
       if(!list) return;
       // 성씨는 이름 칸이 아직 비었을 때만 — 곧 성을 치려는 참이라는 뜻이다
@@ -3032,11 +3141,22 @@
     /* 판이 펼쳐진 뒤 손가락을 떼지 않고 그대로 끌면, 지금 짚고 있는 글자가
        도드라진다. 손가락을 붙잡아 둔 상태라 좌표로 무엇을 짚었는지 찾는다. */
     kbd.addEventListener('pointermove', e=>{
+      if(fkBtn && kbPop.hidden){
+        const d=fkDirOf(e.clientX-fkX, e.clientY-fkY);
+        // 방향을 잡은 순간부터는 꾹 누르기(성씨 판)를 취소한다 — 미는 중이다
+        if(d>0) clearTimeout(kbPopTimer);
+        if(d!==fkDirNow) fkPaint(d);
+      }
       if(e.pointerId!==kbPopPtrId || kbPop.hidden) return;
       kbPopSetHover(kbPopOptionAt(e.clientX, e.clientY));
     });
     kbd.addEventListener('pointerup', e=>{
       clearTimeout(kbPopTimer);
+      if(fkBtn){
+        // 성씨 판이 떠 있으면 그쪽이 임자다 — 플릭은 없던 일로
+        if(!kbPop.hidden){ fkEnd(false); }
+        else{ fkPaint(fkDirOf(e.clientX-fkX, e.clientY-fkY)); fkEnd(true); kbPopFired=true; }
+      }
       if(e.pointerId!==kbPopPtrId) return;
       kbPopPtrId=null;
       // 뗀 자리를 한 번 더 확인한다 — 끌던 도중 pointermove 가 끊겨도
@@ -3053,6 +3173,7 @@
     });
     kbd.addEventListener('pointercancel', e=>{
       clearTimeout(kbPopTimer);
+      fkEnd(false);
       if(e.pointerId===kbPopPtrId){ kbPopPtrId=null; kbPopSetHover(null); }
     });
     kbd.addEventListener('click', e=>{
