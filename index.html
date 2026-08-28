@@ -335,8 +335,11 @@
   /* 여러 장을 골랐다가 마음이 바뀌었을 때, 남은 사진을 하나씩 넘기지 않고
      한 번에 전부 취소하고 처음 화면으로 돌아가는 버튼(썸네일 삭제 버튼과
      같은 자리·모양) */
+  /* 입력판(#edBottom, z-index 2)보다 반드시 위에 그려야 한다. 둘 다 2 였을
+     때는 뒤에 놓인 입력판이 이겨서, 입력판을 화면 위로 올린 순간 ✕ 가
+     그 밑으로 들어가 사라져 버렸다. */
   #edCancelBtn{
-    position:absolute;top:max(16px,env(safe-area-inset-top));right:16px;z-index:2;
+    position:absolute;top:max(16px,env(safe-area-inset-top));right:16px;z-index:4;
     width:44px;height:44px;border-radius:50%;border:none;
     background:rgba(0,0,0,.55);color:#fff;font-size:20px;
     display:flex;align-items:center;justify-content:center;
@@ -852,7 +855,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v237</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v238</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2872,7 +2875,7 @@
       kbd.hidden = !kbTarget;
       if(!kbTarget){ kbCycStop(); kbVCycStop(); kbPopHide(); if(kbShift){ kbShift=false; kbPaintShift(); } }
       kbApplyMode();
-      const eb=$('edBottom');
+      const eb=$('edBottom'), cb=$('edCancelBtn');
       if(kbTarget){
         /* 자판이 떠 있는 동안은 화면 맨 위로 올린다. 자판 바로 위에 두면
            성씨 판이 두세 줄로 커졌을 때 입력칸을 덮어 버려서, 무엇을 치고
@@ -2881,8 +2884,13 @@
         eb.style.top='calc(env(safe-area-inset-top) + 10px)';
         eb.style.bottom='auto';
         eb.style.transform='translateX(-50%)';
+        /* ✕ 는 원래 화면 오른쪽 위에 있는데, 입력판이 그 자리로 올라오면서
+           가로로 겹친다(입력판이 화면 폭의 94%). 입력판 바로 밑으로 내려
+           둔다 — 가운데가 비어 있으니 가릴 것도 없다. */
+        cb.style.top=(eb.getBoundingClientRect().bottom+10)+'px';
       }else{
         eb.style.top=''; eb.style.bottom=''; eb.style.transform='';
+        cb.style.top='';
       }
     }
     /* 이름→전화번호로 넘어갈 때 잠깐 둘 다 포커스가 없는 순간이 생긴다.
