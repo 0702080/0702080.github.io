@@ -683,14 +683,20 @@
     background:rgba(20,15,25,.72);backdrop-filter:blur(2px);
   }
   #readyModal.on{display:block;}
+  /* 판 전체가 아니라 목록만 스크롤한다 — 항목을 열 개, 스무 개 넣어도
+     "추가" 칸과 아래 버튼이 늘 제자리에 보여서 계속 이어 넣을 수 있다. */
   #readyModalInner{
     position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    width:min(92%,480px);max-height:82vh;overflow-y:auto;
+    width:min(92%,480px);max-height:82vh;overflow:hidden;
+    display:flex;flex-direction:column;
     background:#FFF9F1;border-radius:20px;padding:22px 20px;color:#3E3348;
     box-shadow:0 12px 30px rgba(0,0,0,.4);
+  }
+  #readyList{
+    flex:1;min-height:0;overflow-y:auto;
     scrollbar-width:none;-ms-overflow-style:none;
   }
-  #readyModalInner::-webkit-scrollbar{display:none;}
+  #readyList::-webkit-scrollbar{display:none;}
   #readyModalInner h2{font-size:18px;margin:0 0 12px;text-align:center;}
   #readyAddRow{display:flex;gap:8px;margin-bottom:14px;}
   #readyNewInput{
@@ -707,10 +713,28 @@
     border-bottom:1px solid rgba(97,72,120,.12);
   }
   .readyRow:active{background:rgba(97,72,120,.10);}
-  .readyBox{font-size:22px;line-height:1;flex-shrink:0;color:#614878;}
+  /* 네모와 V 를 글꼴에 기대지 않고 직접 그린다. ☐·☑ 문자는 폰마다
+     모양이 제각각이라(그냥 네모로만 보이는 기기도 있다) 체크했는지가
+     한눈에 안 들어왔다. */
+  .readyBox{
+    position:relative;flex-shrink:0;box-sizing:border-box;
+    width:26px;height:26px;border-radius:7px;
+    border:2.5px solid #a495b5;background:#fff;
+  }
+  .readyRow.done .readyBox{background:#0f7b6c;border-color:#0f7b6c;}
+  .readyRow.done .readyBox::after{
+    content:'';position:absolute;left:8px;top:3px;width:6px;height:13px;
+    border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg);
+  }
   .readyText{flex:1;font-size:16px;line-height:1.35;}
-  /* 다 한 항목은 줄을 긋고 흐리게 — 남은 게 뭔지 한눈에 보인다 */
-  .readyRow.done .readyText{text-decoration:line-through;opacity:.45;}
+  /* 다 한 항목은 가로줄을 찍 긋는다 — 줄이 흐려지면 그은 티가 안 나므로
+     글자만 옅게 하고 줄은 진하게 남긴다 */
+  .readyRow.done .readyText{
+    color:#8a8194;
+    text-decoration:line-through;
+    -webkit-text-decoration-color:#0f7b6c;text-decoration-color:#0f7b6c;
+    text-decoration-thickness:2.5px;
+  }
   .readyDel{color:#a08fae;font-size:20px;line-height:1;padding:2px 8px;flex-shrink:0;}
   #readyEmpty{text-align:center;color:#8c7f99;padding:18px 0;font-size:15px;}
   #readyFoot{display:flex;gap:8px;margin-top:16px;}
@@ -903,7 +927,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v241</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v242</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -3394,7 +3418,7 @@
     if(!data.ready.length){ box.innerHTML='<div id="readyEmpty">아래에서 준비할 것을 추가해보세요</div>'; readyBadge(); return; }
     box.innerHTML=data.ready.map((it,i)=>
       '<div class="readyRow'+(it.done?' done':'')+'" data-i="'+i+'">'+
-        '<span class="readyBox">'+(it.done?'☑':'☐')+'</span>'+
+        '<span class="readyBox"></span>'+
         '<span class="readyText">'+escHtml(it.t)+'</span>'+
         '<span class="readyDel" data-del="'+i+'">×</span>'+
       '</div>').join('');
