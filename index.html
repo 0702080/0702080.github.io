@@ -234,12 +234,13 @@
     text-shadow:none;
   }
 
-  #tvRow{display:grid;grid-template-columns:1fr;gap:12px;}
+  #tvRow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   #tvRow>button{width:auto;min-width:0;}
 
   /* "카메라로 찍기" 바로 밑에 뜨는 멘트 한 줄 — 탭하면 다른 멘트로 바뀐다 */
+  /* 위 "카메라로 찍기" 와 붙어 있어 잘못 눌리던 것 — 30px 더 내렸다 */
   #mentLine{
-    display:block;width:100%;margin-top:8px;font-size:20px;font-weight:700;color:#614878;
+    display:block;width:100%;margin-top:38px;font-size:20px;font-weight:700;color:#614878;
     font-family:inherit;background:none;border:none;appearance:none;-webkit-appearance:none;
     text-align:center;cursor:pointer;padding:4px 10px;line-height:1.4;
     user-select:none;-webkit-user-select:none;
@@ -672,6 +673,53 @@
   }
 
   /* ── 촬영 멘트 모음 (전체 보기) ── */
+  /* ── 촬영 준비 체크 ── 멘트 모음과 같은 모양새로 맞춘다 */
+  #readyBadge{
+    margin-left:6px;font-size:12px;font-weight:800;opacity:.85;
+    font-variant-numeric:tabular-nums;
+  }
+  #readyModal{
+    position:fixed;inset:0;z-index:70;display:none;
+    background:rgba(20,15,25,.72);backdrop-filter:blur(2px);
+  }
+  #readyModal.on{display:block;}
+  #readyModalInner{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:min(92%,480px);max-height:82vh;overflow-y:auto;
+    background:#FFF9F1;border-radius:20px;padding:22px 20px;color:#3E3348;
+    box-shadow:0 12px 30px rgba(0,0,0,.4);
+    scrollbar-width:none;-ms-overflow-style:none;
+  }
+  #readyModalInner::-webkit-scrollbar{display:none;}
+  #readyModalInner h2{font-size:18px;margin:0 0 12px;text-align:center;}
+  #readyAddRow{display:flex;gap:8px;margin-bottom:14px;}
+  #readyNewInput{
+    flex:1;min-width:0;padding:10px 12px;border-radius:10px;
+    border:1px solid #d8cfc0;font-size:15px;font-family:inherit;
+  }
+  #readyAddBtn{
+    padding:10px 16px;border-radius:10px;border:none;
+    background:#614878;color:#fff;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;
+  }
+  .readyRow{
+    display:flex;align-items:center;gap:10px;
+    padding:11px 8px;border-radius:12px;cursor:pointer;
+    border-bottom:1px solid rgba(97,72,120,.12);
+  }
+  .readyRow:active{background:rgba(97,72,120,.10);}
+  .readyBox{font-size:22px;line-height:1;flex-shrink:0;color:#614878;}
+  .readyText{flex:1;font-size:16px;line-height:1.35;}
+  /* 다 한 항목은 줄을 긋고 흐리게 — 남은 게 뭔지 한눈에 보인다 */
+  .readyRow.done .readyText{text-decoration:line-through;opacity:.45;}
+  .readyDel{color:#a08fae;font-size:20px;line-height:1;padding:2px 8px;flex-shrink:0;}
+  #readyEmpty{text-align:center;color:#8c7f99;padding:18px 0;font-size:15px;}
+  #readyFoot{display:flex;gap:8px;margin-top:16px;}
+  #readyFoot button{
+    flex:1;padding:12px;border-radius:12px;border:none;
+    font-family:inherit;font-size:16px;font-weight:800;cursor:pointer;
+  }
+  #readyReset{background:#efe6f5;color:#614878;}
+  #readyClose{background:#614878;color:#fff;}
   #mentModal{
     position:fixed;inset:0;z-index:70;display:none;
     background:rgba(20,15,25,.72);backdrop-filter:blur(2px);
@@ -855,11 +903,12 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v240</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v241</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
-    <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button>
+    <button class="sub enter" id="bTvLink" style="animation-delay:.04s"><span class="ico">📺</span>태블릿</button
+    ><button class="sub enter" id="bReady" style="animation-delay:.07s"><span class="ico">✅</span>촬영준비<span id="readyBadge"></span></button>
   </div>
 
   <div id="quickGrid">
@@ -890,6 +939,22 @@
   </div>
 
   <div id="homeLog" class="hint"></div>
+</div>
+
+<!-- 촬영 준비 체크 (Todo) -->
+<div id="readyModal">
+  <div id="readyModalInner">
+    <h2>✅ 촬영 준비 체크</h2>
+    <div id="readyAddRow">
+      <input id="readyNewInput" type="text" placeholder="준비할 것 추가" maxlength="30" autocomplete="off" enterkeyhint="done">
+      <button id="readyAddBtn" type="button">추가</button>
+    </div>
+    <div id="readyList"></div>
+    <div id="readyFoot">
+      <button id="readyReset" type="button">전체 해제</button>
+      <button id="readyClose" type="button">닫기</button>
+    </div>
+  </div>
 </div>
 
 <!-- 촬영 멘트 모음 (전체 보기) -->
@@ -3290,12 +3355,19 @@
   function mentFlat(){ return data.ment.flatMap(g=>g.items); }
   let MENT_FLAT=mentFlat();
   let lastMentIdx=-1;
+  /* 누를 때마다 글자색이 둘 사이를 오간다 — 멘트가 바뀐 걸 글자를 다 읽지
+     않고도 알아챌 수 있다(비슷한 길이의 문구면 안 바뀐 줄 알기 쉽다). */
+  const MENT_COLORS=['#614878','#0f7b6c'];
+  let mentColorAlt=0;
   function showNewMent(){
-    if(!MENT_FLAT.length){ $('mentLine').textContent='💬 멘트를 추가해보세요'; return; }
+    const el=$('mentLine');
+    el.style.color=MENT_COLORS[mentColorAlt];
+    mentColorAlt=1-mentColorAlt;
+    if(!MENT_FLAT.length){ el.textContent='💬 멘트를 추가해보세요'; return; }
     let i;
     do{ i=Math.floor(Math.random()*MENT_FLAT.length); }while(i===lastMentIdx && MENT_FLAT.length>1);
     lastMentIdx=i;
-    $('mentLine').textContent='💬 '+MENT_FLAT[i];
+    el.textContent='💬 '+MENT_FLAT[i];
   }
   showNewMent();
   $('mentLine').onclick=showNewMent;
@@ -3303,6 +3375,55 @@
   function escHtml(s){
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+
+  /* ── 촬영 준비 체크 ──
+     찍기 전에 챙길 것들. 항목은 마음대로 더하고 지울 수 있고, 체크한
+     상태도 저장된다. 다음 촬영 때는 "전체 해제" 한 번이면 다시 시작. */
+  const READY_DEFAULT=['손거울 준비','손거울 닦이','스마트폰 배터리 잔량 체크'];
+  if(!Array.isArray(data.ready)){
+    data.ready=READY_DEFAULT.map(t=>({t:t,done:false}));
+    save();
+  }
+  function readyBadge(){
+    const n=data.ready.length, d=data.ready.filter(x=>x.done).length;
+    // 항목이 없으면 숫자를 안 붙인다. 다 했으면 체크만 보여 준다.
+    $('readyBadge').textContent = !n ? '' : (d===n ? ' ✓' : ' '+d+'/'+n);
+  }
+  function readyRender(){
+    const box=$('readyList');
+    if(!data.ready.length){ box.innerHTML='<div id="readyEmpty">아래에서 준비할 것을 추가해보세요</div>'; readyBadge(); return; }
+    box.innerHTML=data.ready.map((it,i)=>
+      '<div class="readyRow'+(it.done?' done':'')+'" data-i="'+i+'">'+
+        '<span class="readyBox">'+(it.done?'☑':'☐')+'</span>'+
+        '<span class="readyText">'+escHtml(it.t)+'</span>'+
+        '<span class="readyDel" data-del="'+i+'">×</span>'+
+      '</div>').join('');
+    readyBadge();
+  }
+  readyRender();
+  $('bReady').onclick=()=>{ readyRender(); $('readyModal').classList.add('on'); };
+  $('readyClose').onclick=()=>$('readyModal').classList.remove('on');
+  // 판 바깥(어두운 곳)을 눌러도 닫힌다
+  $('readyModal').onclick=e=>{ if(e.target===$('readyModal')) $('readyModal').classList.remove('on'); };
+  $('readyReset').onclick=()=>{ data.ready.forEach(x=>x.done=false); save(); readyRender(); };
+  $('readyList').onclick=e=>{
+    const del=e.target.getAttribute && e.target.getAttribute('data-del');
+    if(del!==null && del!==undefined && del!==''){
+      data.ready.splice(+del,1); save(); readyRender(); return;   // 지우기가 먼저 — 체크로 새지 않게
+    }
+    const row=e.target.closest && e.target.closest('.readyRow');
+    if(!row) return;
+    const i=+row.getAttribute('data-i');
+    data.ready[i].done=!data.ready[i].done; save(); readyRender();
+  };
+  function readyAdd(){
+    const inp=$('readyNewInput'), t=(inp.value||'').trim();
+    if(!t) return;
+    data.ready.push({t:t,done:false}); save();
+    inp.value=''; readyRender(); inp.focus();
+  }
+  $('readyAddBtn').onclick=readyAdd;
+  $('readyNewInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); readyAdd(); } });
   // 화면을 최대한 간단하게: 입력칸 하나 + 추가 버튼 하나, 각 멘트 옆에 삭제(×) 하나뿐.
   function renderMentList(){
     $('mentList').innerHTML=data.ment.map((g,gi)=>
