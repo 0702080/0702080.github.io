@@ -923,7 +923,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v243</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v244</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2699,8 +2699,36 @@
       q7:['최','정','조','장','신','서','송','전','손','심','성','차'],
       q8:['이','윤','임','오','한','황','안','유','홍','양','허','하']
     };
-    const CJ_HOLD=1200;        // 자음
-    const CJ_HOLD_VOWEL=1600;  // 모음
+    /* 자음은 자리에 따라 다르게 준다.
+       · 첫소리 자리는 넉넉히(2.5초). 이름에 흔한 ㅎ·ㅈ·ㅊ·태·표 가 다
+         여기서 거듭 눌러 나온다("혜" 의 ㅎ 은 ㅇ 을 두 번). 1.2초로는
+         한 박자만 늦어도 끊겼다.
+       · 받침 자리는 짧게(1.2초). 여기만 "박기" 처럼 받침 뒤에 같은 자음이
+         오는 말이 걸린다 — 길게 주면 그 ㄱ 이 ㄲ 으로 바뀌어 버린다.
+         반대로 받침을 된소리·거센소리로 바꿀 일은 이름엔 거의 없다. */
+    const CJ_HOLD=2500;        // 자음 — 넉넉한 쪽
+    const CJ_HOLD_JONG=1200;   // 자음 — 받침에서 부딪히는 키만
+
+    /* 받침 자리에서는 이 글자들로 안 바꾼다 — 이름의 받침으로 쓰이지
+       않기 때문이다("밖·부엌·밭·앞" 같은 낱말에나 나온다). 빼고 나면
+       ㄱ·ㄷ·ㅂ 키는 받침 자리에서 바꿀 게 없어져서, "박기·백건" 처럼
+       받침 뒤에 같은 자음이 오는 이름을 시간에 쫓기지 않고 칠 수 있다.
+       ㅎ 은 남긴다 — "지혜·은혜" 는 받침 ㅇ 을 ㅎ 으로 바꿔야 나온다. */
+    const JONG_NOCYC='ㄲㅋㄸㅌㅃㅍㅆ';
+
+    /* 받침 자리에서 시간을 짧게 봐야 하는 키 — 그 키의 첫 글자가 이름에
+       흔한 받침일 때다. 받침 ㅇ 뒤에 또 ㅇ 을 누르면("성은") 새 글자를
+       치려는 것이지 ㅎ 으로 바꾸려는 게 아닐 때가 많아서 빨리 끊어야 한다.
+       반대로 받침 ㅅ 은 이름에 안 쓰이므로 ("혜진" 의 ㅅ 은 ㅈ 으로 가려는
+       것이 분명하다) 넉넉히 줘도 헷갈릴 일이 없다. */
+    const JONG_TIGHT='ㄱㄴㄹㅁㅂㅇ';
+    /* 모음은 5초. 1.6초로는 짧았다 — "성혜진" 의 ㅖ 는 ㅓ 키를 네 번
+       눌러야 하는데, 찍히는 분과 이야기하다 한 박자 늦으면 차례가 끊겨
+       ㅕ 에서 멈춰 버렸다. 모음은 길게 줘도 잃는 게 없다: 한글은 음절
+       사이에 반드시 자음이 끼므로("아아" 도 ㅇㅏㅇㅏ) 같은 모음 키를
+       잇따라 누르는 건 언제나 "차례를 넘기려는 것" 이고, 다른 키를 누르면
+       그 자리에서 바로 끝난다. */
+    const CJ_HOLD_VOWEL=5000;  // 모음
 
     let kbBase='', kbCho=-1, kbJung=-1, kbJong=0;
     let kbVowSeq='';                       // 지금 만들고 있는 모음의 ㅣㆍㅡ 조각들
@@ -2708,7 +2736,10 @@
     function kbCycStop(){ if(kbCycTimer){ clearTimeout(kbCycTimer); kbCycTimer=null; } kbCycKey=null; kbCycPos=null; }
     function kbCycArm(){
       if(kbCycTimer) clearTimeout(kbCycTimer);
-      kbCycTimer=setTimeout(()=>{ kbCycTimer=null; kbCycKey=null; kbCycPos=null; }, CJ_HOLD);
+      const base = kbCycKey ? (CJ_CONS[kbCycKey]||[])[0] : '';
+      const tight = kbCycPos==='jong' && JONG_TIGHT.indexOf(base)>=0;
+      kbCycTimer=setTimeout(()=>{ kbCycTimer=null; kbCycKey=null; kbCycPos=null; },
+                            tight ? CJ_HOLD_JONG : CJ_HOLD);
     }
     // 아직 모음이 안 된 조각(ㆍ, ㆍㆍ)은 그대로 보여줘서 눌린 게 보이게 한다
     function kbPending(){ return (kbJung<0 && kbVowSeq && !CJ_VOW[kbVowSeq]) ? kbVowSeq : ''; }
@@ -2736,7 +2767,9 @@
       if(!cyc) return;
       // 같은 키를 이어 눌렀으면 그 자리에서 다음 글자로 바꾼다
       if(kbCycKey===keyId && kbCycPos){
-        const list = kbCycPos==='jong' ? cyc.filter(j=>JONG.indexOf(j)>0) : cyc;
+        const list = kbCycPos==='jong'
+          ? cyc.filter((j,ix)=> ix===0 || (JONG.indexOf(j)>0 && JONG_NOCYC.indexOf(j)<0))
+          : cyc;
         /* 글자가 하나뿐인 키(ㄴ·ㄹ·ㅁ)는 거듭 눌러도 바뀔 게 없다. 그런 키를
            또 눌렀다면 "김민" 의 ㅁㅁ, "한나" 의 ㄴㄴ 처럼 받침을 놓고 다음
            글자를 치려는 것이다. 아래로 내려보내 새 글자로 받는다.
@@ -2917,8 +2950,10 @@
        방식의 상태가 섞이지 않게 한다. */
     /* 잠깐 있다 없앤 플릭('fk')을 골라 둔 채로 저장된 사람이 있을 수 있다.
        그냥 두면 천지인으로 튀어 어리둥절하므로, 배치가 같았던 두벌식C 로 보낸다. */
-    let kbMode = data.kbMode==='fk' ? 'qc'
-               : (data.kbMode==='qw' || data.kbMode==='qc') ? data.kbMode : 'cj';
+    /* 앱을 열 때는 늘 천지인으로 시작한다. 여럿이 돌려 쓰는 폰이라
+       앞사람이 바꿔 둔 자판이 그대로 나오면 헷갈린다. 다른 자판을 고르면
+       그 자리에서 바뀌고, 앱을 다시 열 때 천지인으로 돌아온다. */
+    let kbMode = 'cj';
     /* 원래 두벌식에만 있는 ⇧ — 한 글자만 적용되고 바로 풀린다 */
     let kbShift=false;
     function kbPaintShift(){
