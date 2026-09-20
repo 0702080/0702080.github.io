@@ -173,6 +173,14 @@ mark{background:color-mix(in srgb,var(--accent) 28%,transparent); color:inherit;
   border:1px solid var(--line); font-weight:500;
 }
 .settings .row small{color:var(--ink-2); font-size:12px; font-weight:400}
+#libReport{
+  margin:10px 0 4px; padding:11px 13px; border-radius:10px;
+  background:var(--surface-2); border:1px solid var(--line);
+  font-size:13px; line-height:1.65; word-break:break-all;
+}
+#libReport.bad{border-color:#c9603f; color:#c9603f}
+#libReport b{color:var(--ink)}
+#libReport.bad b{color:#c9603f}
 .fineprint{margin-top:22px; font-size:12px; line-height:1.7; color:var(--ink-2)}
 
 /* ── 곡 상세 ──────────────────────────── */

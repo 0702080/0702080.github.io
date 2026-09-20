@@ -86,10 +86,12 @@
       </label>
       <div class="row">
         <span>내 악보 불러오기<br>
-          <small>고른 이미지는 이 기기에만 저장됩니다</small></span>
-        <input type="file" id="libPick" accept="image/*" multiple hidden>
-        <button class="chip" id="libBtn">이미지 고르기</button>
+          <small>ZIP 또는 이미지. 이 기기에만 저장됩니다</small></span>
+        <input type="file" id="libPick" multiple hidden
+               accept=".zip,application/zip,image/*">
+        <button class="chip" id="libBtn">파일 고르기</button>
       </div>
+      <div id="libReport" hidden></div>
       <div class="row stat"><span>이 기기에 저장된 악보</span><b id="libCount">0곡</b></div>
       <div class="row stat"><span>등록된 곡</span><b id="statCount">–</b></div>
       <div class="row stat"><span>오프라인 저장</span><b id="statCache">확인 중…</b></div>

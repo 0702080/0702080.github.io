@@ -2,7 +2,7 @@
 'use strict';
 
 // 폰이 옛 캐시를 물고 있는지 설정 화면에서 바로 확인할 수 있도록 남긴다.
-const APP_VERSION = '2026-09-19 d';
+const APP_VERSION = '2026-09-21 ZIP';
 const DATA_URL = 'data/hymns.json';
 const SAMPLE_URL = 'data/hymns.sample.json';
 const LS = 'hymnapp.v1';
@@ -91,6 +91,72 @@ async function libClearAll() {
   os.clear();
   await done(os.transaction);
   db.close();
+}
+
+/* ── ZIP 풀기 ───────────────────────────
+   카톡·드라이브로 사진을 옮기면 파일 이름이 바뀌어 번호를 잃는다.
+   ZIP 안에서는 원래 이름이 보존되므로 압축 파일째 받아서 직접 푼다.
+   (라이브러리 없이 브라우저 기본 기능만 사용) */
+const MIME = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+  gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp'
+};
+
+function mimeOf(name) {
+  return MIME[(name.split('.').pop() || '').toLowerCase()] || 'application/octet-stream';
+}
+
+async function readZip(file) {
+  const buf = await file.arrayBuffer();
+  const dv = new DataView(buf);
+  const u8 = new Uint8Array(buf);
+
+  let eocd = -1;
+  const floor = Math.max(0, buf.byteLength - 22 - 65535);
+  for (let i = buf.byteLength - 22; i >= floor; i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('ZIP 파일이 아닙니다');
+
+  const count = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const out = [];
+
+  for (let n = 0; n < count; n++) {
+    if (p + 46 > buf.byteLength || dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true);
+    const compSize = dv.getUint32(p + 20, true);
+    const nameLen = dv.getUint16(p + 28, true);
+    const extraLen = dv.getUint16(p + 30, true);
+    const cmtLen = dv.getUint16(p + 32, true);
+    const localOff = dv.getUint32(p + 42, true);
+    const name = new TextDecoder('utf-8')
+      .decode(u8.subarray(p + 46, p + 46 + nameLen));
+    p += 46 + nameLen + extraLen + cmtLen;
+
+    if (name.endsWith('/')) continue;
+    const base = name.split('/').pop();
+    if (!base || base.startsWith('.')) continue;
+    if (!MIME[(base.split('.').pop() || '').toLowerCase()]) continue;
+
+    const lNameLen = dv.getUint16(localOff + 26, true);
+    const lExtraLen = dv.getUint16(localOff + 28, true);
+    const start = localOff + 30 + lNameLen + lExtraLen;
+    const raw = u8.slice(start, start + compSize);
+
+    let bytes;
+    if (method === 0) {
+      bytes = raw;
+    } else if (method === 8 && typeof DecompressionStream === 'function') {
+      const stream = new Blob([raw]).stream()
+        .pipeThrough(new DecompressionStream('deflate-raw'));
+      bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+    } else {
+      continue;                      // 지원하지 않는 압축 방식
+    }
+    out.push(new File([bytes], base, { type: mimeOf(base) }));
+  }
+  return out;
 }
 
 function parseFileName(name) {
@@ -856,37 +922,71 @@ async function loadLibrary() {
 }
 
 /* 고른 이미지들을 이 기기에 저장한다. 서버로는 아무것도 보내지 않는다. */
+function report(html, bad) {
+  const el = $('libReport');
+  el.hidden = false;
+  el.className = bad ? 'bad' : '';
+  el.innerHTML = html;
+}
+
 async function importFiles(fileList) {
-  const files = [...fileList];
-  const records = [];
-  let skipped = 0;
-  for (const f of files) {
-    const meta = parseFileName(f.name);
-    if (!meta || !(meta.no >= 1 && meta.no <= state.meta.totalSlots)) {
-      skipped++;
-      continue;
-    }
-    records.push({ no: meta.no, title: meta.title, blob: f });
-  }
-  if (!records.length) {
-    toast('넣을 수 없음', '파일 이름 앞에 번호가 있어야 합니다');
-    return;
-  }
-  $('libBtn').disabled = true;
-  $('libBtn').textContent = '저장 중…';
+  const btn = $('libBtn');
+  btn.disabled = true;
+  btn.textContent = '읽는 중…';
+  report('파일을 읽고 있습니다…');
+
   try {
+    // ZIP 이 섞여 있으면 먼저 푼다.
+    let files = [];
+    for (const f of [...fileList]) {
+      if (/\.zip$/i.test(f.name)) {
+        report(`${esc(f.name)} 을 푸는 중…`);
+        files = files.concat(await readZip(f));
+      } else {
+        files.push(f);
+      }
+    }
+
+    const records = [];
+    const rejected = [];
+    for (const f of files) {
+      const meta = parseFileName(f.name);
+      if (!meta || !(meta.no >= 1 && meta.no <= state.meta.totalSlots)) {
+        rejected.push(f.name);
+        continue;
+      }
+      records.push({ no: meta.no, title: meta.title, blob: f });
+    }
+
+    if (!records.length) {
+      const sample = rejected.slice(0, 3).map(esc).join('<br>');
+      report(
+        `<b>0곡 등록됨</b><br>고른 파일 ${files.length}개 모두 이름 앞에 번호가 없습니다.` +
+        `<br><br>카톡·드라이브로 옮기면 이름이 바뀝니다. ZIP 으로 옮기면 원래 이름이 남습니다.` +
+        (sample ? `<br><br>예: <br>${sample}` : ''), true);
+      return;
+    }
+
+    btn.textContent = '저장 중…';
     await libPut(records);
     await loadLibrary();
     buildIndex();
     $('statCount').textContent =
       `${state.hymns.length} / ${state.meta.totalSlots}곡`;
-    toast(`${records.length}곡 저장`,
-          skipped ? `${skipped}개는 번호를 못 찾아 건너뜀` : '이 기기에만 저장됐습니다');
+
+    const nums = records.map(r => r.no).sort((a, b) => a - b);
+    let msg = `<b>${records.length}곡 저장됨</b> (${nums[0]}~${nums[nums.length - 1]}장)`;
+    if (rejected.length) {
+      msg += `<br>${rejected.length}개는 이름에 번호가 없어 건너뜀:<br>` +
+             rejected.slice(0, 3).map(esc).join('<br>');
+    }
+    report(msg + '<br><br>이 기기에만 저장되었습니다.');
+    toast(`${records.length}곡 저장`);
   } catch (e) {
-    toast('저장 실패', e && e.message ? e.message : '저장 공간을 확인해 주세요');
+    report('<b>실패</b><br>' + esc(e && e.message ? e.message : e), true);
   } finally {
-    $('libBtn').disabled = false;
-    $('libBtn').textContent = '이미지 고르기';
+    btn.disabled = false;
+    btn.textContent = '파일 고르기';
   }
 }
 
