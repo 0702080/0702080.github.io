@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "collection": "내 찬송가",
+    "totalSlots": 645,
+    "note": "이 파일은 예시입니다. tools/ 의 등록기를 돌리면 data/hymns.json 이 만들어지고, 앱은 그쪽을 우선 사용합니다."
+  },
+  "hymns": [
+    {
+      "no": 1,
+      "title": "샘플 · 온음표와 4분음표",
+      "tune": "SAMPLE ONE",
+      "key": "C",
+      "time": "4/4",
+      "composer": "(샘플)",
+      "author": "(샘플)",
+      "tags": ["샘플"],
+      "score": { "type": "musicxml", "src": "scores/001.musicxml" },
+      "verses": [
+        { "n": 1, "lines": ["여기에 가사를 한 글자씩 넣으면 됩니다", "음표 하나에 한 음절씩 대응합니다"] },
+        { "n": 2, "lines": ["둘째 절은 아래에 같은 방식으로 붙습니다", "절을 더 늘리려면 세 번째 네 번째로 계속"] }
+      ]
+    },
+    {
+      "no": 2,
+      "title": "샘플 · 못갖춘마디와 붙임줄",
+      "tune": "SAMPLE TWO",
+      "key": "F",
+      "time": "3/4",
+      "composer": "(샘플)",
+      "author": "(샘플)",
+      "tags": ["샘플"],
+      "score": { "type": "musicxml", "src": "scores/002.musicxml" },
+      "verses": [
+        { "n": 1, "lines": ["못갖춘마디로 시작하고", "점음표도 됩니다", "붙임줄은 물결표로"] }
+      ]
+    },
+    {
+      "no": 3,
+      "title": "샘플 · 단조와 임시표",
+      "tune": "SAMPLE THREE",
+      "key": "Am",
+      "time": "4/4",
+      "composer": "(샘플)",
+      "author": "(샘플)",
+      "tags": ["샘플"],
+      "score": { "type": "musicxml", "src": "scores/003.musicxml" },
+      "verses": [
+        { "n": 1, "lines": ["단조는 조표 뒤에 m 을 붙여요", "임시표는 샵이나 플랫을 음이름 뒤에 씁니다", "8분음표는 자동으로 빔이 묶여서 나옵니다"] }
+      ]
+    }
+  ]
+}

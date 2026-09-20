@@ -1,0 +1,21 @@
+{
+  "name": "내 찬송가",
+  "short_name": "찬송가",
+  "description": "개인용 찬송가 악보·가사 뷰어",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf8f3",
+  "theme_color": "#faf8f3",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "즐겨찾기", "url": "./#fav" },
+    { "name": "검색", "url": "./#search" }
+  ]
+}

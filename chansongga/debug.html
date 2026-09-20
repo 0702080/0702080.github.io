@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>키 진단</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{margin:0;padding:12px;font:15px/1.5 -apple-system,system-ui,"Malgun Gothic",sans-serif}
+  h1{font-size:17px;margin:0 0 4px}
+  p.lead{margin:0 0 12px;color:#777;font-size:13px}
+  #env{font-size:12px;color:#777;background:#8881;padding:8px 10px;
+       border-radius:8px;margin-bottom:12px;word-break:break-all}
+  form{display:flex;gap:8px;margin-bottom:10px}
+  input{flex:1;min-width:0;padding:12px;font-size:16px;
+        border:2px solid #8a5a2b;border-radius:10px;background:transparent;color:inherit}
+  button{padding:12px 14px;font-size:14px;font-weight:700;border:0;
+         border-radius:10px;background:#8a5a2b;color:#fff}
+  #log{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;
+       border:1px solid #8884;border-radius:8px;padding:8px;
+       height:46vh;overflow:auto;white-space:pre-wrap;word-break:break-all}
+  .hit{color:#1a7f37;font-weight:700}
+  .row{padding:2px 0;border-bottom:1px solid #8882}
+</style>
+</head>
+<body>
+
+<h1>키 진단</h1>
+<p class="lead">아래 칸을 눌러 <b>23</b> 을 치고 <b>완료</b> 키를 누르세요.
+그 아래에 어떤 이벤트가 오는지 그대로 찍힙니다.</p>
+
+<div id="env">확인 중…</div>
+
+<form id="f" action="#" autocomplete="off">
+  <input id="i" type="text" inputmode="numeric" pattern="[0-9]*"
+         enterkeyhint="done" autocomplete="off" autocapitalize="off"
+         spellcheck="false" placeholder="여기에 번호 입력">
+  <button type="button" id="clr">비우기</button>
+</form>
+
+<div id="log"></div>
+
+<script>
+const log = document.getElementById('i') && document.getElementById('log');
+const i = document.getElementById('i');
+const f = document.getElementById('f');
+let n = 0;
+
+function put(text, hit) {
+  const d = document.createElement('div');
+  d.className = 'row' + (hit ? ' hit' : '');
+  d.textContent = (++n) + '  ' + text;
+  log.prepend(d);
+}
+
+// '완료' 를 뜻할 수 있는 신호들
+const INTERESTING = new Set(['Enter', 'Go', 'Done', 'Search', 'Send', 'Next']);
+
+['keydown','keyup','keypress','beforeinput','input','change','blur','focus',
+ 'compositionstart','compositionupdate','compositionend'].forEach(type => {
+  i.addEventListener(type, e => {
+    const bits = [type];
+    if ('key' in e && e.key !== undefined) bits.push('key=' + e.key);
+    if ('code' in e && e.code) bits.push('code=' + e.code);
+    if ('keyCode' in e && e.keyCode) bits.push('keyCode=' + e.keyCode);
+    if ('inputType' in e && e.inputType) bits.push('inputType=' + e.inputType);
+    if ('data' in e && e.data !== undefined && e.data !== null)
+      bits.push('data=' + JSON.stringify(e.data));
+    bits.push('value=' + JSON.stringify(i.value));
+    const hit = INTERESTING.has(e.key) ||
+                (e.inputType || '').startsWith('insertLine') ||
+                (e.inputType || '').startsWith('insertParagraph');
+    put(bits.join('  '), hit);
+  });
+});
+
+f.addEventListener('submit', e => {
+  e.preventDefault();
+  put('form submit  <<< 이게 뜨면 완료키를 잡을 수 있습니다', true);
+});
+
+document.getElementById('clr').addEventListener('click', () => {
+  i.value = '';
+  log.innerHTML = '';
+  n = 0;
+  i.focus();
+});
+
+(async () => {
+  const bits = [];
+  bits.push('보안 컨텍스트(HTTPS 취급): ' + window.isSecureContext);
+  bits.push('서비스워커 지원: ' + ('serviceWorker' in navigator));
+  if ('serviceWorker' in navigator) {
+    const rs = await navigator.serviceWorker.getRegistrations().catch(() => []);
+    bits.push('등록된 서비스워커: ' + rs.length + '개');
+  }
+  if (window.caches) {
+    const keys = await caches.keys().catch(() => []);
+    bits.push('캐시 이름: ' + (keys.join(', ') || '없음'));
+  }
+  try {
+    const r = await fetch('app.js?probe=' + Date.now(), { cache: 'no-store' });
+    const t = await r.text();
+    const m = t.match(/APP_VERSION\s*=\s*'([^']+)'/);
+    bits.push('서버의 app.js 버전: ' + (m ? m[1] : '못 찾음'));
+  } catch (e) {
+    bits.push('app.js 확인 실패: ' + e.message);
+  }
+  bits.push('브라우저: ' + navigator.userAgent);
+  document.getElementById('env').textContent = bits.join('\n');
+})();
+</script>
+</body>
+</html>

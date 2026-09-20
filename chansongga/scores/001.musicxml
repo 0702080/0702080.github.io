@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <work><work-title>샘플 · 온음표와 4분음표</work-title></work>
+  <identification>
+    <creator type="composer">(샘플)</creator>
+    <creator type="lyricist">(샘플)</creator>
+    <encoding><software>mkscore.py</software></encoding>
+  </identification>
+  <part-list><score-part id="P1"><part-name>Melody</part-name></score-part></part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>24</divisions>
+        <key><fifths>0</fifths><mode>major</mode></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>92</per-minute></metronome></direction-type><sound tempo="92"/></direction>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>begin</syllabic><text>여</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>둘</text></lyric>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>middle</syllabic><text>기</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>째</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>end</syllabic><text>에</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>절</text></lyric>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>가</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>은</text></lyric>
+      </note>
+    </measure>
+    <measure number="2">
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>begin</syllabic><text>사</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>아</text></lyric>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>end</syllabic><text>를</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>래</text></lyric>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>한</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>에</text></lyric>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>begin</syllabic><text>글</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>같</text></lyric>
+      </note>
+    </measure>
+    <measure number="3">
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>end</syllabic><text>자</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>은</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>씩</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>방</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>begin</syllabic><text>넣</text></lyric>
+        <lyric number="2"><syllabic>middle</syllabic><text>식</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>middle</syllabic><text>으</text></lyric>
+        <lyric number="2"><syllabic>middle</syllabic><text>으</text></lyric>
+      </note>
+    </measure>
+    <measure number="4">
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>48</duration>
+        <type>half</type>
+        <lyric number="1"><syllabic>end</syllabic><text>면</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>로</text></lyric>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>48</duration>
+        <type>half</type>
+        <lyric number="1"><syllabic>begin</syllabic><text>됩</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>붙</text></lyric>
+      </note>
+    </measure>
+    <measure number="5">
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>end</syllabic><text>니</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>습</text></lyric>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>다</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>니</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>begin</syllabic><text>음</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>다</text></lyric>
+      </note>
+      <note>
+        <pitch><step>C</step><octave>5</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>end</syllabic><text>표</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>절</text></lyric>
+      </note>
+    </measure>
+    <measure number="6">
+      <note>
+        <pitch><step>B</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>begin</syllabic><text>하</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>을</text></lyric>
+      </note>
+      <note>
+        <pitch><step>A</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>end</syllabic><text>나</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>더</text></lyric>
+      </note>
+      <note>
+        <pitch><step>G</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>에</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>늘</text></lyric>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>single</syllabic><text>한</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>리</text></lyric>
+      </note>
+    </measure>
+    <measure number="7">
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>begin</syllabic><text>음</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>려</text></lyric>
+      </note>
+      <note>
+        <pitch><step>D</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>middle</syllabic><text>절</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>면</text></lyric>
+      </note>
+      <note>
+        <pitch><step>E</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>end</syllabic><text>씩</text></lyric>
+        <lyric number="2"><syllabic>begin</syllabic><text>세</text></lyric>
+      </note>
+      <note>
+        <pitch><step>F</step><octave>4</octave></pitch>
+        <duration>24</duration>
+        <type>quarter</type>
+        <lyric number="1"><syllabic>begin</syllabic><text>대</text></lyric>
+        <lyric number="2"><syllabic>end</syllabic><text>번</text></lyric>
+      </note>
+    </measure>
+    <measure number="8">
+      <note>
+        <pitch><step>C</step><octave>4</octave></pitch>
+        <duration>96</duration>
+        <type>whole</type>
+        <lyric number="1"><syllabic>end</syllabic><text>응</text></lyric>
+        <lyric number="2"><syllabic>single</syllabic><text>째</text></lyric>
+      </note>
+    </measure>
+  </part>
+</score-partwise>

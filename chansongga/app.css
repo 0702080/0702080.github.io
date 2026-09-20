@@ -1,0 +1,254 @@
+:root{
+  --bg:#faf8f3; --surface:#fff; --surface-2:#f2eee4; --line:#e2dccd;
+  --ink:#232018; --ink-2:#6b6455; --accent:#8a5a2b; --accent-ink:#fff;
+  --bar-h:56px; --tab-h:58px; --lyric-scale:1.15; --radius:14px;
+  --shadow:0 1px 3px rgba(60,48,28,.10),0 6px 18px rgba(60,48,28,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#1b1a17; --surface:#242220; --surface-2:#2d2a26; --line:#3a3630;
+    --ink:#ece7dc; --ink-2:#9d9686; --accent:#d9a86a; --accent-ink:#241c10;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1b1a17; --surface:#242220; --surface-2:#2d2a26; --line:#3a3630;
+  --ink:#ece7dc; --ink-2:#9d9686; --accent:#d9a86a; --accent-ink:#241c10;
+  --shadow:0 1px 3px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* #view-pad 처럼 ID 로 display 를 지정한 요소가 hidden 을 덮어쓰지 않도록. */
+[hidden]{display:none !important}
+html,body{margin:0;padding:0;height:100%;overscroll-behavior-y:none}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo",
+    "Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+  font-size:16px; line-height:1.6;
+  display:flex; flex-direction:column;
+  height:100dvh;
+}
+
+/* ── 상단바 ───────────────────────────── */
+#appbar{
+  flex:0 0 auto; display:flex; align-items:center; gap:4px;
+  height:calc(var(--bar-h) + env(safe-area-inset-top));
+  padding:env(safe-area-inset-top) 8px 0;
+  background:var(--surface); border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:20;
+}
+#appTitle{
+  flex:1; margin:0; font-size:17px; font-weight:650; letter-spacing:-.01em;
+  text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* ── 본문 ─────────────────────────────── */
+#main{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch}
+/* 키패드 시트가 덮는 만큼 본문 아래를 비워 둔다. */
+body.pad-open #main{padding-bottom:var(--pad-h,320px)}
+.view{padding:16px; padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+.view[hidden]{display:none}
+.empty{color:var(--ink-2); text-align:center; padding:48px 16px; line-height:1.8}
+
+/* ── 시작 화면 ────────────────────────── */
+.home-hero{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:18px; min-height:60vh; text-align:center;
+}
+.home-mark{
+  width:76px; height:76px; border-radius:50%; display:grid; place-items:center;
+  background:var(--accent); color:var(--accent-ink); font-size:38px; line-height:1;
+}
+.home-msg{margin:0; color:var(--ink-2); line-height:1.8}
+.home-hero .wide-btn{max-width:220px; margin-top:4px}
+
+/* ── 번호 키패드 (하단 시트) ───────────── */
+#padBackdrop{
+  position:fixed; inset:0; z-index:28; background:rgba(0,0,0,.28);
+  backdrop-filter:blur(1.5px);
+}
+#padSheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  background:var(--surface); border-top:1px solid var(--line);
+  border-radius:20px 20px 0 0;
+  padding:6px 14px calc(14px + env(safe-area-inset-bottom));
+  box-shadow:0 -6px 28px rgba(0,0,0,.22);
+  animation:sheet-up .18s ease-out;
+}
+@keyframes sheet-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-grip{
+  display:block; width:42px; height:5px; margin:2px auto 6px; padding:0;
+  border:0; border-radius:99px; background:var(--line); cursor:pointer;
+}
+.pad-display{text-align:center; margin-bottom:8px}
+#padNum{
+  display:block; font-size:40px; font-weight:300; letter-spacing:.05em;
+  font-variant-numeric:tabular-nums; line-height:1.15; min-height:46px;
+}
+#padHint{display:block; color:var(--ink-2); font-size:12.5px; margin-top:1px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#padHint.miss{color:#c9603f}
+.keypad{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:9px;
+  max-width:360px; width:100%; margin:0 auto;
+}
+.keypad button{
+  aspect-ratio:1/.5; border:1px solid var(--line); border-radius:12px;
+  background:var(--surface-2); color:var(--ink); font-size:23px; font-weight:400;
+  cursor:pointer; transition:transform .06s;
+}
+.keypad button:active{transform:scale(.95); background:var(--line)}
+.keypad button.go{background:var(--accent); color:var(--accent-ink); border-color:transparent; font-size:15px}
+.keypad button.del{font-size:19px; color:var(--ink-2)}
+
+/* ── 목록 ─────────────────────────────── */
+.hymn-list{list-style:none; margin:0; padding:0}
+.hymn-list li{border-bottom:1px solid var(--line)}
+.hymn-list button{
+  display:flex; align-items:baseline; gap:12px; width:100%;
+  padding:13px 4px; border:0; background:transparent; color:var(--ink);
+  font:inherit; text-align:left; cursor:pointer;
+}
+.hymn-list button:active{background:var(--surface-2)}
+.hl-no{
+  flex:0 0 46px; text-align:right; color:var(--accent);
+  font-variant-numeric:tabular-nums; font-weight:600; font-size:15px;
+}
+.hl-title{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.hl-sub{display:block; font-size:12px; color:var(--ink-2); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
+.hl-star{flex:0 0 auto; color:var(--accent); font-size:13px}
+
+/* ── 하단 입력줄 (항상 표시) ─────────────── */
+#omnibar{
+  flex:0 0 auto; background:var(--surface);
+  border-top:1px solid var(--line); padding:8px 12px 6px;
+}
+#omnibar .omni-row{display:flex; gap:8px; align-items:center;
+  max-width:680px; margin:0 auto}
+#omni{
+  flex:1; min-width:0; padding:11px 14px; font:inherit; font-size:16px;
+  color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line); border-radius:99px; outline:none;
+}
+#omni::placeholder{color:var(--ink-2); font-size:14px}
+#omni:focus{border-color:var(--accent); background:var(--surface)}
+#omniClear{
+  flex:0 0 auto; min-width:60px; height:46px; padding:0 14px;
+  border:1px solid var(--line); border-radius:99px;
+  background:var(--accent); color:var(--accent-ink);
+  font:inherit; font-size:14px; font-weight:700; line-height:1; cursor:pointer;
+}
+#omniClear:active{opacity:.7}
+#omniHint{
+  max-width:680px; margin:0 auto 6px; padding:0 4px;
+  font-size:13px; color:var(--ink-2); text-align:center;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+#omniHint b{color:var(--accent); font-weight:600}
+#omniHint.miss{color:#c9603f}
+
+/* ── 검색 결과 ─────────────────────────── */
+mark{background:color-mix(in srgb,var(--accent) 28%,transparent); color:inherit; border-radius:3px}
+
+/* ── 설정 ─────────────────────────────── */
+.settings .row{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:14px 2px; border-bottom:1px solid var(--line);
+}
+.settings select,.settings input[type=range]{font:inherit; color:var(--ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:9px; padding:6px}
+.settings input[type=range]{flex:0 0 150px; padding:0; border:0; background:transparent; accent-color:var(--accent)}
+.settings input[type=checkbox]{width:22px; height:22px; accent-color:var(--accent)}
+.settings .stat b{font-variant-numeric:tabular-nums; color:var(--ink-2); font-weight:600}
+.wide-btn{
+  width:100%; margin-top:18px; padding:13px; font:inherit; font-weight:600;
+  background:var(--accent); color:var(--accent-ink); border:0;
+  border-radius:var(--radius); cursor:pointer;
+}
+.wide-btn:disabled{opacity:.5}
+.wide-btn.ghost{
+  margin-top:8px; background:transparent; color:var(--ink-2);
+  border:1px solid var(--line); font-weight:500;
+}
+.settings .row small{color:var(--ink-2); font-size:12px; font-weight:400}
+.fineprint{margin-top:22px; font-size:12px; line-height:1.7; color:var(--ink-2)}
+
+/* ── 곡 상세 ──────────────────────────── */
+.score-wrap{
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--radius); padding:10px; margin-bottom:18px; box-shadow:var(--shadow);
+}
+.score-bar{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px}
+.chip{
+  padding:6px 11px; font:inherit; font-size:13px; border-radius:99px;
+  border:1px solid var(--line); background:var(--surface-2); color:var(--ink); cursor:pointer;
+}
+.chip.flat{border-style:dashed; color:var(--ink-2); cursor:default}
+.chip.on{color:var(--accent); border-color:var(--accent); font-weight:700}
+#favChip{min-width:38px; font-size:15px; line-height:1}
+#scoreToggle{margin-left:auto}
+.osmd{overflow-x:auto; min-height:40px}
+.osmd svg{max-width:100%; height:auto !important}
+
+/* 이미지 악보 — 기본은 폭 맞춤, '확대'를 누르면 좌우로 밀어서 봅니다. */
+.score-img-wrap{
+  overflow:auto; -webkit-overflow-scrolling:touch;
+  border-radius:8px; background:#fff; line-height:0;
+}
+.score-img-wrap img{display:block; width:100%; height:auto}
+.score-img-wrap.zoom{max-height:78vh}
+.score-img-wrap.zoom img{width:240%; max-width:none}
+/* 어두운 곳에서 흰 종이가 눈부실 때 — 설정에서 켭니다. */
+body.invert-score .score-img-wrap{background:#000}
+body.invert-score .score-img-wrap img{filter:invert(1)}
+.score-msg{margin:10px 2px; font-size:13px; color:var(--ink-2)}
+
+.lyrics{font-size:calc(16px * var(--lyric-scale)); line-height:1.85}
+.verse{margin:0 0 20px; display:flex; gap:10px}
+.verse-n{
+  flex:0 0 auto; color:var(--accent); font-weight:700; font-size:.85em;
+  min-width:1.4em; padding-top:.15em;
+}
+.verse-body p{margin:0}
+.verse-body p + p{margin-top:.15em}
+.refrain{color:var(--ink-2); font-style:italic}
+
+/* ── 제스처 안내 토스트 ─────────────────── */
+#toast{
+  position:fixed; left:50%; top:calc(50% - 20px); transform:translate(-50%,-50%);
+  z-index:40; pointer-events:none;
+  padding:14px 26px; border-radius:16px;
+  background:rgba(0,0,0,.72); color:#fff;
+  font-size:26px; font-weight:600; font-variant-numeric:tabular-nums;
+  letter-spacing:.02em; backdrop-filter:blur(3px);
+  animation:toast-in .14s ease-out;
+}
+#toast small{display:block; font-size:12.5px; font-weight:400; opacity:.85; margin-top:3px}
+@keyframes toast-in{from{opacity:0; transform:translate(-50%,-46%) scale(.94)}
+                    to{opacity:1; transform:translate(-50%,-50%) scale(1)}}
+#toast.out{opacity:0; transition:opacity .25s ease-in}
+
+/* ── 하단 탭바 ─────────────────────────── */
+#tabbar{
+  flex:0 0 auto; display:flex;
+  height:calc(var(--tab-h) + env(safe-area-inset-bottom));
+  padding-bottom:env(safe-area-inset-bottom);
+  background:var(--surface); border-top:1px solid var(--line);
+}
+#tabbar.hidden{display:none}
+.tab{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; border:0; background:transparent; color:var(--ink-2);
+  font-size:10.5px; font-family:inherit; cursor:pointer; padding:0;
+}
+.tab span{font-size:19px; line-height:1}
+/* 글자로 된 아이콘(123, 가)은 기호 아이콘보다 작게 잡아야 균형이 맞는다. */
+.tab span.ic-t{font-size:14px; font-weight:800; letter-spacing:-.03em; padding:2px 0}
+.tab.active{color:var(--accent)}
+
+@media (min-width:720px){
+  .view{max-width:680px; margin:0 auto; width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}

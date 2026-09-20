@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>내 찬송가</title>
+<!-- maximum-scale 을 두지 않는다 — 악보를 손가락으로 확대할 수 있어야 한다. -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1b1a17" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#faf8f3" media="(prefers-color-scheme: light)">
+<meta name="description" content="개인용 찬송가 악보·가사 뷰어">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="찬송가">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<!-- 주소에 버전을 박아 두면 브라우저가 옛 파일을 재사용할 수 없다. -->
+<link rel="stylesheet" href="app.css?v=20260919e">
+</head>
+<body>
+
+<!-- 곡 화면에서는 숨긴다 — 악보에 화면을 최대한 내준다. -->
+<header id="appbar">
+  <h1 id="appTitle">내 찬송가</h1>
+</header>
+
+<main id="main">
+
+  <!-- 시작 화면 (번호 입력 전) -->
+  <section class="view" id="view-home">
+    <div class="home-hero">
+      <div class="home-mark">♩</div>
+      <p class="home-msg">아래 입력줄에 번호를 치면<br>치는 즉시 해당 곡이 열립니다.<br>
+        제목이나 초성을 넣으면 검색됩니다.</p>
+      <button class="wide-btn" id="homeOpenPad">큰 키패드로 입력</button>
+    </div>
+  </section>
+
+  <!-- 전체 목록 -->
+  <section class="view" id="view-list" hidden>
+    <ul class="hymn-list" id="hymnList"></ul>
+  </section>
+
+  <!-- 검색 -->
+  <section class="view" id="view-search" hidden>
+    <ul class="hymn-list" id="searchResults"></ul>
+    <p class="empty" id="searchEmpty" hidden>검색 결과가 없습니다.</p>
+  </section>
+
+  <!-- 즐겨찾기 -->
+  <section class="view" id="view-fav" hidden>
+    <ul class="hymn-list" id="favList"></ul>
+    <p class="empty" id="favEmpty" hidden>아직 즐겨찾기한 곡이 없습니다.<br>곡을 열고 오른쪽 위 ☆ 를 누르세요.</p>
+  </section>
+
+  <!-- 설정 -->
+  <section class="view" id="view-settings" hidden>
+    <div class="settings">
+      <label class="row">
+        <span>테마</span>
+        <select id="setTheme">
+          <option value="auto">시스템 설정 따름</option>
+          <option value="light">밝게</option>
+          <option value="dark">어둡게</option>
+        </select>
+      </label>
+      <label class="row">
+        <span>가사 글자 크기</span>
+        <input type="range" id="setFont" min="90" max="190" step="10">
+      </label>
+      <label class="row">
+        <span>악보 크기</span>
+        <input type="range" id="setZoom" min="50" max="150" step="10">
+      </label>
+      <label class="row">
+        <span>화면 항상 켜기</span>
+        <input type="checkbox" id="setWake">
+      </label>
+      <label class="row">
+        <span>곡 열면 악보 먼저</span>
+        <input type="checkbox" id="setScoreFirst">
+      </label>
+      <label class="row">
+        <span>이미지 악보 반전<br><small>어두운 곳에서 눈부심 줄이기</small></span>
+        <input type="checkbox" id="setInvert">
+      </label>
+      <div class="row">
+        <span>내 악보 불러오기<br>
+          <small>고른 이미지는 이 기기에만 저장됩니다</small></span>
+        <input type="file" id="libPick" accept="image/*" multiple hidden>
+        <button class="chip" id="libBtn">이미지 고르기</button>
+      </div>
+      <div class="row stat"><span>이 기기에 저장된 악보</span><b id="libCount">0곡</b></div>
+      <div class="row stat"><span>등록된 곡</span><b id="statCount">–</b></div>
+      <div class="row stat"><span>오프라인 저장</span><b id="statCache">확인 중…</b></div>
+      <div class="row stat"><span>버전</span><b id="statVer">–</b></div>
+      <button class="wide-btn" id="cacheBtn">전곡 오프라인 저장</button>
+      <button class="wide-btn ghost" id="libClearBtn">이 기기에 저장된 악보 전체 삭제</button>
+      <p class="fineprint">개인 소장 자료를 본인 기기에서 보기 위한 앱입니다.
+        수록 자료의 저작권은 각 권리자에게 있으며, 공개 배포 시 별도의 이용허락이 필요합니다.</p>
+    </div>
+  </section>
+
+  <!-- 곡 상세 -->
+  <section class="view detail" id="view-detail" hidden>
+    <div class="score-wrap" id="scoreWrap">
+      <div class="score-bar">
+        <span id="trGroup">
+          <button class="chip" id="trDown">♭ 내림</button>
+          <span class="chip flat" id="trLabel">원조</span>
+          <button class="chip" id="trUp">♯ 올림</button>
+        </span>
+        <button class="chip" id="imgZoom" hidden>⤢ 확대</button>
+        <button class="chip" id="favChip">☆</button>
+        <button class="chip" id="scoreToggle">악보 숨기기</button>
+      </div>
+      <div id="osmd" class="osmd"></div>
+      <div id="scoreImgWrap" class="score-img-wrap" hidden>
+        <img id="scoreImg" alt="악보" decoding="async">
+      </div>
+      <p class="score-msg" id="scoreMsg" hidden></p>
+    </div>
+
+    <div class="lyrics" id="lyrics"></div>
+  </section>
+
+</main>
+
+<div id="toast" hidden></div>
+
+<!-- 번호 입력 시트 — 열려 있는 동안 뒤의 곡이 실시간으로 바뀝니다 -->
+<div id="padBackdrop" hidden></div>
+<div id="padSheet" hidden role="dialog" aria-label="번호 입력">
+  <button class="sheet-grip" id="padClose" aria-label="키패드 닫기"></button>
+  <div class="pad-display">
+    <span id="padNum">–</span>
+    <small id="padHint">번호를 누르세요</small>
+  </div>
+  <div class="keypad" id="keypad"></div>
+</div>
+
+<!-- 항상 떠 있는 입력줄 — 숫자를 넣으면 그 즉시 해당 곡이 열립니다 -->
+<div id="omnibar">
+  <div id="omniHint" hidden></div>
+  <!-- form 으로 감싸면 안드로이드 '완료/이동' 키가 submit 으로도 잡힙니다. -->
+  <form id="omniForm" class="omni-row" action="#" autocomplete="off">
+    <!-- 기본은 숫자 키패드. '한글' 탭을 누르면 inputmode 가 text 로 바뀝니다. -->
+    <input id="omni" type="text" inputmode="numeric" pattern="[0-9]*"
+           enterkeyhint="done" autocomplete="off"
+           autocapitalize="off" spellcheck="false"
+           placeholder="번호 입력  (예: 12)">
+    <button id="omniClear" type="button" hidden aria-label="입력 지우기">지움</button>
+  </form>
+</div>
+
+<nav id="tabbar">
+  <button data-view="num"      class="tab active"><span class="ic-t">123</span>번호</button>
+  <button data-view="kor"      class="tab"><span class="ic-t">가</span>한글</button>
+  <button data-view="list"     class="tab"><span>☰</span>목록</button>
+  <button data-view="fav"      class="tab"><span>★</span>즐겨찾기</button>
+  <button data-view="settings" class="tab"><span>⚙</span>설정</button>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>
