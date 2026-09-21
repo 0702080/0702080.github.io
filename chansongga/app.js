@@ -2,7 +2,7 @@
 'use strict';
 
 // 폰이 옛 캐시를 물고 있는지 설정 화면에서 바로 확인할 수 있도록 남긴다.
-const APP_VERSION = '2026-09-21 slide';
+const APP_VERSION = '2026-09-21 slide2';
 const DATA_URL = 'data/hymns.json';
 const SAMPLE_URL = 'data/hymns.sample.json';
 const LS = 'hymnapp.v1';
@@ -622,6 +622,9 @@ function fsSync() {
    새 악보가 옆에서 밀려 들어오고 이전 악보는 반대편으로 나간다.
    prep 은 그림을 받기 전에 자리를 잡고, run 은 다 받은 뒤에 움직인다. */
 function slidePrep(cur, prev, prevImg, oldSrc, dir) {
+  // 예전 index.html 이 캐시에 남아 레이어가 없을 수 있다. 그때는 전환만
+  // 건너뛰고 악보는 정상으로 보여야 한다.
+  if (!cur || !prev || !prevImg) return false;
   if (!dir || !oldSrc) {
     slideReset(cur, prev);
     return false;
@@ -638,6 +641,7 @@ function slidePrep(cur, prev, prevImg, oldSrc, dir) {
 }
 
 function slideRun(cur, prev, dir) {
+  if (!cur || !prev) return;
   cur.style.transition = '';
   cur.style.transform = 'translateX(0)';
   prev.style.transition = '';
@@ -646,9 +650,11 @@ function slideRun(cur, prev, dir) {
 }
 
 function slideReset(cur, prev) {
-  cur.style.transition = 'none';
-  cur.style.transform = 'translateX(0)';
-  prev.classList.remove('on');
+  if (cur) {
+    cur.style.transition = 'none';
+    cur.style.transform = 'translateX(0)';
+  }
+  if (prev) prev.classList.remove('on');
 }
 
 /* 지금 화면에 쓰이는 악보 요소 (이미지 / OSMD) */
@@ -657,7 +663,23 @@ function activeScoreBox() {
   return type === 'image' ? $('scoreImgWrap') : $('osmd');
 }
 
+/* 무슨 일이 있어도 '준비 중' 문구가 그대로 굳지 않게 한다.
+   예외가 나면 화면에 이유를 띄운다. 원인을 바로 알 수 있어야 한다. */
 async function loadScore(h) {
+  try {
+    await loadScoreInner(h);
+  } catch (e) {
+    const msg = $('scoreMsg');
+    if (msg) {
+      msg.hidden = false;
+      msg.textContent = '악보를 표시하지 못했습니다: ' +
+        (e && e.message ? e.message : e) +
+        '  (새로고침해도 같으면 브라우저 캐시를 지워 주세요)';
+    }
+  }
+}
+
+async function loadScoreInner(h) {
   const msg = $('scoreMsg'), box = $('osmd'), imgWrap = $('scoreImgWrap');
   const type = (h.score || {}).type;
 
