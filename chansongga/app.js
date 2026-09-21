@@ -2,7 +2,7 @@
 'use strict';
 
 // 폰이 옛 캐시를 물고 있는지 설정 화면에서 바로 확인할 수 있도록 남긴다.
-const APP_VERSION = '2026-09-21 margin';
+const APP_VERSION = '2026-09-21 center';
 const DATA_URL = 'data/hymns.json';
 const SAMPLE_URL = 'data/hymns.sample.json';
 const LS = 'hymnapp.v1';

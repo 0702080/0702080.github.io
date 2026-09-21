@@ -1,5 +1,5 @@
 /* 내 찬송가 — 서비스워커 (오프라인 지원) */
-const VERSION = 'hymn-v12';
+const VERSION = 'hymn-v13';
 const SHELL = [
   './', './index.html', './app.css', './app.js',
   './manifest.webmanifest', './data/hymns.json', './data/hymns.sample.json',
