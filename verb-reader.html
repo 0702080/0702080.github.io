@@ -323,8 +323,11 @@ function looksVerbal(s) {
   return false;
 }
 function adjStem(s) {
+  if (!s) return false;
   if (A_STEMS.has(s)) return true;
-  for (const a of A_STEMS) if (s.endsWith(a) && a.length > 1) return true;
+  // 강하·약하·길하 — "하"를 떼면 형용사 어간이다. 안 그러면 looksVerbal이 동사로 가로챈다.
+  if (s.endsWith("하") && A_STEMS.has(s.slice(0, -1))) return true;
+  for (const a of A_STEMS) if (a.length > 1 && s.endsWith(a)) return true;
   return false;
 }
 
