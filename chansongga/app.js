@@ -2,7 +2,7 @@
 'use strict';
 
 // 폰이 옛 캐시를 물고 있는지 설정 화면에서 바로 확인할 수 있도록 남긴다.
-const APP_VERSION = '2026-09-21 zoom';
+const APP_VERSION = '2026-09-21 full';
 const DATA_URL = 'data/hymns.json';
 const SAMPLE_URL = 'data/hymns.sample.json';
 const LS = 'hymnapp.v1';
@@ -415,60 +415,78 @@ function paintFav(no) {
    처리한다. 두 손가락으로 벌리면 확대, 확대된 상태에서 끌면 이동. */
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 6;
-const zoom = { s: 1, x: 0, y: 0 };
+const TAP_MS = 320;      // 이보다 오래 누르면 탭이 아니다
+const TAP_SLOP = 12;     // 이보다 많이 움직이면 탭이 아니다
 
-function applyZoom() {
-  const img = $('scoreImg');
-  img.style.transform =
-    `translate(${zoom.x.toFixed(1)}px, ${zoom.y.toFixed(1)}px) scale(${zoom.s})`;
-  $('scoreImgWrap').classList.toggle('zoomed', zoom.s > 1.01);
-  $('imgZoom').textContent = zoom.s > 1.01 ? '⤡ 원래대로' : '⤢ 확대';
-}
+/* 악보 확대/이동기. 작은 악보칸과 전체화면이 같은 코드를 쓴다.
+   opts.onTap   한 번 탭했을 때
+   opts.onSwipe 확대하지 않은 상태에서 좌우로 밀었을 때 (-1 이전 / +1 다음)
+   opts.onChange 배율이 바뀔 때 */
+function createZoomer(wrapId, imgId, opts = {}) {
+  const z = { s: 1, x: 0, y: 0 };
+  const W = () => $(wrapId);
+  const I = () => $(imgId);
 
-/* 확대해도 악보가 화면 밖으로 완전히 빠져나가지 않도록 붙잡는다. */
-function clampZoom() {
-  const wrap = $('scoreImgWrap');
-  const img = $('scoreImg');
-  zoom.s = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom.s));
-  const w = wrap.clientWidth;
-  const h = img.clientHeight || wrap.clientHeight;
-  const extraX = w * (zoom.s - 1);
-  const extraY = h * (zoom.s - 1);
-  zoom.x = Math.min(0, Math.max(-extraX, zoom.x));
-  zoom.y = Math.min(0, Math.max(-extraY, zoom.y));
-  if (zoom.s <= ZOOM_MIN + 0.001) { zoom.x = 0; zoom.y = 0; }
-}
-
-function resetZoom() {
-  zoom.s = 1; zoom.x = 0; zoom.y = 0;
-  applyZoom();
-}
-
-function initScoreZoom() {
-  const wrap = $('scoreImgWrap');
   const gap = t => Math.hypot(t[0].clientX - t[1].clientX,
                               t[0].clientY - t[1].clientY);
   const mid = t => (t.length > 1
     ? { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 }
     : { x: t[0].clientX, y: t[0].clientY });
 
-  let start = null;   // { s, x, y, gap, p }
+  function apply() {
+    I().style.transform =
+      `translate(${z.x.toFixed(1)}px, ${z.y.toFixed(1)}px) scale(${z.s})`;
+    W().classList.toggle('zoomed', z.s > 1.01);
+    if (opts.onChange) opts.onChange(z);
+  }
+
+  /* 확대해도 악보가 화면 밖으로 완전히 빠져나가지 않게 붙잡는다. */
+  function clamp() {
+    z.s = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z.s));
+    const w = I().clientWidth || W().clientWidth;
+    const h = I().clientHeight || W().clientHeight;
+    z.x = Math.min(0, Math.max(-w * (z.s - 1), z.x));
+    z.y = Math.min(0, Math.max(-h * (z.s - 1), z.y));
+    if (z.s <= ZOOM_MIN + 0.001) { z.x = 0; z.y = 0; }
+  }
+
+  function reset() { z.s = 1; z.x = 0; z.y = 0; apply(); }
+
+  function zoomTo(s) {
+    z.s = s;
+    z.x = -(W().clientWidth * (s - 1)) / 2;
+    z.y = 0;
+    clamp();
+    apply();
+  }
+
+  let start = null;        // 확대/이동 시작 상태
+  let tap = null;          // 탭 판정용
+  let touchedAt = 0;       // 터치 뒤 따라오는 가짜 click 무시용
+
+  const wrap = W();
 
   wrap.addEventListener('touchstart', e => {
     const t = e.touches;
     const pinch = t.length >= 2;
-    // 확대되지 않은 상태의 한 손가락은 곡 넘기기용으로 흘려보낸다.
-    if (!pinch && zoom.s <= 1.01) { start = null; return; }
+    if (t.length === 1) {
+      tap = { at: Date.now(), x: t[0].clientX, y: t[0].clientY, moved: false };
+    } else {
+      tap = null;
+    }
+    // 확대 전의 한 손가락은 곡 넘기기용이므로 위로 흘려보낸다.
+    if (!pinch && z.s <= 1.01) { start = null; return; }
     e.stopPropagation();
-    start = {
-      s: zoom.s, x: zoom.x, y: zoom.y,
-      gap: pinch ? gap(t) : 0, p: mid(t), pinch
-    };
+    start = { s: z.s, x: z.x, y: z.y, gap: pinch ? gap(t) : 0, p: mid(t), pinch };
   }, { passive: true });
 
   wrap.addEventListener('touchmove', e => {
-    if (!start) return;
     const t = e.touches;
+    if (tap && t.length === 1 &&
+        Math.hypot(t[0].clientX - tap.x, t[0].clientY - tap.y) > TAP_SLOP) {
+      tap.moved = true;
+    }
+    if (!start) return;
     e.stopPropagation();
     e.preventDefault();
 
@@ -476,43 +494,99 @@ function initScoreZoom() {
     if (start.pinch && t.length >= 2 && start.gap > 0) {
       const k = Math.min(ZOOM_MAX / start.s,
                 Math.max(ZOOM_MIN / start.s, gap(t) / start.gap));
-      zoom.s = start.s * k;
+      z.s = start.s * k;
       // 손가락 사이 지점이 제자리에 머물도록 이동량을 보정한다.
-      zoom.x = p.x - k * (start.p.x - start.x);
-      zoom.y = p.y - k * (start.p.y - start.y);
+      z.x = p.x - k * (start.p.x - start.x);
+      z.y = p.y - k * (start.p.y - start.y);
     } else {
-      zoom.x = start.x + (p.x - start.p.x);
-      zoom.y = start.y + (p.y - start.p.y);
+      z.x = start.x + (p.x - start.p.x);
+      z.y = start.y + (p.y - start.p.y);
     }
-    clampZoom();
-    applyZoom();
+    clamp();
+    apply();
   }, { passive: false });
 
   wrap.addEventListener('touchend', e => {
-    if (!start) return;
-    // touchstart 를 여기서 가로챘으므로 touchend 도 같이 막아야 한다.
-    // 안 그러면 상세 화면이 낡은 시작 좌표로 곡을 넘겨 버린다.
-    e.stopPropagation();
-    if (e.touches.length === 0) start = null;
-    clampZoom();
-    applyZoom();
+    const last = e.changedTouches && e.changedTouches[0];
+    const isTap = !!tap && !tap.moved && (Date.now() - tap.at) < TAP_MS &&
+                  !!last && e.touches.length === 0;
+    const dx = (tap && last) ? last.clientX - tap.x : 0;
+    const dy = (tap && last) ? last.clientY - tap.y : 0;
+
+    if (start) {
+      // touchstart 를 가로챘으니 touchend 도 막아야 한다. 안 그러면 상세
+      // 화면이 낡은 시작 좌표로 곡을 넘겨 버린다.
+      e.stopPropagation();
+      if (e.touches.length === 0) start = null;
+      clamp();
+      apply();
+    } else if (opts.onSwipe && z.s <= 1.01 && tap && !isTap &&
+               Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 2) {
+      opts.onSwipe(dx < 0 ? 1 : -1);
+    }
+
+    if (isTap && opts.onTap) {
+      touchedAt = Date.now();
+      opts.onTap();
+    }
+    tap = null;
   }, { passive: true });
 
-  // 마우스 휠 확대 (PC 에서 확인용)
+  // 마우스로 쓸 때
+  wrap.addEventListener('click', () => {
+    if (Date.now() - touchedAt < 600) return;   // 터치 뒤 따라온 가짜 click
+    if (opts.onTap) opts.onTap();
+  });
+
   wrap.addEventListener('wheel', e => {
-    if (!e.ctrlKey && zoom.s <= 1.01) return;
+    if (!e.ctrlKey && z.s <= 1.01) return;
     e.preventDefault();
     const r = wrap.getBoundingClientRect();
     const px = e.clientX - r.left, py = e.clientY - r.top;
     const k = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-    const ns = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom.s * k));
-    const kk = ns / zoom.s;
-    zoom.x = px - kk * (px - zoom.x);
-    zoom.y = py - kk * (py - zoom.y);
-    zoom.s = ns;
-    clampZoom();
-    applyZoom();
+    const ns = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z.s * k));
+    const kk = ns / z.s;
+    z.x = px - kk * (px - z.x);
+    z.y = py - kk * (py - z.y);
+    z.s = ns;
+    clamp();
+    apply();
   }, { passive: false });
+
+  return { z, apply, clamp, reset, zoomTo };
+}
+
+let scoreZoom = null;    // 곡 화면 안의 작은 악보
+let fsZoom = null;       // 전체화면 악보
+
+/* ── 전체화면 악보 ───────────────────────
+   악보를 한 번 탭하면 전체화면으로 열린다. 다시 탭하면 닫힌다. */
+function fsOpen() {
+  const src = $('scoreImg').getAttribute('src');
+  if (!src || $('scoreImgWrap').hidden) return;
+  $('fsImg').src = src;
+  $('fsView').hidden = false;
+  document.body.classList.add('fs-open');
+  fsZoom.reset();
+  const el = $('fsView');
+  if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+}
+
+function fsClose() {
+  $('fsView').hidden = true;
+  document.body.classList.remove('fs-open');
+  if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+const fsIsOpen = () => !$('fsView').hidden;
+
+/* 전체화면에서 곡을 넘기면 그림도 같이 바꾼다. */
+function fsSync() {
+  if (!fsIsOpen()) return;
+  const src = $('scoreImg').getAttribute('src');
+  if (src) { $('fsImg').src = src; fsZoom.reset(); }
 }
 
 /* 지금 화면에 쓰이는 악보 요소 (이미지 / OSMD) */
@@ -542,11 +616,11 @@ async function loadScore(h) {
     box.hidden = true;
     box.innerHTML = '';
     imgWrap.hidden = collapsed;
-    resetZoom();                    // 곡을 바꾸면 확대 상태도 처음으로
+    if (scoreZoom) scoreZoom.reset();   // 곡을 바꾸면 확대 상태도 처음으로
     msg.hidden = false;
     msg.textContent = '악보 불러오는 중…';
     const img = $('scoreImg');
-    img.onload = () => { msg.hidden = true; };
+    img.onload = () => { msg.hidden = true; fsSync(); };
     img.alt = `${h.no}장 ${h.title} 악보`;
 
     // 이전 곡의 Blob URL 은 반드시 풀어준다. 안 그러면 메모리가 계속 쌓인다.
@@ -788,7 +862,7 @@ function initSwipe() {
     lastDy = 0;
     // 확대된 이미지 위에서는 좌우로 미는 게 '화면 밀기'여야 한다.
     // 악보를 확대해 둔 상태에서는 좌우로 미는 게 '악보 이동'이어야 한다.
-    lockPan = zoom.s > 1.01 &&
+    lockPan = scoreZoom.z.s > 1.01 &&
       !!(e.target.closest && e.target.closest('.score-img-wrap'));
     const c = mid(t);
     cx0 = c.x; cy0 = c.y;
@@ -821,8 +895,10 @@ function initSwipe() {
     if (two) { two = false; return; }      // 핀치였으면 아무것도 하지 않는다
     if (lockPan) return;
 
-    const dx = e.changedTouches[0].clientX - sx;
-    const dy = e.changedTouches[0].clientY - sy;
+    const last = e.changedTouches && e.changedTouches[0];
+    if (!last) return;
+    const dx = last.clientX - sx;
+    const dy = last.clientY - sy;
     if (Math.abs(dx) > SWIPE_X && Math.abs(dx) > Math.abs(dy) * 2) {
       step(dx < 0 ? 1 : -1);               // 오른쪽→왼쪽 = 다음 곡
     }
@@ -935,15 +1011,25 @@ function wire() {
     $('scoreToggle').textContent = box.hidden ? '악보 보기' : '악보 숨기기';
   });
   $('imgZoom').addEventListener('click', () => {
-    if (zoom.s > 1.01) { resetZoom(); return; }
-    zoom.s = 2.2;                       // 가운데를 기준으로 키운다
-    const wrap = $('scoreImgWrap');
-    zoom.x = -wrap.clientWidth * (zoom.s - 1) / 2;
-    zoom.y = 0;
-    clampZoom();
-    applyZoom();
+    if (scoreZoom.z.s > 1.01) scoreZoom.reset();
+    else scoreZoom.zoomTo(2.2);
   });
-  initScoreZoom();
+
+  // 작은 악보를 탭하면 전체화면, 전체화면에서 탭하면 닫는다.
+  scoreZoom = createZoomer('scoreImgWrap', 'scoreImg', {
+    onTap: fsOpen,
+    onChange: z => {
+      $('imgZoom').textContent = z.s > 1.01 ? '⤡ 원래대로' : '⤢ 확대';
+    }
+  });
+  fsZoom = createZoomer('fsView', 'fsImg', {
+    onTap: fsClose,
+    onSwipe: step            // 전체화면에서도 좌우로 밀어 곡을 넘긴다
+  });
+  $('fsClose').addEventListener('click', e => { e.stopPropagation(); fsClose(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && fsIsOpen()) fsClose();
+  });
 
   // iOS 사파리는 user-scalable=no 를 무시한다. 페이지 자체가 확대되지 않도록
   // 사파리 전용 제스처 이벤트를 막는다. 악보 확대는 위에서 직접 처리한다.
