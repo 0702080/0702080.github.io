@@ -210,6 +210,7 @@ mark{background:color-mix(in srgb,var(--accent) 28%,transparent); color:inherit;
 .score-img-wrap img{
   display:block; width:100%; height:auto;
   transform-origin:0 0; will-change:transform;
+  touch-action:none;   /* 상속되지 않으므로 img 에도 지정한다 */
 }
 .score-img-wrap.zoomed img{cursor:grab}
 /* 어두운 곳에서 흰 종이가 눈부실 때 — 설정에서 켭니다. */
@@ -235,7 +236,19 @@ body.invert-score .score-img-wrap img{filter:invert(1)}
 #fsImg{
   display:block; width:100%; height:100%; object-fit:contain;
   transform-origin:0 0; will-change:transform;
+  /* touch-action 은 상속되지 않는다. 터치가 실제로 닿는 img 에도 지정해야
+     브라우저가 두 손가락 제스처를 가로채지 않는다. */
+  touch-action:none;
 }
+#fsInfo{
+  position:absolute; z-index:2; left:50%; transform:translateX(-50%);
+  bottom:calc(16px + env(safe-area-inset-bottom));
+  padding:7px 14px; border-radius:99px;
+  background:rgba(0,0,0,.55); color:#fff;
+  font-size:13px; font-weight:600; font-variant-numeric:tabular-nums;
+  pointer-events:none; transition:opacity .25s;
+}
+#fsInfo.fade{opacity:0}
 #fsClose{
   position:absolute; z-index:2;
   top:calc(10px + env(safe-area-inset-top)); right:12px;
@@ -244,6 +257,10 @@ body.invert-score .score-img-wrap img{filter:invert(1)}
   cursor:pointer;
 }
 body.fs-open{overflow:hidden}
+/* 전체화면에서도 번호를 칠 수 있어야 한다. 입력줄만 악보 위로 올린다. */
+body.fs-open #omnibar{position:relative; z-index:70; box-shadow:0 -4px 16px rgba(0,0,0,.3)}
+body.fs-open #tabbar{display:none}
+body.fs-open #fsClose{bottom:auto}
 body.invert-score #fsView{background:#000}
 body.invert-score #fsImg{filter:invert(1)}
 

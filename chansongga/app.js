@@ -2,7 +2,7 @@
 'use strict';
 
 // 폰이 옛 캐시를 물고 있는지 설정 화면에서 바로 확인할 수 있도록 남긴다.
-const APP_VERSION = '2026-09-21 full';
+const APP_VERSION = '2026-09-21 full2';
 const DATA_URL = 'data/hymns.json';
 const SAMPLE_URL = 'data/hymns.sample.json';
 const LS = 'hymnapp.v1';
@@ -568,19 +568,31 @@ function fsOpen() {
   $('fsView').hidden = false;
   document.body.classList.add('fs-open');
   fsZoom.reset();
-  const el = $('fsView');
-  if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  // 브라우저의 네이티브 전체화면(requestFullscreen)은 그 요소의 자손만 그린다.
+  // 그러면 하단 입력줄이 화면에서 사라져 번호를 칠 수 없다. 그래서 화면을
+  // 덮는 방식으로 띄우고, 입력줄만 그 위에 올린다.
 }
 
 function fsClose() {
   $('fsView').hidden = true;
   document.body.classList.remove('fs-open');
-  if (document.fullscreenElement && document.exitFullscreen) {
-    document.exitFullscreen().catch(() => {});
-  }
 }
 
 const fsIsOpen = () => !$('fsView').hidden;
+
+/* 전체화면 아래쪽에 배율을 잠깐 띄운다. 확대가 먹히는지 눈으로 바로 확인된다. */
+let fsInfoTimer = null;
+function fsInfoShow(text) {
+  const el = $('fsInfo');
+  el.hidden = false;
+  el.classList.remove('fade');
+  el.textContent = text;
+  clearTimeout(fsInfoTimer);
+  fsInfoTimer = setTimeout(() => {
+    el.classList.add('fade');
+    setTimeout(() => { el.hidden = true; }, 280);
+  }, 1100);
+}
 
 /* 전체화면에서 곡을 넘기면 그림도 같이 바꾼다. */
 function fsSync() {
@@ -1027,6 +1039,18 @@ function wire() {
     onSwipe: step            // 전체화면에서도 좌우로 밀어 곡을 넘긴다
   });
   $('fsClose').addEventListener('click', e => { e.stopPropagation(); fsClose(); });
+
+  // 확대기와 별개로 손가락 수를 읽는다. 확대가 안 될 때, 터치 자체가 안 오는지
+  // 아니면 계산이 잘못된 것인지 화면만 보고 가릴 수 있다. (capture 단계)
+  ['touchstart', 'touchmove', 'touchend'].forEach(ev =>
+    $('fsView').addEventListener(ev, e => {
+      const n = e.touches.length;
+      // capture 단계라 확대 계산 전이다. 다음 프레임에 읽어야 현재 배율이 나온다.
+      requestAnimationFrame(() => {
+        fsInfoShow(n ? `손가락 ${n} · ${fsZoom.z.s.toFixed(1)}배`
+                     : `${fsZoom.z.s.toFixed(1)}배`);
+      });
+    }, { passive: true, capture: true }));
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && fsIsOpen()) fsClose();
   });
