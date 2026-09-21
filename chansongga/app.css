@@ -48,7 +48,9 @@ body{
 #main{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch}
 /* 키패드 시트가 덮는 만큼 본문 아래를 비워 둔다. */
 body.pad-open #main{padding-bottom:var(--pad-h,320px)}
-.view{padding:16px; padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+/* 위아래 여백을 좌우와 같게 맞춘다. 화면 아래 안전영역은 탭바가 이미
+   처리하므로 여기서 또 띄우면 악보 밑에 빈 공간만 커진다. */
+.view{padding:16px}
 .view[hidden]{display:none}
 .empty{color:var(--ink-2); text-align:center; padding:48px 16px; line-height:1.8}
 
@@ -187,9 +189,10 @@ mark{background:color-mix(in srgb,var(--accent) 28%,transparent); color:inherit;
 /* ── 곡 상세 ──────────────────────────── */
 .score-wrap{
   background:var(--surface); border:1px solid var(--line);
-  border-radius:var(--radius); padding:10px; margin-bottom:18px; box-shadow:var(--shadow);
+  border-radius:var(--radius); padding:10px; box-shadow:var(--shadow);
 }
-.score-bar{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px}
+/* 가사가 있을 때만 사이를 띄운다. 없으면 악보 밑이 바로 끝난다. */
+.lyrics:not(:empty){margin-top:16px}
 .chip{
   padding:6px 11px; font:inherit; font-size:13px; border-radius:99px;
   border:1px solid var(--line); background:var(--surface-2); color:var(--ink); cursor:pointer;
