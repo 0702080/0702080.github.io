@@ -23,6 +23,7 @@
 html,body{margin:0;padding:0;height:100%;overscroll-behavior-y:none}
 body{
   background:var(--bg); color:var(--ink);
+  touch-action:manipulation;   /* 두 번 탭해서 페이지가 확대되지 않게 */
   font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo",
     "Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
   font-size:16px; line-height:1.6;
@@ -200,14 +201,17 @@ mark{background:color-mix(in srgb,var(--accent) 28%,transparent); color:inherit;
 .osmd{overflow-x:auto; min-height:40px}
 .osmd svg{max-width:100%; height:auto !important}
 
-/* 이미지 악보 — 기본은 폭 맞춤, '확대'를 누르면 좌우로 밀어서 봅니다. */
+/* 이미지 악보 — 두 손가락으로 확대하고 끌어서 움직인다.
+   touch-action:none 이라야 브라우저가 가로채지 않고 우리가 처리할 수 있다. */
 .score-img-wrap{
-  overflow:auto; -webkit-overflow-scrolling:touch;
+  overflow:hidden; touch-action:none;
   border-radius:8px; background:#fff; line-height:0;
 }
-.score-img-wrap img{display:block; width:100%; height:auto}
-.score-img-wrap.zoom{max-height:78vh}
-.score-img-wrap.zoom img{width:240%; max-width:none}
+.score-img-wrap img{
+  display:block; width:100%; height:auto;
+  transform-origin:0 0; will-change:transform;
+}
+.score-img-wrap.zoomed img{cursor:grab}
 /* 어두운 곳에서 흰 종이가 눈부실 때 — 설정에서 켭니다. */
 body.invert-score .score-img-wrap{background:#000}
 body.invert-score .score-img-wrap img{filter:invert(1)}

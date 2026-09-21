@@ -2,7 +2,7 @@
 'use strict';
 
 // 폰이 옛 캐시를 물고 있는지 설정 화면에서 바로 확인할 수 있도록 남긴다.
-const APP_VERSION = '2026-09-21 ZIP';
+const APP_VERSION = '2026-09-21 zoom';
 const DATA_URL = 'data/hymns.json';
 const SAMPLE_URL = 'data/hymns.sample.json';
 const LS = 'hymnapp.v1';
@@ -410,6 +410,111 @@ function paintFav(no) {
   chip.classList.toggle('on', on);
 }
 
+/* ── 악보 확대/이동 ─────────────────────
+   페이지 전체는 확대되지 않게 막아 두고(viewport), 악보 영역만 여기서 직접
+   처리한다. 두 손가락으로 벌리면 확대, 확대된 상태에서 끌면 이동. */
+const ZOOM_MIN = 1;
+const ZOOM_MAX = 6;
+const zoom = { s: 1, x: 0, y: 0 };
+
+function applyZoom() {
+  const img = $('scoreImg');
+  img.style.transform =
+    `translate(${zoom.x.toFixed(1)}px, ${zoom.y.toFixed(1)}px) scale(${zoom.s})`;
+  $('scoreImgWrap').classList.toggle('zoomed', zoom.s > 1.01);
+  $('imgZoom').textContent = zoom.s > 1.01 ? '⤡ 원래대로' : '⤢ 확대';
+}
+
+/* 확대해도 악보가 화면 밖으로 완전히 빠져나가지 않도록 붙잡는다. */
+function clampZoom() {
+  const wrap = $('scoreImgWrap');
+  const img = $('scoreImg');
+  zoom.s = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom.s));
+  const w = wrap.clientWidth;
+  const h = img.clientHeight || wrap.clientHeight;
+  const extraX = w * (zoom.s - 1);
+  const extraY = h * (zoom.s - 1);
+  zoom.x = Math.min(0, Math.max(-extraX, zoom.x));
+  zoom.y = Math.min(0, Math.max(-extraY, zoom.y));
+  if (zoom.s <= ZOOM_MIN + 0.001) { zoom.x = 0; zoom.y = 0; }
+}
+
+function resetZoom() {
+  zoom.s = 1; zoom.x = 0; zoom.y = 0;
+  applyZoom();
+}
+
+function initScoreZoom() {
+  const wrap = $('scoreImgWrap');
+  const gap = t => Math.hypot(t[0].clientX - t[1].clientX,
+                              t[0].clientY - t[1].clientY);
+  const mid = t => (t.length > 1
+    ? { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 }
+    : { x: t[0].clientX, y: t[0].clientY });
+
+  let start = null;   // { s, x, y, gap, p }
+
+  wrap.addEventListener('touchstart', e => {
+    const t = e.touches;
+    const pinch = t.length >= 2;
+    // 확대되지 않은 상태의 한 손가락은 곡 넘기기용으로 흘려보낸다.
+    if (!pinch && zoom.s <= 1.01) { start = null; return; }
+    e.stopPropagation();
+    start = {
+      s: zoom.s, x: zoom.x, y: zoom.y,
+      gap: pinch ? gap(t) : 0, p: mid(t), pinch
+    };
+  }, { passive: true });
+
+  wrap.addEventListener('touchmove', e => {
+    if (!start) return;
+    const t = e.touches;
+    e.stopPropagation();
+    e.preventDefault();
+
+    const p = mid(t);
+    if (start.pinch && t.length >= 2 && start.gap > 0) {
+      const k = Math.min(ZOOM_MAX / start.s,
+                Math.max(ZOOM_MIN / start.s, gap(t) / start.gap));
+      zoom.s = start.s * k;
+      // 손가락 사이 지점이 제자리에 머물도록 이동량을 보정한다.
+      zoom.x = p.x - k * (start.p.x - start.x);
+      zoom.y = p.y - k * (start.p.y - start.y);
+    } else {
+      zoom.x = start.x + (p.x - start.p.x);
+      zoom.y = start.y + (p.y - start.p.y);
+    }
+    clampZoom();
+    applyZoom();
+  }, { passive: false });
+
+  wrap.addEventListener('touchend', e => {
+    if (!start) return;
+    // touchstart 를 여기서 가로챘으므로 touchend 도 같이 막아야 한다.
+    // 안 그러면 상세 화면이 낡은 시작 좌표로 곡을 넘겨 버린다.
+    e.stopPropagation();
+    if (e.touches.length === 0) start = null;
+    clampZoom();
+    applyZoom();
+  }, { passive: true });
+
+  // 마우스 휠 확대 (PC 에서 확인용)
+  wrap.addEventListener('wheel', e => {
+    if (!e.ctrlKey && zoom.s <= 1.01) return;
+    e.preventDefault();
+    const r = wrap.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    const k = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+    const ns = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom.s * k));
+    const kk = ns / zoom.s;
+    zoom.x = px - kk * (px - zoom.x);
+    zoom.y = py - kk * (py - zoom.y);
+    zoom.s = ns;
+    clampZoom();
+    applyZoom();
+  }, { passive: false });
+}
+
 /* 지금 화면에 쓰이는 악보 요소 (이미지 / OSMD) */
 function activeScoreBox() {
   const type = ((state.current || {}).score || {}).type;
@@ -437,8 +542,7 @@ async function loadScore(h) {
     box.hidden = true;
     box.innerHTML = '';
     imgWrap.hidden = collapsed;
-    imgWrap.classList.remove('zoom');
-    $('imgZoom').textContent = '⤢ 확대';
+    resetZoom();                    // 곡을 바꾸면 확대 상태도 처음으로
     msg.hidden = false;
     msg.textContent = '악보 불러오는 중…';
     const img = $('scoreImg');
@@ -671,15 +775,21 @@ function initSwipe() {
 
   let sx = 0, sy = 0, cy0 = 0, cx0 = 0, gap0 = 0;
   let lastDy = 0, two = false, twoVertical = false, lockPan = false;
+  // 이 화면이 touchstart 를 실제로 받았을 때만 손짓으로 인정한다.
+  // 악보가 시작을 가로챈 경우 낡은 좌표로 곡이 넘어가면 안 된다.
+  let armed = false;
 
   el.addEventListener('touchstart', e => {
     const t = touches(e);
     if (!t.length) return;
+    armed = true;
     two = t.length >= 2;
     twoVertical = false;
     lastDy = 0;
     // 확대된 이미지 위에서는 좌우로 미는 게 '화면 밀기'여야 한다.
-    lockPan = !!(e.target.closest && e.target.closest('.score-img-wrap.zoom'));
+    // 악보를 확대해 둔 상태에서는 좌우로 미는 게 '악보 이동'이어야 한다.
+    lockPan = zoom.s > 1.01 &&
+      !!(e.target.closest && e.target.closest('.score-img-wrap'));
     const c = mid(t);
     cx0 = c.x; cy0 = c.y;
     sx = t[0].clientX; sy = t[0].clientY;
@@ -701,6 +811,8 @@ function initSwipe() {
   }, { passive: false });
 
   el.addEventListener('touchend', e => {
+    if (!armed) return;          // 시작을 못 봤으면 아무것도 하지 않는다
+    armed = false;
     if (twoVertical) {
       if (Math.abs(lastDy) > SWIPE_Y2) jumpTen(lastDy < 0 ? 1 : -1);
       two = twoVertical = false;
@@ -823,9 +935,20 @@ function wire() {
     $('scoreToggle').textContent = box.hidden ? '악보 보기' : '악보 숨기기';
   });
   $('imgZoom').addEventListener('click', () => {
-    const on = $('scoreImgWrap').classList.toggle('zoom');
-    $('imgZoom').textContent = on ? '⤡ 축소' : '⤢ 확대';
+    if (zoom.s > 1.01) { resetZoom(); return; }
+    zoom.s = 2.2;                       // 가운데를 기준으로 키운다
+    const wrap = $('scoreImgWrap');
+    zoom.x = -wrap.clientWidth * (zoom.s - 1) / 2;
+    zoom.y = 0;
+    clampZoom();
+    applyZoom();
   });
+  initScoreZoom();
+
+  // iOS 사파리는 user-scalable=no 를 무시한다. 페이지 자체가 확대되지 않도록
+  // 사파리 전용 제스처 이벤트를 막는다. 악보 확대는 위에서 직접 처리한다.
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev =>
+    document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
 
   $('setTheme').addEventListener('change', e => {
     state.settings.theme = e.target.value; save(); applySettings();
