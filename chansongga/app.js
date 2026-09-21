@@ -2,7 +2,7 @@
 'use strict';
 
 // 폰이 옛 캐시를 물고 있는지 설정 화면에서 바로 확인할 수 있도록 남긴다.
-const APP_VERSION = '2026-09-21 center';
+const APP_VERSION = '2026-09-21 dedup';
 const DATA_URL = 'data/hymns.json';
 const SAMPLE_URL = 'data/hymns.sample.json';
 const LS = 'hymnapp.v1';
@@ -1179,11 +1179,25 @@ function wire() {
 }
 
 /* 검색용 색인을 다시 만든다. 곡이 추가/변경될 때마다 호출. */
+/* 번호 -> 곡 맵만 다시 만든다. 같은 번호가 둘 이상이면 하나로 줄인다. */
+function reindexByNo() {
+  state.byNo.clear();
+  const unique = [];
+  for (const h of state.hymns) {
+    if (state.byNo.has(h.no)) {
+      Object.assign(state.byNo.get(h.no), h);   // 뒤에 온 정보로 덮어쓴다
+      continue;
+    }
+    state.byNo.set(h.no, h);
+    unique.push(h);
+  }
+  if (unique.length !== state.hymns.length) state.hymns = unique;
+}
+
 function buildIndex() {
   state.hymns.sort((a, b) => a.no - b.no);
-  state.byNo.clear();
+  reindexByNo();
   for (const h of state.hymns) {
-    state.byNo.set(h.no, h);
     const lyricText = (h.verses || []).flatMap(v => v.lines || []).join(' ');
     h._text = norm(h.title + ' ' + lyricText + ' ' + (h.tune || ''));
     h._cho = toCho(h.title + ' ' + lyricText);
@@ -1193,6 +1207,9 @@ function buildIndex() {
 /* 이 기기에 저장해 둔 악보를 곡 목록에 얹는다. 없는 번호는 새로 만든다. */
 async function loadLibrary() {
   const rows = await libAll();
+  // 조회 전에 번호 색인을 맞춘다. 비어 있는 채로 조회하면 이미 있는 곡도
+  // '없다'고 판단해 같은 번호를 또 밀어 넣는다.
+  reindexByNo();
   state.lib.clear();
   for (const r of rows) {
     if (!r || !r.blob) continue;
