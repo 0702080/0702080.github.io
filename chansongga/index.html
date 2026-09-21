@@ -77,10 +77,6 @@
         <input type="checkbox" id="setWake">
       </label>
       <label class="row">
-        <span>곡 열면 악보 먼저</span>
-        <input type="checkbox" id="setScoreFirst">
-      </label>
-      <label class="row">
         <span>이미지 악보 반전<br><small>어두운 곳에서 눈부심 줄이기</small></span>
         <input type="checkbox" id="setInvert">
       </label>
@@ -106,18 +102,10 @@
   <!-- 곡 상세 -->
   <section class="view detail" id="view-detail" hidden>
     <div class="score-wrap" id="scoreWrap">
-      <div class="score-bar">
-        <span id="trGroup">
-          <button class="chip" id="trDown">♭ 내림</button>
-          <span class="chip flat" id="trLabel">원조</span>
-          <button class="chip" id="trUp">♯ 올림</button>
-        </span>
-        <button class="chip" id="imgZoom" hidden>⤢ 확대</button>
-        <button class="chip" id="favChip">☆</button>
-        <button class="chip" id="scoreToggle">악보 숨기기</button>
-      </div>
       <div id="osmd" class="osmd"></div>
       <div id="scoreImgWrap" class="score-img-wrap" hidden>
+        <!-- prev 는 이전 악보. 새 악보가 다 뜬 뒤 겹친 채로 사라진다. -->
+        <img id="scoreImgPrev" class="score-prev" alt="" aria-hidden="true">
         <img id="scoreImg" alt="악보" decoding="async">
       </div>
       <p class="score-msg" id="scoreMsg" hidden></p>
@@ -130,6 +118,7 @@
 
 <!-- 악보를 탭하면 열리는 전체화면. 다시 탭하면 닫힙니다. -->
 <div id="fsView" hidden>
+  <img id="fsImgPrev" class="score-prev" alt="" aria-hidden="true">
   <img id="fsImg" alt="악보 전체화면" decoding="async">
   <div id="fsInfo" hidden></div>
   <button id="fsClose" aria-label="닫기">✕</button>

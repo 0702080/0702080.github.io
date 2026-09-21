@@ -2,7 +2,7 @@
 'use strict';
 
 // 폰이 옛 캐시를 물고 있는지 설정 화면에서 바로 확인할 수 있도록 남긴다.
-const APP_VERSION = '2026-09-21 full2';
+const APP_VERSION = '2026-09-21 fade';
 const DATA_URL = 'data/hymns.json';
 const SAMPLE_URL = 'data/hymns.sample.json';
 const LS = 'hymnapp.v1';
@@ -14,11 +14,12 @@ const state = {
   fav: new Set(),
   settings: {
     theme: 'auto', font: 115, zoom: 80,
-    wake: false, scoreFirst: true, invert: false, transpose: {}
+    wake: false, invert: false, transpose: {}
   },
   view: 'pad',
   lib: new Map(),        // 번호 -> { title, blob }  이 기기에 저장된 악보
-  objUrl: null,          // 지금 화면에 쓰는 Blob URL (다음 곡에서 해제한다)
+  objUrl: null,          // 지금 화면에 쓰는 Blob URL
+  objUrlOld: null,       // 페이드 중인 이전 악보 (한 세대 뒤에 해제한다)
   current: null,
   padBuf: '',
   osmd: null,
@@ -380,8 +381,6 @@ function openHymn(no, opts = {}) {
   if (opts.replace) history.replaceState({ no: h.no }, '', url);
   else if (opts.push !== false) history.pushState({ no: h.no }, '', url);
 
-  paintFav(h.no);
-
   $('lyrics').innerHTML = (h.verses || []).map(v => `
     <div class="verse">
       <span class="verse-n">${esc(v.n)}</span>
@@ -394,21 +393,18 @@ function openHymn(no, opts = {}) {
 
   // 제목·가사는 즉시 바뀌고, 무거운 악보 렌더링만 잠깐 늦춘다.
   clearTimeout(scoreTimer);
-  $('scoreMsg').hidden = false;
-  $('scoreMsg').textContent = '악보 준비 중…';
+  // 이미 악보가 떠 있으면 안내문을 띄우지 않는다. 곡을 넘길 때마다
+  // 글자가 번쩍여서 전환이 끊겨 보이기 때문.
+  if (!$('scoreImg').getAttribute('src')) {
+    $('scoreMsg').hidden = false;
+    $('scoreMsg').textContent = '악보 준비 중…';
+  }
   scoreTimer = setTimeout(() => loadScore(h), opts.defer ? 260 : 0);
   return true;
 }
 
 /* ── 악보 (OSMD) ──────────────────────── */
 function transposeOf(no) { return state.settings.transpose[no] || 0; }
-
-function paintFav(no) {
-  const on = state.fav.has(no);
-  const chip = $('favChip');
-  chip.textContent = on ? '★' : '☆';
-  chip.classList.toggle('on', on);
-}
 
 /* ── 악보 확대/이동 ─────────────────────
    페이지 전체는 확대되지 않게 막아 두고(viewport), 악보 영역만 여기서 직접
@@ -564,6 +560,7 @@ let fsZoom = null;       // 전체화면 악보
 function fsOpen() {
   const src = $('scoreImg').getAttribute('src');
   if (!src || $('scoreImgWrap').hidden) return;
+  $('fsImgPrev').classList.remove('on');   // 새로 열 때는 잔상 없이
   $('fsImg').src = src;
   $('fsView').hidden = false;
   document.body.classList.add('fs-open');
@@ -598,7 +595,22 @@ function fsInfoShow(text) {
 function fsSync() {
   if (!fsIsOpen()) return;
   const src = $('scoreImg').getAttribute('src');
-  if (src) { $('fsImg').src = src; fsZoom.reset(); }
+  const img = $('fsImg');
+  const prev = $('fsImgPrev');
+  if (!src || src === img.getAttribute('src')) return;
+
+  const shown = img.getAttribute('src');
+  if (shown) {
+    prev.src = shown;
+    prev.classList.add('on');
+    void prev.offsetWidth;          // 전환 시작점을 만들어 준다
+  } else {
+    prev.classList.remove('on');
+  }
+
+  img.onload = () => prev.classList.remove('on');
+  img.src = src;
+  fsZoom.reset();
 }
 
 /* 지금 화면에 쓰이는 악보 요소 (이미지 / OSMD) */
@@ -610,11 +622,6 @@ function activeScoreBox() {
 async function loadScore(h) {
   const msg = $('scoreMsg'), box = $('osmd'), imgWrap = $('scoreImgWrap');
   const type = (h.score || {}).type;
-  const collapsed = !state.settings.scoreFirst;
-
-  $('scoreToggle').textContent = collapsed ? '악보 보기' : '악보 숨기기';
-  $('trGroup').hidden = type !== 'musicxml';   // 조옮김은 MusicXML 에서만
-  $('imgZoom').hidden = type !== 'image';
 
   if (!type) {
     box.hidden = imgWrap.hidden = true;
@@ -627,16 +634,40 @@ async function loadScore(h) {
   if (type === 'image') {
     box.hidden = true;
     box.innerHTML = '';
-    imgWrap.hidden = collapsed;
+    imgWrap.hidden = false;
     if (scoreZoom) scoreZoom.reset();   // 곡을 바꾸면 확대 상태도 처음으로
-    msg.hidden = false;
-    msg.textContent = '악보 불러오는 중…';
+
     const img = $('scoreImg');
-    img.onload = () => { msg.hidden = true; fsSync(); };
+    const prev = $('scoreImgPrev');
+    const shown = img.getAttribute('src');
+
+    // 이미 악보가 떠 있으면 그것을 뒤에 남겨 두고 새 악보가 겹쳐 올라오게 한다.
+    if (shown) {
+      prev.src = shown;
+      prev.classList.add('on');
+      // Blob 악보는 즉시 로드돼서 on 이 같은 프레임에 붙었다 떨어진다.
+      // 그러면 브라우저가 중간 상태를 계산하지 않아 전환이 재생되지 않는다.
+      // 여기서 스타일을 한 번 강제로 반영시켜 시작점을 만들어 준다.
+      void prev.offsetWidth;
+      msg.hidden = true;               // 넘길 때 안내문이 번쩍이지 않게
+    } else {
+      prev.classList.remove('on');
+      msg.hidden = false;
+      msg.textContent = '악보 불러오는 중…';
+    }
+
+    img.onload = () => {
+      msg.hidden = true;
+      prev.classList.remove('on');     // 이전 악보가 부드럽게 사라진다
+      fsSync();
+    };
     img.alt = `${h.no}장 ${h.title} 악보`;
 
-    // 이전 곡의 Blob URL 은 반드시 풀어준다. 안 그러면 메모리가 계속 쌓인다.
-    if (state.objUrl) { URL.revokeObjectURL(state.objUrl); state.objUrl = null; }
+    // 이전 악보가 아직 화면에 겹쳐 있으므로 한 세대 뒤에 푼다.
+    // 바로 풀면 페이드 중인 그림이 깨진다.
+    if (state.objUrlOld) URL.revokeObjectURL(state.objUrlOld);
+    state.objUrlOld = state.objUrl;
+    state.objUrl = null;
 
     const rec = state.lib.get(h.no);
     if (rec) {                       // 이 기기에 저장해 둔 악보
@@ -663,7 +694,7 @@ async function loadScore(h) {
   }
 
   imgWrap.hidden = true;
-  box.hidden = collapsed;
+  box.hidden = false;
   msg.hidden = false; msg.textContent = '악보 불러오는 중…';
   box.innerHTML = '';
 
@@ -698,22 +729,12 @@ function applyTranspose(rerender = true) {
   if (!o || !o.Sheet) return;
   const n = transposeOf(state.current.no);
   o.Sheet.Transpose = n;
-  $('trLabel').textContent = n === 0 ? '원조' : (n > 0 ? `+${n}` : `${n}`);
   try {
     o.updateGraphic();
     o.render();
   } catch (e) {
     if (rerender) $('scoreMsg').textContent = '조옮김에 실패했습니다.';
   }
-}
-
-function bumpTranspose(d) {
-  if (!state.current || !state.osmd) return;
-  const no = state.current.no;
-  const n = Math.max(-11, Math.min(11, transposeOf(no) + d));
-  state.settings.transpose[no] = n;
-  save();
-  applyTranspose();
 }
 
 const isDark = () => document.documentElement.dataset.theme === 'dark' ||
@@ -730,7 +751,6 @@ function applySettings() {
   $('setFont').value = s.font;
   $('setZoom').value = s.zoom;
   $('setWake').checked = s.wake;
-  $('setScoreFirst').checked = s.scoreFirst;
   $('setInvert').checked = s.invert;
   document.body.classList.toggle('invert-score', s.invert);
   if (state.osmd) { state.osmd.zoom = s.zoom / 100; try { state.osmd.render(); } catch (e) {} }
@@ -1007,32 +1027,11 @@ function wire() {
   });
   $('omniClear').addEventListener('click', clearOmni);
 
-  $('favChip').addEventListener('click', () => {
-    if (!state.current) return;
-    const no = state.current.no;
-    if (state.fav.has(no)) state.fav.delete(no); else state.fav.add(no);
-    save();
-    paintFav(no);
-  });
 
-  $('trUp').addEventListener('click', () => bumpTranspose(1));
-  $('trDown').addEventListener('click', () => bumpTranspose(-1));
-  $('scoreToggle').addEventListener('click', () => {
-    const box = activeScoreBox();
-    box.hidden = !box.hidden;
-    $('scoreToggle').textContent = box.hidden ? '악보 보기' : '악보 숨기기';
-  });
-  $('imgZoom').addEventListener('click', () => {
-    if (scoreZoom.z.s > 1.01) scoreZoom.reset();
-    else scoreZoom.zoomTo(2.2);
-  });
 
   // 작은 악보를 탭하면 전체화면, 전체화면에서 탭하면 닫는다.
   scoreZoom = createZoomer('scoreImgWrap', 'scoreImg', {
     onTap: fsOpen,
-    onChange: z => {
-      $('imgZoom').textContent = z.s > 1.01 ? '⤡ 원래대로' : '⤢ 확대';
-    }
   });
   fsZoom = createZoomer('fsView', 'fsImg', {
     onTap: fsClose,
@@ -1075,9 +1074,6 @@ function wire() {
   });
   $('setWake').addEventListener('change', e => {
     state.settings.wake = e.target.checked; save(); updateWakeLock();
-  });
-  $('setScoreFirst').addEventListener('change', e => {
-    state.settings.scoreFirst = e.target.checked; save();
   });
   $('setInvert').addEventListener('change', e => {
     state.settings.invert = e.target.checked; save();

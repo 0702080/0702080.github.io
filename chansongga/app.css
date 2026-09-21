@@ -204,9 +204,17 @@ mark{background:color-mix(in srgb,var(--accent) 28%,transparent); color:inherit;
 /* 이미지 악보 — 두 손가락으로 확대하고 끌어서 움직인다.
    touch-action:none 이라야 브라우저가 가로채지 않고 우리가 처리할 수 있다. */
 .score-img-wrap{
-  overflow:hidden; touch-action:none;
+  position:relative; overflow:hidden; touch-action:none;
   border-radius:8px; background:#fff; line-height:0;
 }
+/* 곡을 넘길 때 이전 악보가 겹친 채로 사라져 화면이 끊기지 않는다. */
+.score-prev{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:contain; object-position:top center;
+  opacity:0; pointer-events:none; transition:opacity .26s ease-out;
+}
+.score-prev.on{opacity:1; transition:none}
+#scoreImg, #fsImg{position:relative; z-index:1}   /* 이전 악보보다 위에 */
 .score-img-wrap img{
   display:block; width:100%; height:auto;
   transform-origin:0 0; will-change:transform;
