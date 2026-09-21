@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>말씀 초점 읽기</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&display=swap">
+<style>
+  :root {
+    --paper:        #F7F6F2;
+    --raised:       #FFFFFF;
+    --ink:          #16181C;
+    --ink-soft:     #5A6068;
+    --ink-faint:    #9EA3AA;
+    --accent:       #2D4159;
+    --accent-weak:  #E3E7ED;
+    --rule:         #E0DED6;
+
+    --role-s:       #2E5E8E;   /* 주어 */
+    --role-o:       #97552F;   /* 목적어 */
+    --role-v:       #16181C;   /* 동사 */
+    --role-a:       #3F6B5E;   /* 형용사 */
+
+    --shadow:       0 -1px 0 rgba(22,24,28,.07), 0 -12px 28px rgba(22,24,28,.07);
+    --dim-op:   .16;
+    --dim-blur: 2.4px;
+    --fs:       19px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14161A; --raised: #1C1F25; --ink: #F1EFE9;
+      --ink-soft: #A0A6AE; --ink-faint: #565C65;
+      --accent: #9DBED0; --accent-weak: #26303B; --rule: #2A2E35;
+      --role-s: #82B5DE; --role-o: #D9A06E; --role-v: #F1EFE9; --role-a: #7FBCA8;
+      --shadow: 0 -1px 0 rgba(0,0,0,.5), 0 -12px 28px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14161A; --raised: #1C1F25; --ink: #F1EFE9;
+    --ink-soft: #A0A6AE; --ink-faint: #565C65;
+    --accent: #9DBED0; --accent-weak: #26303B; --rule: #2A2E35;
+    --role-s: #82B5DE; --role-o: #D9A06E; --role-v: #F1EFE9; --role-a: #7FBCA8;
+    --shadow: 0 -1px 0 rgba(0,0,0,.5), 0 -12px 28px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "Noto Sans KR", system-ui, -apple-system, sans-serif;
+    overscroll-behavior-y: none;
+  }
+
+  /* ── 헤더 ───────────────────────────────── */
+  header {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: saturate(1.6) blur(14px);
+    -webkit-backdrop-filter: saturate(1.6) blur(14px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .head-in {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; max-width: 660px; margin: 0 auto;
+  }
+  #pick {
+    font: inherit; font-size: 15px; font-weight: 700; color: var(--ink);
+    background: transparent; border: 0; padding: 4px 2px;
+    max-width: 55%; text-overflow: ellipsis;
+  }
+  #pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .count {
+    font-size: 11px; color: var(--accent); background: var(--accent-weak);
+    border-radius: 999px; padding: 3px 9px; white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .icon-btn {
+    margin-left: auto; font: inherit; font-size: 12px; font-weight: 500;
+    border: 1px solid var(--rule); background: var(--raised); color: var(--ink-soft);
+    border-radius: 999px; padding: 7px 13px; cursor: pointer; white-space: nowrap;
+  }
+  .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ── 본문 ───────────────────────────────── */
+  main { max-width: 660px; margin: 0 auto; padding: 4px 18px 230px; }
+  .verse {
+    display: grid; grid-template-columns: 24px 1fr; gap: 10px;
+    padding: 10px 0; border: 0; background: none; width: 100%;
+    text-align: left; font: inherit; color: inherit; cursor: pointer;
+  }
+  .verse:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+  .n {
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    font-variant-numeric: tabular-nums; padding-top: .6em; text-align: right;
+  }
+  .t {
+    font-family: "Noto Serif KR", "Nanum Myeongjo", serif;
+    font-size: var(--fs); line-height: 2.05; word-break: keep-all;
+  }
+
+  .w { transition: opacity .28s ease, filter .28s ease, color .28s ease; }
+  .w.off { color: var(--ink-faint); opacity: var(--dim-op); filter: blur(var(--dim-blur)); }
+  .w.on  { opacity: 1; filter: none; }
+  .w.on.r-s { color: var(--role-s); font-weight: 700; }
+  .w.on.r-o { color: var(--role-o); font-weight: 700; }
+  .w.on.r-v { color: var(--role-v); font-weight: 700; }
+  .w.on.r-a { color: var(--role-a); font-weight: 600; }
+  .w.on.r-e { color: var(--ink-soft); font-weight: 400; }
+
+  .verse.peek .w { opacity: 1 !important; filter: none !important; }
+  .verse.peek .w.off { color: var(--ink-soft); }
+
+  /* 편집 모드 */
+  body.edit .w {
+    cursor: pointer; border-radius: 4px;
+    box-shadow: inset 0 -1px 0 var(--rule);
+    opacity: 1 !important; filter: none !important;
+  }
+  body.edit .w.off { color: var(--ink-faint); }
+  body.edit .verse { cursor: default; }
+
+  .empty {
+    text-align: center; color: var(--ink-soft); font-size: 14px;
+    line-height: 1.9; padding: 70px 10px;
+  }
+  .hint { font-size: 10.5px; color: var(--ink-faint); text-align: center; padding: 26px 0 4px; }
+
+  /* ── 하단 바 ─────────────────────────────── */
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    background: var(--raised); border-top: 1px solid var(--rule); box-shadow: var(--shadow);
+    padding: 11px 18px calc(11px + env(safe-area-inset-bottom, 0px));
+  }
+  .bar-in { max-width: 660px; margin: 0 auto; display: grid; gap: 10px; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .row label { font-size: 11px; font-weight: 500; color: var(--ink-soft); white-space: nowrap; }
+  .pct { font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; width: 34px; text-align: right; }
+
+  input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; min-width: 90px; height: 24px; background: none; margin: 0; }
+  input[type=range]::-webkit-slider-runnable-track { height: 3px; border-radius: 3px; background: var(--rule); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px; margin-top: -8.5px; border-radius: 50%;
+    background: var(--accent); border: 3px solid var(--raised); box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  }
+  input[type=range]::-moz-range-track { height: 3px; border-radius: 3px; background: var(--rule); }
+  input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 3px solid var(--raised); }
+
+  .chip {
+    font: inherit; font-size: 12px; font-weight: 500; padding: 8px 13px;
+    border-radius: 999px; border: 1px solid var(--rule); background: transparent;
+    color: var(--ink-soft); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .chip:active { transform: scale(.97); }
+  .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .chip[data-role="s"] { color: var(--role-s); }
+  .chip[data-role="o"] { color: var(--role-o); }
+  .chip[data-role="v"] { color: var(--ink); }
+  .chip[data-role="a"] { color: var(--role-a); }
+  .chip[aria-pressed="true"] { background: currentColor; border-color: currentColor; }
+  .chip[aria-pressed="true"] span:not(.dot) { color: var(--raised); }
+  .chip[aria-pressed="true"] .dot { background: var(--raised); }
+  .chip.plain[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--raised); }
+  .chip.sz { min-width: 42px; justify-content: center; }
+  .spacer { flex: 1; }
+
+  /* ── 입력 시트 ───────────────────────────── */
+  .sheet[hidden] { display: none; }
+  .sheet {
+    position: fixed; inset: 0; z-index: 50; background: var(--paper);
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .sheet-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px; border-bottom: 1px solid var(--rule);
+  }
+  .sheet-head h2 { margin: 0; font-size: 16px; font-weight: 700; }
+  .sheet-body { flex: 1; overflow-y: auto; padding: 16px 18px; display: grid; gap: 13px; align-content: start; }
+  .sheet-foot { padding: 12px 18px; border-top: 1px solid var(--rule); display: flex; gap: 8px; }
+  .field { display: grid; gap: 6px; }
+  .field > span { font-size: 11px; font-weight: 500; color: var(--ink-soft); }
+  input[type=text], textarea {
+    font: inherit; font-size: 14px; color: var(--ink); background: var(--raised);
+    border: 1px solid var(--rule); border-radius: 10px; padding: 11px 12px; width: 100%;
+  }
+  textarea { min-height: 220px; resize: vertical; line-height: 1.75; font-family: "Noto Serif KR", serif; }
+  input[type=text]:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .btn {
+    font: inherit; font-size: 14px; font-weight: 500; padding: 12px 18px; border-radius: 10px;
+    border: 1px solid var(--rule); background: var(--raised); color: var(--ink); cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--raised); flex: 1; }
+  .btn.danger { color: #B4453A; border-color: var(--rule); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .note { font-size: 11.5px; color: var(--ink-faint); line-height: 1.8; }
+  .note code { font-family: ui-monospace, Menlo, monospace; font-size: 11px; background: var(--accent-weak); padding: 1px 4px; border-radius: 3px; }
+  .sync { font-size: 10.5px; color: var(--ink-faint); text-align: center; padding-top: 2px; }
+
+  @media (prefers-reduced-motion: reduce) { .w, .chip { transition: none; } }
+</style>
+
+<header>
+  <div class="head-in">
+    <select id="pick" aria-label="장 선택"></select>
+    <span class="count" id="count">—</span>
+    <button class="icon-btn" id="openAdd">＋ 본문 넣기</button>
+  </div>
+</header>
+
+<main id="reader"></main>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="row" id="roles">
+      <button class="chip" data-role="s" aria-pressed="false"><span class="dot"></span><span>주어</span></button>
+      <button class="chip" data-role="o" aria-pressed="false"><span class="dot"></span><span>목적어</span></button>
+      <button class="chip" data-role="v" aria-pressed="true"><span class="dot"></span><span>동사</span></button>
+      <button class="chip" data-role="a" aria-pressed="false"><span class="dot"></span><span>형용사</span></button>
+    </div>
+    <div class="row">
+      <label for="dim">흐리기</label>
+      <input type="range" id="dim" min="0" max="100" value="84">
+      <span class="pct" id="dimval">84%</span>
+    </div>
+    <div class="row">
+      <button class="chip plain" id="edit" aria-pressed="false">고치기</button>
+      <span class="spacer"></span>
+      <button class="chip plain sz" id="minus" aria-label="글자 작게">가⁻</button>
+      <button class="chip plain sz" id="plus" aria-label="글자 크게">가⁺</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-head">
+    <h2>본문 넣기</h2>
+    <span class="spacer"></span>
+    <button class="btn" id="closeAdd">닫기</button>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <span>제목</span>
+      <input type="text" id="fTitle" placeholder="예: 역대하 14장">
+    </div>
+    <div class="field">
+      <span>본문 — 성경 사이트에서 한 장을 복사해 붙여넣으세요</span>
+      <textarea id="fText" placeholder="절마다 줄을 바꿔 붙여넣으면 됩니다.&#10;줄 앞에 절 번호가 있어도 알아서 인식합니다."></textarea>
+    </div>
+    <div class="field">
+      <span>또는 텍스트 파일 첨부</span>
+      <input type="file" id="fFile" accept=".txt,text/plain">
+    </div>
+    <p class="note">
+      붙여넣으면 조사와 어미를 분석해 <strong>주어·목적어·동사·형용사</strong>를 자동으로 표시합니다.
+      규칙 기반이라 틀리는 어절이 있는데, 읽기 화면에서 <code>고치기</code>를 켜고 단어를 탭하면 바로 바꿀 수 있습니다.
+    </p>
+    <button class="btn danger" id="delCh">이 장 삭제</button>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn primary" id="saveCh">분석해서 저장</button>
+  </div>
+</div>
+
+<script>
+/* ═══ 1. 한국어 문장성분 분석기 ═══════════════════════════
+   조사로 체언의 격을, 어미로 용언을 판정한다.
+   관형형(-는/-은/-을)은 조사와 형태가 겹치므로 어간 사전으로 가른다. */
+
+const V_STEMS = new Set(("가 오 보 듣 말하 이르 주 받 먹 마시 죽 살 낳 지 서 앉 눕 누우 일어나 나가 들어가 나아가 " +
+"돌아가 돌아오 돌아왔 보내 데리 알 모르 믿 사랑하 미워하 기도하 경배하 섬기 지키 범하 구하 찾 잃 얻 싸우 이기 " +
+"치 죽이 멸하 세우 헐 짓 건축하 기록하 대답하 묻 부르 부르짖 외치 울 웃 기뻐하 두려워하 노하 진노하 용서하 " +
+"구원하 축복하 저주하 명하 행하 없애 깨뜨리 찍 누리 대신하 장사되 되 보시 잡 당기 거느리 갖추 돕 도우 " +
+"의지하 의탁하 원하 못하 하 도망하 추격하 엎드러지 남 패망하 노략하 이끌 만들 형통하 있 삼키 흩 모으 " +
+"떠나 머무 이루 마치 시작하 그치 쉬 일하 심 거두 뿌리 베 갈 오르 내리 건너 지나 따르 좇 인도하 " +
+"택하 기름붓 제사하 드리 사르 정결하 더럽히 고치 낫 병들 슬퍼하 즐거워하 찬양하 감사하 노래하 " +
+"듣보 깨닫 생각하 기억하 잊 속이 훔치 간음하 " +
+"통치하 다스리 판단하 심판하 정하 허락하 금하 맹세하 언약하 지시하 가르치 배우 " +
+"전하 선포하 예언하 응하 이루어지 나타나 보이 감추 숨 열 닫 " +
+"싣 나르 팔 사 바꾸 갚 빌리 " +
+"진치 전쟁하 패하 승리하 사로잡 노략질하").split(/\s+/).filter(Boolean));
+
+const A_STEMS = new Set(("크 작 많 적 강 약 없 좋 나쁘 아름답 두렵 무섭 기쁘 슬프 높 낮 길 짧 넓 좁 " +
+"깊 얕 무겁 가볍 밝 어둡 덥 춥 새롭 오래 어리 늙 젊 빠르 느리 " +
+"평안하 견고하 존귀하 비천하 정직하 악하 선하 거룩하 의롭 미련하 지혜롭 " +
+"풍성하 가난하 부요하 강성하 심하 놀랍 아프 " +
+"같 다르 옳 그르 참되 신실하").split(/\s+/).filter(Boolean));
+
+/* 주격·목적격·기타 조사 (긴 것부터) */
+const J_SUBJ = ["께옵서", "께서는", "께서도", "께서", "이야말로", "이", "가", "은", "는"];
+const J_OBJ  = ["을", "를"];
+const J_ETC  = ["에게서", "으로부터", "에서부터", "에게", "한테", "으로서", "으로써", "이라도",
+                "까지", "부터", "에서", "으로", "에는", "에도", "와는", "과는",
+                "께", "에", "로", "와", "과", "의", "도", "만", "야", "여", "이여", "아"];
+
+/* 확실한 용언 어미 — 어간 확인 없이 서술어로 인정 */
+const E_STRONG = ["사옵나이다", "하옵소서", "나이다", "옵소서", "느니라", "으니라", "으리라", "로소이다",
+  "였더라", "았더라", "었더라", "하더라", "이더라", "시니라", "리로다", "니이다",
+  "니라", "더라", "리라", "노라", "도다", "지라", "소서", "으라", "이라", "이요", "이니", "이며", "이라야",
+  "았다", "었다", "겠다", "한다", "된다", "는다", "았고", "었고", "았으며", "었으며",
+  "으므로", "므로", "으매", "으며", "으니", "으면", "으되", "거늘", "거든", "지만", "든지", "면서", "려고", "고자",
+  "하여", "하고", "하며", "하니", "하매", "하는", "하던", "하사", "하게", "하지", "하라", "하신", "하실", "하였", "하시", "한즉", "하나",
+  "되고", "되며", "되니", "되어", "되는", "되었", "되지",
+  "시니", "시고", "시며", "시매", "시는", "시던", "시어", "셨다", "셨고", "시오니", "시오매",
+  "있고", "있으", "있는", "없고", "없으", "없는", "없이", "없사오니", "있나니", "없었"];
+
+/* 어간 확인이 필요한 약한 어미 */
+const E_WEAK = ["어서", "아서", "게", "지", "되", "고", "며", "여", "니", "매", "면", "나", "서", "어", "아",
+                "는", "은", "을", "던", "기", "음", "임", "ㄹ", "라", "자"];
+
+const TAIL = /[.,·;:!?"'”’)\]』」]+$/;
+const HEAD = /^["'“‘(\[『「]+/;
+
+function stemOf(w, e) { return w.slice(0, w.length - e.length); }
+
+function looksVerbal(s) {
+  if (!s) return false;
+  if (V_STEMS.has(s) || A_STEMS.has(s)) return true;
+  for (const m of ["하", "되", "시", "았", "었", "겠", "으시", "이시", "오시"]) if (s.endsWith(m)) return true;
+  return false;
+}
+function adjStem(s) {
+  if (A_STEMS.has(s)) return true;
+  for (const a of A_STEMS) if (s.endsWith(a) && a.length > 1) return true;
+  return false;
+}
+
+/* 관형형 축약 — 어미 ㄴ/ㄹ이 어간에 붙은 꼴: 큰(크+ㄴ), 한, 노략한, 지킨, 줄(주+ㄹ) */
+const SAFE1 = new Set(["크", "하", "되", "오", "주", "보", "가"]);
+function contracted(w) {
+  const code = w.charCodeAt(w.length - 1) - 0xAC00;
+  if (code < 0 || code > 11171) return null;
+  const jong = code % 28;
+  if (jong !== 4 && jong !== 8) return null;           // ㄴ, ㄹ 받침만
+  const stem = w.slice(0, -1) + String.fromCharCode(0xAC00 + Math.floor(code / 28) * 28);
+
+  // 한 글자짜리는 "산·말·문"처럼 명사와 겹치므로 확실한 어간만 인정한다
+  if (w.length === 1) {
+    if (!SAFE1.has(stem)) return null;
+    return A_STEMS.has(stem) ? "a" : "v";
+  }
+  if (adjStem(stem)) return "a";
+  if (V_STEMS.has(stem) || looksVerbal(stem)) return "v";
+  return null;
+}
+
+/* 한 어절의 역할을 판정한다 → s(주어) o(목적어) v(동사) a(형용사) e(기타) */
+function classify(raw) {
+  const w = raw.replace(HEAD, "").replace(TAIL, "");
+  if (!w) return "e";
+
+  // 1) 확실한 용언 어미가 먼저다 — "없사오니", "하시니"가 조사로 새는 것을 막는다
+  for (const e of E_STRONG) {
+    if (w.length >= e.length && w.endsWith(e)) {
+      const st = stemOf(w, e);
+      return adjStem(st) || adjStem(st + e.slice(0, 1)) ? "a" : "v";
+    }
+  }
+
+  // 2) 목적격 조사
+  for (const j of J_OBJ) {
+    if (w.length > j.length && w.endsWith(j)) {
+      const st = stemOf(w, j);
+      if (V_STEMS.has(st)) return "v";        // 관형형: 먹을, 지을
+      if (A_STEMS.has(st)) return "a";
+      return "o";
+    }
+  }
+
+  // 3) 주격·주제 조사
+  for (const j of J_SUBJ) {
+    if (w.length > j.length && w.endsWith(j)) {
+      const st = stemOf(w, j);
+      if (V_STEMS.has(st)) return "v";        // 관형형: 지키는, 있는
+      if (A_STEMS.has(st)) return "a";        // 많은, 큰
+      return "s";
+    }
+  }
+
+  // 4) 나머지 조사 → 부사어·관형어
+  for (const j of J_ETC) {
+    if (w.length > j.length && w.endsWith(j)) return "e";
+  }
+
+  // 5) 약한 어미 — 어간이 용언일 때만
+  for (const e of E_WEAK) {
+    if (w.length > e.length && w.endsWith(e)) {
+      const st = stemOf(w, e);
+      if (looksVerbal(st)) return adjStem(st) ? "a" : "v";
+    }
+  }
+
+  return contracted(w) || "e";
+}
+
+/* ═══ 2. 본문 파싱 ═══════════════════════════════════════ */
+
+function parseChapter(raw) {
+  const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  const verses = [];
+  let auto = 0;
+
+  for (const line of lines) {
+    // 출처·제목 줄은 건너뛴다
+    if (/^[^가-힣]*$/.test(line)) continue;
+    if (/(개역개정|개역한글|대한성서공회|새번역|공동번역)/.test(line) && line.length < 40 && !/[.?!]$/.test(line)) continue;
+
+    let n = null, text = line;
+    let m = line.match(/^(\d{1,3})\s*:\s*(\d{1,3})[\s.)]+(.+)$/);   // 14:1 본문
+    if (m) { n = +m[2]; text = m[3]; }
+    else {
+      m = line.match(/^(\d{1,3})[\s.)]+(.+)$/);                      // 1 본문
+      if (m) { n = +m[1]; text = m[2]; }
+    }
+    if (n === null) n = ++auto; else auto = n;
+
+    const words = text.split(/\s+/).filter(Boolean).map(t => ({ t, r: classify(t) }));
+    if (words.length) verses.push({ n, words });
+  }
+  return verses;
+}
+
+/* ═══ 3. 저장소 — db(기기 간 공유) + localStorage(대비) ═══ */
+
+/* 예시 본문은 사용료 없이 쓸 수 있는 개역한글판을 쓴다.
+   대한성서공회가 보호기간 만료로 안내하고 있으며, 출처 표기가 조건이라 화면에도 남긴다. */
+const SAMPLE_TITLE = "역대하 14장";
+const SAMPLE_SRC = "성경전서 개역한글판 · 대한성서공회";
+const SAMPLE = `아비야가 그 열조와 함께 자매 다윗성에 장사되고 그 아들 아사가 대신하여 왕이 되니 그 시대에 그 땅이 십년을 평안하니라
+아사가 그 하나님 여호와 보시기에 선과 정의를 행하여
+이방 제단과 산당을 없이하고 주상을 훼파하며 아세라 상을 찍고
+유다 사람을 명하여 그 열조의 하나님 여호와를 구하게 하며 그 율법과 명령을 행하게 하고
+또 유다 모든 성읍에서 산당과 태양상을 없이하매 나라가 그 앞에서 평안함을 얻으니라
+여호와께서 아사에게 평안을 주셨으므로 그 땅이 평안하여 여러해 싸움이 없은지라 저가 견고한 성읍들을 유다에 건축하니라
+아사가 일찌기 유다 사람에게 이르되 우리가 우리 하나님 여호와를 찾았으므로 이 땅이 아직 우리 앞에 있나니 우리가 이 성읍들을 건축하고 그 주위에 성곽과 망대와 문과 빗장을 만들자 우리가 주를 찾았으므로 주께서 우리에게 사방의 평안을 주셨느니라 하고 이에 저희가 성읍을 형통하게 건축 하였더라
+아사의 군대는 유다 중에서 큰 방패와 창을 잡는 자가 삼십만이요 베냐민 중에서 작은 방패를 잡으며 활을 당기는 자가 이십 팔만이라 다 큰 용사더라
+구스 사람 세라가 저희를 치려하여 군사 백만과 병거 삼백승을 거느리고 마레사에 이르매
+아사가 마주 나아가서 마레사의 스바다 골짜기에 진 치고
+그 하나님 여호와께 부르짖어 가로되 여호와여 강한 자와 약한 자 사이에는 주 밖에 도와줄 이가 없사오니 우리 하나님 여호와여 우리를 도우소서 우리가 주를 의지하오며 주의 이름을 의탁하옵고 이 많은 무리를 치러 왔나이다 여호와여 주는 우리 하나님이시오니 원컨대 사람으로 주를 이기지 못하게 하옵소서 하였더니
+여호와께서 구스 사람을 아사와 유다 사람 앞에서 쳐서 패하게 하시니 구스 사람이 도망하는지라
+아사와 그 좇는 자가 구스 사람을 쫓아 그랄까지 이르매 이에 구스 사람이 엎드러지고 살아 남은 자가 없었으니 이는 여호와 앞에서와 그 군대 앞에서 패망하였음이라 노략한 물건이 심히 많았더라
+여호와께서 그랄 사면 모든 성읍 백성을 두렵게 하시니 무리가 그 모든 성읍을 치고 그 가운데 있는 많은 물건을 노략하고
+또 짐승 지키는 천막을 치고 양과 약대를 많이 이끌고 예루살렘으로 돌아왔더라`;
+
+const LS = "focus-bible-v1";
+let chapters = {};      // id -> {id, title, verses, updatedAt}
+let curId = null;
+let db = null;
+
+function lsRead() {
+  try { return JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) { return null; }
+}
+function lsWrite() {
+  try { localStorage.setItem(LS, JSON.stringify({ chapters, curId, prefs })); } catch (e) {}
+}
+
+const prefs = { dim: 84, fs: 19, roles: { s: false, o: false, v: true, a: false }, edit: false };
+
+/* ═══ 4. 렌더링 ═══════════════════════════════════════ */
+
+const reader = document.getElementById("reader");
+const pick   = document.getElementById("pick");
+const countEl= document.getElementById("count");
+const root   = document.documentElement;
+const ROLE_NAME = { s: "주어", o: "목적어", v: "동사", a: "형용사", e: "기타" };
+const CYCLE = ["v", "s", "o", "a", "e"];
+
+function anyRole() { return Object.values(prefs.roles).some(Boolean); }
+
+function renderList() {
+  const ids = Object.keys(chapters).sort((a, b) => (chapters[b].updatedAt || 0) - (chapters[a].updatedAt || 0));
+  pick.innerHTML = "";
+  for (const id of ids) {
+    const o = document.createElement("option");
+    o.value = id; o.textContent = chapters[id].title;
+    pick.appendChild(o);
+  }
+  if (!curId || !chapters[curId]) curId = ids[0] || null;
+  if (curId) pick.value = curId;
+}
+
+function renderReader() {
+  reader.innerHTML = "";
+  const ch = chapters[curId];
+  if (!ch) {
+    reader.innerHTML = '<p class="empty">아직 넣은 본문이 없습니다.<br>위의 <strong>＋ 본문 넣기</strong>로 한 장을 붙여넣어 보세요.</p>';
+    countEl.textContent = "—";
+    return;
+  }
+
+  const tally = { s: 0, o: 0, v: 0, a: 0 };
+  const show = anyRole();
+
+  ch.verses.forEach((v, vi) => {
+    const el = document.createElement("button");
+    el.className = "verse"; el.type = "button";
+    el.setAttribute("aria-label", v.n + "절 전체 보기");
+
+    const n = document.createElement("span");
+    n.className = "n"; n.textContent = v.n;
+
+    const t = document.createElement("span");
+    t.className = "t";
+
+    v.words.forEach((w, wi) => {
+      if (tally[w.r] !== undefined) tally[w.r]++;
+      const s = document.createElement("span");
+      const lit = !show || prefs.roles[w.r];
+      s.className = "w " + (lit ? "on r-" + w.r : "off");
+      s.textContent = w.t;
+      s.dataset.v = vi; s.dataset.w = wi;
+      if (prefs.edit) s.title = ROLE_NAME[w.r];
+      t.appendChild(s);
+      t.appendChild(document.createTextNode(" "));
+    });
+
+    el.append(n, t);
+    el.addEventListener("click", ev => {
+      if (prefs.edit) {
+        const sp = ev.target.closest(".w");
+        if (!sp) return;
+        const word = ch.verses[+sp.dataset.v].words[+sp.dataset.w];
+        word.r = CYCLE[(CYCLE.indexOf(word.r) + 1) % CYCLE.length];
+        saveChapter(ch);
+        renderReader();
+        return;
+      }
+      el.classList.toggle("peek");
+    });
+    reader.appendChild(el);
+  });
+
+  const hint = document.createElement("p");
+  hint.className = "hint";
+  hint.textContent = prefs.edit
+    ? "단어를 탭하면 동사 → 주어 → 목적어 → 형용사 → 기타 순으로 바뀝니다"
+    : "절을 탭하면 그 절만 온전히 보입니다";
+  if (ch.src) hint.textContent += " · " + ch.src;
+  reader.appendChild(hint);
+
+  countEl.textContent = "동사 " + tally.v + " · 주어 " + tally.s + " · 목적어 " + tally.o;
+}
+
+function applyPrefs() {
+  const d = prefs.dim;
+  root.style.setProperty("--dim-op", (1 - d / 100 * 0.94).toFixed(3));
+  root.style.setProperty("--dim-blur", (d / 100 * 4).toFixed(2) + "px");
+  root.style.setProperty("--fs", prefs.fs + "px");
+  document.body.classList.toggle("edit", prefs.edit);
+  document.getElementById("dim").value = prefs.dim;
+  document.getElementById("dimval").textContent = prefs.dim + "%";
+  document.getElementById("edit").setAttribute("aria-pressed", prefs.edit);
+  document.querySelectorAll("#roles .chip").forEach(c => {
+    c.setAttribute("aria-pressed", !!prefs.roles[c.dataset.role]);
+  });
+}
+
+/* ═══ 5. 저장 ═══════════════════════════════════════ */
+
+function saveChapter(ch) {
+  ch.updatedAt = Date.now();
+  chapters[ch.id] = ch;
+  lsWrite();
+  if (db) {
+    db.doc("chapters/" + ch.id)
+      .set({ title: ch.title, src: ch.src || "", verses: ch.verses, updatedAt: ch.updatedAt })
+      .catch(() => {});   // 쓰기 권한이 없어도 화면과 localStorage는 그대로 동작한다
+  }
+}
+
+function newId() {
+  return "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+/* ═══ 6. 이벤트 ═══════════════════════════════════════ */
+
+document.getElementById("dim").addEventListener("input", e => {
+  prefs.dim = +e.target.value; applyPrefs(); lsWrite();
+});
+document.getElementById("plus").addEventListener("click", () => {
+  prefs.fs = Math.min(28, prefs.fs + 1); applyPrefs(); lsWrite();
+});
+document.getElementById("minus").addEventListener("click", () => {
+  prefs.fs = Math.max(15, prefs.fs - 1); applyPrefs(); lsWrite();
+});
+document.getElementById("edit").addEventListener("click", () => {
+  prefs.edit = !prefs.edit; applyPrefs(); renderReader(); lsWrite();
+});
+document.querySelectorAll("#roles .chip").forEach(c => {
+  c.addEventListener("click", () => {
+    prefs.roles[c.dataset.role] = !prefs.roles[c.dataset.role];
+    applyPrefs(); renderReader(); lsWrite();
+  });
+});
+pick.addEventListener("change", () => {
+  curId = pick.value; renderReader(); lsWrite();
+});
+
+const sheet = document.getElementById("sheet");
+const fTitle = document.getElementById("fTitle");
+const fText = document.getElementById("fText");
+
+document.getElementById("openAdd").addEventListener("click", () => {
+  fTitle.value = ""; fText.value = "";
+  document.getElementById("delCh").hidden = !curId;
+  sheet.hidden = false;
+  fTitle.focus();
+});
+document.getElementById("closeAdd").addEventListener("click", () => { sheet.hidden = true; });
+
+document.getElementById("fFile").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    fText.value = String(r.result || "");
+    if (!fTitle.value) fTitle.value = f.name.replace(/\.[^.]+$/, "");
+  };
+  r.onerror = () => { alert("파일을 읽지 못했습니다. 텍스트 파일인지 확인해 주세요."); };
+  r.readAsText(f, "utf-8");
+});
+
+document.getElementById("saveCh").addEventListener("click", () => {
+  const raw = fText.value.trim();
+  if (!raw) { alert("본문을 붙여넣어 주세요."); fText.focus(); return; }
+  const verses = parseChapter(raw);
+  if (!verses.length) { alert("절을 찾지 못했습니다. 절마다 줄을 바꿔서 넣어 주세요."); return; }
+  const ch = {
+    id: newId(),
+    title: fTitle.value.trim() || ("본문 " + (Object.keys(chapters).length + 1)),
+    verses, updatedAt: Date.now()
+  };
+  saveChapter(ch);
+  curId = ch.id;
+  sheet.hidden = true;
+  renderList(); renderReader(); lsWrite();
+});
+
+document.getElementById("delCh").addEventListener("click", () => {
+  if (!curId) return;
+  const ch = chapters[curId];
+  if (!confirm("「" + ch.title + "」을(를) 삭제할까요?")) return;
+  const gone = curId;
+  delete chapters[gone];
+  curId = null;
+  if (db) db.doc("chapters/" + gone).delete().catch(() => {});
+  sheet.hidden = true;
+  renderList(); renderReader(); lsWrite();
+});
+
+/* ═══ 7. 시작 ═══════════════════════════════════════ */
+
+const saved = lsRead();
+if (saved && saved.chapters && Object.keys(saved.chapters).length) {
+  chapters = saved.chapters;
+  curId = saved.curId;
+  if (saved.prefs) Object.assign(prefs, saved.prefs, { roles: Object.assign({}, prefs.roles, saved.prefs.roles) });
+} else {
+  const ch = { id: "sample", title: SAMPLE_TITLE, src: SAMPLE_SRC, verses: parseChapter(SAMPLE), updatedAt: Date.now() };
+  chapters[ch.id] = ch;
+  curId = ch.id;
+}
+
+applyPrefs();
+renderList();
+renderReader();
+
+/* db가 붙으면 기기 간에 장이 공유된다. 없으면 localStorage만으로 그대로 동작한다. */
+if (window.claude && window.claude.use) {
+  window.claude.use("db").then(d => {
+    if (!d) return;
+    db = d;
+    db.collection("chapters").onSnapshot(snap => {
+      let changed = false;
+      snap.docs.forEach(doc => {
+        const data = doc.data();
+        if (!data || !Array.isArray(data.verses)) return;
+        const mine = chapters[doc.id];
+        if (!mine || (data.updatedAt || 0) > (mine.updatedAt || 0)) {
+          chapters[doc.id] = { id: doc.id, title: String(data.title || "제목 없음"), src: String(data.src || ""), verses: data.verses, updatedAt: data.updatedAt || 0 };
+          changed = true;
+        }
+      });
+      if (changed) { lsWrite(); renderList(); renderReader(); }
+    }, () => {});
+    // 이 기기에만 있던 장을 한 번 올려 둔다
+    Object.values(chapters).forEach(ch => { if (ch.id !== "sample") saveChapter(ch); });
+  }).catch(() => {});
+}
+</script>
+
+</html>
