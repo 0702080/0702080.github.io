@@ -2,7 +2,7 @@
 'use strict';
 
 // 폰이 옛 캐시를 물고 있는지 설정 화면에서 바로 확인할 수 있도록 남긴다.
-const APP_VERSION = '2026-09-21 fade';
+const APP_VERSION = '2026-09-21 slide';
 const DATA_URL = 'data/hymns.json';
 const SAMPLE_URL = 'data/hymns.sample.json';
 const LS = 'hymnapp.v1';
@@ -19,7 +19,8 @@ const state = {
   view: 'pad',
   lib: new Map(),        // 번호 -> { title, blob }  이 기기에 저장된 악보
   objUrl: null,          // 지금 화면에 쓰는 Blob URL
-  objUrlOld: null,       // 페이드 중인 이전 악보 (한 세대 뒤에 해제한다)
+  objUrlOld: null,       // 넘어가는 중인 이전 악보 (한 세대 뒤에 해제한다)
+  slideDir: 0,           // +1 오른쪽에서 / -1 왼쪽에서 / 0 전환 없음
   current: null,
   padBuf: '',
   osmd: null,
@@ -376,6 +377,9 @@ let scoreTimer = null;
 function openHymn(no, opts = {}) {
   const h = state.byNo.get(Number(no));
   if (!h) return false;
+  // 번호가 커지면 오른쪽에서, 작아지면 왼쪽에서 밀려 들어온다.
+  const from = state.current ? state.current.no : null;
+  state.slideDir = (from === null || from === h.no) ? 0 : (h.no > from ? 1 : -1);
   state.current = h;
   const url = '#' + h.no;
   if (opts.replace) history.replaceState({ no: h.no }, '', url);
@@ -560,7 +564,7 @@ let fsZoom = null;       // 전체화면 악보
 function fsOpen() {
   const src = $('scoreImg').getAttribute('src');
   if (!src || $('scoreImgWrap').hidden) return;
-  $('fsImgPrev').classList.remove('on');   // 새로 열 때는 잔상 없이
+  slideReset($('fsLayer'), $('fsPrevLayer'));   // 새로 열 때는 잔상 없이
   $('fsImg').src = src;
   $('fsView').hidden = false;
   document.body.classList.add('fs-open');
@@ -599,18 +603,52 @@ function fsSync() {
   const prev = $('fsImgPrev');
   if (!src || src === img.getAttribute('src')) return;
 
+  const cur = $('fsLayer');
+  const prevLayer = $('fsPrevLayer');
   const shown = img.getAttribute('src');
-  if (shown) {
-    prev.src = shown;
-    prev.classList.add('on');
-    void prev.offsetWidth;          // 전환 시작점을 만들어 준다
-  } else {
-    prev.classList.remove('on');
-  }
+  const dir = state.slideDir;
 
-  img.onload = () => prev.classList.remove('on');
+  const sliding = slidePrep(cur, prevLayer, prev, shown, dir);
+  img.onload = () => {
+    if (sliding) slideRun(cur, prevLayer, dir);
+    else slideReset(cur, prevLayer);
+  };
+  img.onerror = () => slideReset(cur, prevLayer);
   img.src = src;
   fsZoom.reset();
+}
+
+/* ── 악보 슬라이드 ───────────────────────
+   새 악보가 옆에서 밀려 들어오고 이전 악보는 반대편으로 나간다.
+   prep 은 그림을 받기 전에 자리를 잡고, run 은 다 받은 뒤에 움직인다. */
+function slidePrep(cur, prev, prevImg, oldSrc, dir) {
+  if (!dir || !oldSrc) {
+    slideReset(cur, prev);
+    return false;
+  }
+  prevImg.src = oldSrc;
+  prev.classList.add('on');
+  prev.style.transition = 'none';
+  prev.style.transform = 'translateX(0)';
+  cur.style.transition = 'none';
+  cur.style.transform = `translateX(${dir > 0 ? 100 : -100}%)`;
+  // 시작점을 한 번 커밋해야 브라우저가 전환을 재생한다.
+  void cur.offsetWidth;
+  return true;
+}
+
+function slideRun(cur, prev, dir) {
+  cur.style.transition = '';
+  cur.style.transform = 'translateX(0)';
+  prev.style.transition = '';
+  prev.style.transform = `translateX(${dir > 0 ? -100 : 100}%)`;
+  prev.classList.remove('on');
+}
+
+function slideReset(cur, prev) {
+  cur.style.transition = 'none';
+  cur.style.transform = 'translateX(0)';
+  prev.classList.remove('on');
 }
 
 /* 지금 화면에 쓰이는 악보 요소 (이미지 / OSMD) */
@@ -638,33 +676,30 @@ async function loadScore(h) {
     if (scoreZoom) scoreZoom.reset();   // 곡을 바꾸면 확대 상태도 처음으로
 
     const img = $('scoreImg');
-    const prev = $('scoreImgPrev');
+    const prevImg = $('scoreImgPrev');
+    const cur = $('scoreLayer');
+    const prev = $('scorePrevLayer');
     const shown = img.getAttribute('src');
+    const dir = state.slideDir;
 
-    // 이미 악보가 떠 있으면 그것을 뒤에 남겨 두고 새 악보가 겹쳐 올라오게 한다.
+    const sliding = slidePrep(cur, prev, prevImg, shown, dir);
     if (shown) {
-      prev.src = shown;
-      prev.classList.add('on');
-      // Blob 악보는 즉시 로드돼서 on 이 같은 프레임에 붙었다 떨어진다.
-      // 그러면 브라우저가 중간 상태를 계산하지 않아 전환이 재생되지 않는다.
-      // 여기서 스타일을 한 번 강제로 반영시켜 시작점을 만들어 준다.
-      void prev.offsetWidth;
       msg.hidden = true;               // 넘길 때 안내문이 번쩍이지 않게
     } else {
-      prev.classList.remove('on');
       msg.hidden = false;
       msg.textContent = '악보 불러오는 중…';
     }
 
     img.onload = () => {
       msg.hidden = true;
-      prev.classList.remove('on');     // 이전 악보가 부드럽게 사라진다
+      if (sliding) slideRun(cur, prev, dir);
+      else slideReset(cur, prev);
       fsSync();
     };
     img.alt = `${h.no}장 ${h.title} 악보`;
 
-    // 이전 악보가 아직 화면에 겹쳐 있으므로 한 세대 뒤에 푼다.
-    // 바로 풀면 페이드 중인 그림이 깨진다.
+    // 이전 악보가 아직 화면에서 빠져나가는 중이므로 한 세대 뒤에 푼다.
+    // 바로 풀면 넘어가는 중인 그림이 깨진다.
     if (state.objUrlOld) URL.revokeObjectURL(state.objUrlOld);
     state.objUrlOld = state.objUrl;
     state.objUrl = null;
@@ -673,6 +708,7 @@ async function loadScore(h) {
     if (rec) {                       // 이 기기에 저장해 둔 악보
       state.objUrl = URL.createObjectURL(rec.blob);
       img.onerror = () => {
+        slideReset(cur, prev);       // 실패하면 레이어를 제자리로
         msg.hidden = false;
         msg.textContent = '저장된 악보를 여는 데 실패했습니다.';
       };
@@ -680,12 +716,14 @@ async function loadScore(h) {
       return;
     }
     if (!h.score.src) {              // 보관함에도 없고 서버 경로도 없음
+      slideReset(cur, prev);
       img.removeAttribute('src');
       msg.hidden = false;
       msg.textContent = '이 곡의 악보가 이 기기에 없습니다. 설정에서 불러오세요.';
       return;
     }
     img.onerror = () => {
+      slideReset(cur, prev);
       msg.hidden = false;
       msg.textContent = '악보 이미지를 불러오지 못했습니다: ' + h.score.src;
     };

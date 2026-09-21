@@ -103,10 +103,15 @@
   <section class="view detail" id="view-detail" hidden>
     <div class="score-wrap" id="scoreWrap">
       <div id="osmd" class="osmd"></div>
+      <!-- 레이어를 따로 둔다. 슬라이드는 레이어의 transform,
+           확대/이동은 안쪽 img 의 transform 이라 서로 충돌하지 않는다. -->
       <div id="scoreImgWrap" class="score-img-wrap" hidden>
-        <!-- prev 는 이전 악보. 새 악보가 다 뜬 뒤 겹친 채로 사라진다. -->
-        <img id="scoreImgPrev" class="score-prev" alt="" aria-hidden="true">
-        <img id="scoreImg" alt="악보" decoding="async">
+        <div id="scorePrevLayer" class="score-layer prev">
+          <img id="scoreImgPrev" alt="" aria-hidden="true">
+        </div>
+        <div id="scoreLayer" class="score-layer">
+          <img id="scoreImg" alt="악보" decoding="async">
+        </div>
       </div>
       <p class="score-msg" id="scoreMsg" hidden></p>
     </div>
@@ -118,8 +123,12 @@
 
 <!-- 악보를 탭하면 열리는 전체화면. 다시 탭하면 닫힙니다. -->
 <div id="fsView" hidden>
-  <img id="fsImgPrev" class="score-prev" alt="" aria-hidden="true">
-  <img id="fsImg" alt="악보 전체화면" decoding="async">
+  <div id="fsPrevLayer" class="score-layer prev">
+    <img id="fsImgPrev" alt="" aria-hidden="true">
+  </div>
+  <div id="fsLayer" class="score-layer">
+    <img id="fsImg" alt="악보 전체화면" decoding="async">
+  </div>
   <div id="fsInfo" hidden></div>
   <button id="fsClose" aria-label="닫기">✕</button>
 </div>
