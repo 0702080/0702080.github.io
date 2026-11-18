@@ -417,6 +417,9 @@
   /* 왼쪽엔 단추가 없으니 거의 비우지 않고, 오른쪽은 ✕(30px+3px) 만큼만
      비운다 — 글자가 쓸 수 있는 폭을 최대로 벌기 위해서다. */
   #edTelWrap.hasClr #edTel{padding-left:4px;padding-right:34px;}
+  /* 010 처럼 칸에 쓰지 않고 삼킨 키도 '눌렸다' 는 건 보이게 잠깐 물든다 */
+  #edBottom #edTel.telBlink{animation:telBlink .3s ease-out;}
+  @keyframes telBlink{ 0%{background:#bfeee6;} 100%{background:rgba(255,255,255,.95);} }
   /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 각 칸 왼쪽에
      자리를 비워둔다 — 버튼이 없는(아이폰) 경우엔 이 여백도 필요 없다. */
   #edNameWrap.hasClr #edName{padding-right:34px;}
@@ -940,7 +943,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v248</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v249</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -3393,8 +3396,10 @@
     function telSetDigits(d){
       telPre='';
       d=(d||'').replace(/\D/g,'');
-      // 010 을 붙인 통째 번호가 들어오면(11자리) 앞 010 을 뗀다
-      if(d.length>8 && d.startsWith('010')) d=d.slice(3);
+      // 010 을 붙인 통째 번호가 들어오면(정확히 11자리) 앞 010 을 뗀다.
+      // ★ '>8' 로 두면 8자리가 찬 뒤 9번째를 누를 때 이 줄이 걸려서,
+      //   9번째를 버리는 대신 번호 전체가 세 칸 밀렸다.
+      if(d.length===11 && d.startsWith('010')) d=d.slice(3);
       telRaw=d.slice(0,8);
       telRender();
     }
@@ -3408,13 +3413,27 @@
          그래서 맨 앞에서 누른 0 은 언제나 '010 을 치던 중' 이다.
          (가운데에 들어간 010, 예: 010-2010-xxxx 는 그대로 받는다) */
     let telPre='';
+    /* 삼킨 키도 눌린 건 보이게 칸을 잠깐 깜빡인다.
+       ★ 예전엔 아무 반응이 없어서, 0 을 누른 봉사자가 안 눌린 줄 알고
+         한 번 더 눌렀다 — 그게 아래 '0 두 번' 버그의 시작이었다. */
+    function telBlink(){
+      tI.classList.remove('telBlink'); void tI.offsetWidth; tI.classList.add('telBlink');
+    }
     function telPush(nd){
+      if(telRaw.length>=8) return;        // 8자리가 다 찼으면 더 받지 않는다
       if(!telRaw){
         const p=telPre+nd;
         if('010'.startsWith(p)){         // 0 → 01 → 010
           telPre = (p==='010') ? '' : p;
+          telBlink();
           return;                         // 화면은 010-XXXX-XXXX 그대로
         }
+        /* ★ 010 이 깨졌을 때 방금 누른 0 을 칸에 쓰면 안 된다.
+             가운데 첫 자리는 0 이 될 수 없다. 예전엔 여기서 그대로 흘려넣어서,
+             0 을 두 번 누르면 010-0XXX 가 되고 이어 친 번호가 통째로 한 칸
+             밀린 채(010-9876-5432 → 010-0987-6543) 경고 없이 저장됐다.
+             이 0 은 '010 을 다시 치기 시작한 것' 으로 본다. */
+        if(nd==='0'){ telPre='0'; telBlink(); return; }
         telPre='';                        // 010 이 아니었다 — 들고 있던 0·01 은 버린다
       }
       telSetDigits(telRaw+nd);
