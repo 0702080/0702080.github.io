@@ -409,11 +409,14 @@
        어떤 폰에선 잘린다. 여기 19px 는 재기 전 잠깐 쓰는 값일 뿐이다.
      ※ 이름 칸과 높이가 어긋날 걱정은 없다 — 두 칸은 .row(flex) 안에서
        서로 높이를 맞춘다. */
+  /* ★ "Courier New" 는 넣지 않는다. 안드로이드에는 그 글꼴이 없어서 가늘고
+       흐린 타자기체(Cutive Mono)로 바꿔 그린다 — 숫자가 작고 연해 보였다.
+       목록에 없으면 기본 고정폭(굵고 또렷한 Droid Sans Mono 계열)으로 간다. */
   #edBottom #edTel{font-size:19px;letter-spacing:0;text-align:center;
-    font-family:Consolas,"D2Coding","Courier New",monospace;}
-  /* 왼쪽엔 단추가 없으니 조금만, 오른쪽은 ✕(30px+3px) 만큼 비운다 —
-     글자가 쓸 수 있는 폭을 최대로 벌기 위해서다. */
-  #edTelWrap.hasClr #edTel{padding-left:8px;padding-right:36px;}
+    font-family:Consolas,"D2Coding","Roboto Mono",monospace;}
+  /* 왼쪽엔 단추가 없으니 거의 비우지 않고, 오른쪽은 ✕(30px+3px) 만큼만
+     비운다 — 글자가 쓸 수 있는 폭을 최대로 벌기 위해서다. */
+  #edTelWrap.hasClr #edTel{padding-left:4px;padding-right:34px;}
   /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 각 칸 왼쪽에
      자리를 비워둔다 — 버튼이 없는(아이폰) 경우엔 이 여백도 필요 없다. */
   #edNameWrap.hasClr #edName{padding-right:34px;}
@@ -494,8 +497,7 @@
   /* 원래 두벌식 — 한 줄 10칸이라 그리드 대신 flex 로 깔고, 줄마다 칸 수가
      달라도 각 줄이 폭을 꽉 채우게 둔다. */
   .qwoRow{display:flex;gap:4px;}
-  .qwoRow2{padding:0 5%;}   /* 9칸 줄을 반 칸씩 들여쓰기 */
-  .qwoRow3{padding:0 15%;}  /* 7칸 줄을 한 칸 반씩 들여쓰기 — 키 폭이 윗줄과 같아진다 */
+  .qwoRow2{padding:0 5.56%;}   /* 8칸 줄을 반 칸씩 들여쓰기 — 9칸 줄과 키 폭이 같아진다 */
   #kbdQW button{flex:1 1 0;height:58px;font-size:21px;}
   /* 자음·모음 글자 크기를 같게 — 아래쪽 공통 규칙(#kbd .kbVowel, 27px)이
      특정도가 같으면서 더 뒤에 있어 모음만 커져 보였다. #kbd 를 앞에 붙여
@@ -641,9 +643,9 @@
   #kbdNum[hidden]{display:none;}
   .numRow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
   #kbdNum button{height:66px;font-size:28px;letter-spacing:2px;}
-  /* 숫자마다 무지개 색을 하나씩 준다 — 자리를 색으로 기억하게 되고,
-     눌린 숫자가 뭔지도 한눈에 보인다. 색만 다를 뿐 유리알 만드는 방식은
-     다른 키와 같다(위는 밝게, 가운데는 진하게, 아래로 다시 밝게). */
+  /* 숫자판은 두 색만 쓴다 — 숫자는 푸른 유리(한글 자판의 자음 키와 같은 색),
+     CLR·이전 같은 기능 키는 보라 유리. 예전엔 숫자마다 무지개 색을 줬는데
+     열두 가지 색이 한꺼번에 보여 어지러웠다. */
   #kbdNum .kbNum{
     border:1.5px solid var(--kBd);color:var(--kTx);
     background:linear-gradient(180deg,var(--kA) 0%,var(--kB) 52%,var(--kC) 84%,var(--kD) 100%);
@@ -651,17 +653,18 @@
                inset 0 -2px 6px rgba(255,255,255,.75), inset 0 2px 3px rgba(0,0,0,.13);
     text-shadow:0 1px 1px rgba(255,255,255,.55);
   }
-  #kbdNum [data-n="1"]{--kA:#ffe8e5;--kB:#f1968f;--kC:#f4ada6;--kD:#fff2f0;--kBd:#b8564d;--kTx:#5a1e19;}
-  #kbdNum [data-n="2"]{--kA:#fff0e0;--kB:#f5b77c;--kC:#f8c592;--kD:#fff7ee;--kBd:#b87c3c;--kTx:#5a3510;}
-  #kbdNum [data-n="3"]{--kA:#fff7dd;--kB:#f4ce71;--kC:#f7d989;--kD:#fffbee;--kBd:#b08a30;--kTx:#54400c;}
-  #kbdNum [data-n="4"]{--kA:#f0fada;--kB:#bad97b;--kC:#c9e491;--kD:#f8fdec;--kBd:#7d9b40;--kTx:#35470f;}
-  #kbdNum [data-n="5"]{--kA:#e4faec;--kB:#7ed1a1;--kC:#94ddb3;--kD:#f2fdf6;--kBd:#3f9464;--kTx:#154529;}
-  #kbdNum [data-n="6"]{--kA:#e2faf6;--kB:#76d0c7;--kC:#8edcd4;--kD:#f1fdfb;--kBd:#3a9389;--kTx:#0f4540;}
-  #kbdNum [data-n="7"]{--kA:#e6f5fd;--kB:#7cc4e7;--kC:#92d3ef;--kD:#f2fbff;--kBd:#3a86ab;--kTx:#0e3d52;}
-  #kbdNum [data-n="8"]{--kA:#eaeffd;--kB:#8fa6e7;--kC:#a5b8ef;--kD:#f5f8ff;--kBd:#5069ac;--kTx:#1e2d5c;}
-  #kbdNum [data-n="9"]{--kA:#efebfd;--kB:#a694e6;--kC:#b8aaed;--kD:#f8f6ff;--kBd:#6553a4;--kTx:#2b1f57;}
-  #kbdNum [data-n="0"]{--kA:#fdeaf7;--kB:#df8dc7;--kC:#e8a3d4;--kD:#fef5fb;--kBd:#a25287;--kTx:#511c3f;}
+  /* 숫자 — 푸른 유리 (#kbd .kbCons 와 같은 색) */
+  #kbdNum .kbNum{--kA:#dcecfa;--kB:#7fa8cc;--kC:#a4c6e2;--kD:#e6f3ff;--kBd:#2c4d68;--kTx:#0e1e2b;}
   #kbdNum .kbFn{font-size:20px;letter-spacing:0;}
+  /* 기능 키 — CLR 도 이전과 같은 보라 유리로. 숫자판에서 붉은 CLR 까지
+     따로 두면 세 색이 된다. (#kbd .kbClear 보다 뒤에 있어 이쪽이 이긴다) */
+  #kbdNum .kbClear{
+    border-color:#493a61;color:#fff;
+    background:linear-gradient(180deg,#a698c0 0%,#786697 52%,#9080b0 84%,#c3b6d9 100%);
+    box-shadow:0 3px 7px rgba(10,18,30,.42),
+               inset 0 -2px 6px rgba(255,255,255,.35), inset 0 2px 3px rgba(0,0,0,.24);
+    text-shadow:0 1px 2px rgba(0,0,0,.45);
+  }
   /* 화면이 아주 짧은 기기에서는 자판을 조금 낮춰 입력판이 위로 잘리지 않게 */
   @media (max-height:620px){
     #kbd button{height:47px;font-size:20px;}
@@ -937,7 +940,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v247</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v248</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1105,8 +1108,10 @@
       ><button type="button" class="kbVowel" data-vseq="ㅡㆍ" data-vseq2="ㅡㆍㆍ">ㅜ</button>
     </div>
    </div>
-   <!-- 폰 기본 키보드와 자리가 똑같은 원래 두벌식. 익숙한 대신 한 줄에
-        10칸이라 키가 작다. -->
+   <!-- 폰 기본 키보드를 바탕으로 한 두벌식. 원래는 한 줄에 10칸이라 키가
+        작아서, 윗줄 끝 키를 한 줄씩 아래로 내려 한 줄 최대 9칸으로 줄였다
+        (10·9·7칸 → 9·8·9칸). 가장 긴 줄이 짧아진 만큼 키가 넓어진다.
+        ㅔ 는 둘째 줄 끝, ㅣ 는 셋째 줄 끝, ㅎ 은 셋째 줄 맨 앞(ㅋㅌㅊㅍ 옆)으로 갔다. -->
    <div id="kbdQW" hidden>
     <div class="qwoRow">
       <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ"></button
@@ -1117,32 +1122,30 @@
       ><button type="button" class="kbVowel" data-k="ㅛ"></button
       ><button type="button" class="kbVowel" data-k="ㅕ"></button
       ><button type="button" class="kbVowel" data-k="ㅑ"></button
-      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ"></button
-      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ"></button>
+      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ"></button>
     </div>
-    <!-- 가운데 줄은 9칸이라 실제 키보드처럼 양쪽으로 반 칸씩 들여 쓴다 -->
+    <!-- 가운데 줄은 8칸이라 양쪽을 반 칸씩 들여 써서 위아래 줄과 키 폭을 맞춘다 -->
     <div class="qwoRow qwoRow2">
       <button type="button" class="kbCons" data-k="ㅁ"></button
       ><button type="button" class="kbCons" data-k="ㄴ"></button
       ><button type="button" class="kbCons" data-k="ㅇ"></button
       ><button type="button" class="kbCons" data-k="ㄹ"></button
-      ><button type="button" class="kbCons" data-k="ㅎ"></button
       ><button type="button" class="kbVowel" data-k="ㅗ"></button
       ><button type="button" class="kbVowel" data-k="ㅓ"></button
       ><button type="button" class="kbVowel" data-k="ㅏ"></button
-      ><button type="button" class="kbVowel" data-k="ㅣ"></button>
+      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ"></button>
     </div>
-    <!-- ⌫ 는 아랫줄 "이전" 이 대신하므로 뺐다. ⇧ 는 아랫줄로 내렸다.
-         일곱 칸만 남으므로 양쪽을 한 칸 반씩 들여 써서, 윗줄들과 키 폭을
-         똑같이 맞춘다(그냥 두면 일곱 칸이 줄을 꽉 채워 키가 넓게 퍼진다). -->
-    <div class="qwoRow qwoRow3">
-      <button type="button" class="kbCons" data-k="ㅋ"></button
+    <!-- ⌫ 는 아랫줄 "이전" 이 대신하므로 뺐다. ⇧ 는 아랫줄로 내렸다. -->
+    <div class="qwoRow">
+      <button type="button" class="kbCons" data-k="ㅎ"></button
+      ><button type="button" class="kbCons" data-k="ㅋ"></button
       ><button type="button" class="kbCons" data-k="ㅌ"></button
       ><button type="button" class="kbCons" data-k="ㅊ"></button
       ><button type="button" class="kbCons" data-k="ㅍ"></button
       ><button type="button" class="kbVowel" data-k="ㅠ"></button
       ><button type="button" class="kbVowel" data-k="ㅜ"></button
-      ><button type="button" class="kbVowel" data-k="ㅡ"></button>
+      ><button type="button" class="kbVowel" data-k="ㅡ"></button
+      ><button type="button" class="kbVowel" data-k="ㅣ"></button>
     </div>
     <!-- 아랫줄 : ⇧ · 다음 · 이전.
          CLR 은 뺐다 — 이름 칸 오른쪽의 ✕ 가 같은 일(한꺼번에 지우기)을 한다.
@@ -2464,6 +2467,11 @@
     function close(){
       micStop();
       $('editor').classList.remove('on');
+      // 적는 동안 새 버전이 올라왔다면 이제 알린다
+      if(window.__updWaiting && typeof showUpdateBanner==='function'){
+        window.__updWaiting=false;
+        try{ showUpdateBanner(); }catch(e){}
+      }
       baseCanvas=null;
       saving=false; $('edSave').disabled=false;   // 어떤 경로로 닫히든 잠금은 반드시 푼다
     }
@@ -3421,20 +3429,36 @@
        그렸을 때의 폭을 재서 글자 크기를 정한다. 고정폭 글꼴이라 숫자와 X 의
        폭이 같으므로 한 번 재면 어떤 번호든 그대로 맞는다.
        편집기가 안 보일 때는 폭이 0 이라 잴 수 없다 — 그땐 넘어간다. */
-    let telFitCtx=null;
+    /* ★ 캔버스로 재지 않는다. 칸과 똑같은 글꼴을 입힌 숨은 글자를 페이지에
+         실제로 놓고 그 폭을 잰다. 안드로이드에서는 캔버스와 화면 글자가 서로
+         다른 글꼴로 대체되는 일이 있어(캔버스는 넓은 글꼴로 재고 칸은 좁은
+         글꼴로 그린다), 계산한 크기가 실제보다 훨씬 작게 나왔다. */
+    let telFitSpan=null;
     function telFit(){
-      const avail=tI.clientWidth
-        - parseFloat(getComputedStyle(tI).paddingLeft)
-        - parseFloat(getComputedStyle(tI).paddingRight);
-      if(!(avail>0)) return;
       const cs=getComputedStyle(tI);
-      if(!telFitCtx) telFitCtx=document.createElement('canvas').getContext('2d');
-      telFitCtx.font=cs.fontWeight+' 100px '+cs.fontFamily;
-      const w100=telFitCtx.measureText('010-0000-0000').width;
+      const avail=tI.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+      if(!(avail>0)) return;
+      if(!telFitSpan){
+        telFitSpan=document.createElement('span');
+        telFitSpan.setAttribute('aria-hidden','true');
+        telFitSpan.style.cssText='position:fixed;left:-9999px;top:0;visibility:hidden;'+
+                                 'white-space:pre;pointer-events:none;';
+        document.body.appendChild(telFitSpan);
+      }
+      const sp=telFitSpan.style;
+      sp.fontFamily=cs.fontFamily; sp.fontWeight=cs.fontWeight;
+      sp.fontStyle=cs.fontStyle;   sp.letterSpacing=cs.letterSpacing;
+      sp.fontSize='100px';
+      // 숫자와 X 중 넓은 쪽에 맞춘다 — 고정폭이면 같지만, 어떤 글꼴로 바뀌어도 안 넘치게
+      telFitSpan.textContent='010-0000-0000';
+      const a=telFitSpan.getBoundingClientRect().width;
+      telFitSpan.textContent='010-XXXX-XXXX';
+      const b=telFitSpan.getBoundingClientRect().width;
+      const w100=Math.max(a,b);
       if(!(w100>0)) return;
       // 3% 는 남겨 둔다 — 꽉 맞추면 반올림 때문에 마지막 글자가 잘리기도 한다
       let fs=Math.floor(100*avail/w100*0.97);
-      fs=Math.max(12, Math.min(fs, 26));   // 너무 작거나(좁은 폰) 너무 크지(태블릿) 않게
+      fs=Math.max(12, Math.min(fs, 28));   // 너무 작거나(좁은 폰) 너무 크지(태블릿) 않게
       tI.style.fontSize=fs+'px';
     }
     window.addEventListener('resize', ()=>{
@@ -4022,12 +4046,27 @@
       if(isTvMode){
         if(!$('tvShow').classList.contains('on')) location.reload();
         // 사진이 떠 있으면 다음 확인(1분 뒤) 때 다시 시도 — 대기 화면으로 돌아가면 새로고침됨
+      }else if($('editor').classList.contains('on')){
+        // 이름·전화번호를 적는 중엔 띄우지 않는다 — 아래 숫자판을 가린다.
+        // 편집기가 닫히는 순간 띄운다(ED 의 close 가 본다).
+        window.__updWaiting=true;
       }else{
         showUpdateBanner();
       }
     }catch(e){}
   }
   setInterval(checkForUpdate, 60000);
+  /* ★ 1분 타이머만으로는 늦다. 폰은 다른 앱(카메라·카톡)에 가 있는 동안
+       타이머를 멈춰 두기 때문에, 돌아와서도 한참 동안 옛 버전이 돌았다.
+       그래서 열 때, 그리고 다른 앱에서 돌아올 때 곧바로 한 번 더 본다.
+     ★ 여기서 스스로 새로고침하지는 않는다(배너만 띄운다). 카메라에서 막
+       돌아오는 중에 새로고침되면, 그 사진은 갤러리에 안 남는 임시 파일이라
+       그대로 사라진다. */
+  setTimeout(checkForUpdate, 2500);
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden) setTimeout(checkForUpdate, 1500);
+  });
+  window.addEventListener('pageshow', e=>{ if(e.persisted) setTimeout(checkForUpdate, 1500); });
 
   /* 진입 애니메이션이 끝나면 클래스를 떼어낸다 — animation-fill-mode:both 를
      그대로 두면 그 뒤로 버튼을 눌러도(:active/.pressing) transform 이 계속
