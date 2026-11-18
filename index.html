@@ -227,6 +227,15 @@
   /* "사진 카톡 전송" 버튼만 골드/머스터드로 구분 — 이 색은 밝은 편이라
      .go(카메라 버튼)의 흰 글자 대신 어두운 글자로 바꾼다. 눌림 효과는
      .go:active 의 brightness 필터를 그대로 재사용(별도 정의 불필요) */
+  /* ★ .go 가 display:flex 라서 브라우저 기본 [hidden]{display:none} 을 이긴다.
+       따로 눌러두지 않으면 '이어서 입력' 이 늘 떠 있게 된다. */
+  #bResume[hidden]{display:none !important;}
+  .go.resume{
+    border-color:#1f7a6a;
+    background:linear-gradient(180deg,#5fd3bd 0%,#2bb49b 52%,#53cdb7 84%,#a8ecdf 100%);
+    color:#06342c;
+    text-shadow:none;
+  }
   .go.share{
     border-color:#c18d15;
     background:linear-gradient(180deg,#eec463 0%,#e9b335 52%,#edc15a 84%,#f5dca3 100%);
@@ -923,7 +932,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v244</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v245</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -946,6 +955,11 @@
        이미 사진에 합성돼 있으므로 갤러리로 고른 사진은 다시 편집할 필요가
        없다 — 고른 파일을 그대로 공유만 한다. -->
   <button class="go share enter" id="bResendGallery" style="animation-delay:.32s"><span class="ico">📤</span>사진 카톡 전송</button>
+
+  <!-- 이름·전화번호를 적다 ✕ 로 취소한 사진이 남아 있을 때만 나타난다.
+       카메라로 찍은 사진은 갤러리에 남지 않는 임시 파일이라, 취소하면
+       예전에는 다시 찍는 수밖에 없었다. -->
+  <button class="go resume" id="bResume" hidden><span class="ico">✍️</span><span id="bResumeLabel">이어서 입력</span></button>
 
   <button class="go enter" id="bShoot" style="animation-delay:.36s"><span class="ico">📷</span>카메라로 찍기</button>
   <button id="mentLine" type="button" title="눌러서 다른 멘트 보기"></button>
@@ -1129,7 +1143,7 @@
     <div class="qwoRow">
       <button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
       ><button type="button" class="kbFn kbNext qwoNext" data-fn="next">다음</button
-      ><button type="button" class="kbFn qwoBack" data-fn="back">이전</button>
+      ><button type="button" class="kbFn qwoBack" data-fn="back">&#x2190; 이전</button>
     </div>
    </div>
    <!-- 두벌식C — 가나다 순 배열에 멀티탭(ㄱ→ㄲ→ㅋ)을 얹어, 한 줄 7칸으로
@@ -1164,7 +1178,7 @@
       ><button type="button" class="kbVowel" data-qv="v8"><b>ㅔ</b><i>ㅖ</i></button
       ><button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
       ><button type="button" class="kbFn kbNext qwW2" data-fn="next">다음</button
-      ><button type="button" class="kbFn qwW2" data-fn="back">이전</button>
+      ><button type="button" class="kbFn qwW2" data-fn="back">&#x2190; 이전</button>
     </div>
    </div>
    <!-- 전화번호용 숫자판. 폰 기본 숫자 키보드 대신 이걸 띄워서 한글 자판과
@@ -1188,7 +1202,7 @@
     <div class="numRow">
       <button type="button" class="kbFn kbClear" data-fn="numclear">CLR</button
       ><button type="button" class="kbNum" data-n="0">0</button
-      ><button type="button" class="kbFn" data-fn="numback">이전</button>
+      ><button type="button" class="kbFn" data-fn="numback">&#x2190; 이전</button>
     </div>
    </div>
   </div>
@@ -1566,6 +1580,34 @@
     try{ const db=await shotsDb(); db.transaction('shots','readwrite').objectStore('shots').put(rec); }
     catch(e){}
   }
+  /* ───── 적다 만 사진(보류분) ─────
+     ✕ 로 취소한 사진을 'pend' 표시를 달아 같은 저장소에 둔다. 오늘 찍은
+     사진 목록에는 섞이면 안 되므로 불러올 때 갈라낸다. */
+  async function dbSavePending(files){
+    try{
+      const db=await shotsDb();
+      const st=db.transaction('shots','readwrite').objectStore('shots');
+      const all=await new Promise((res,rej)=>{
+        const r=st.getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+      });
+      for(const r of all) if(r.pend) st.delete(r.id);      // 지난 보류분은 치우고
+      const d=todayKey(), t=Date.now();
+      files.forEach((f,i)=>{
+        st.put({ id:'pend_'+t+'_'+i, date:d, pend:1, t:t+i,
+                 blob:f, filename:(f && f.name) || 'photo.jpg' });
+      });
+    }catch(e){}
+  }
+  async function dbClearPending(){
+    try{
+      const db=await shotsDb();
+      const st=db.transaction('shots','readwrite').objectStore('shots');
+      const all=await new Promise((res,rej)=>{
+        const r=st.getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+      });
+      for(const r of all) if(r.pend) st.delete(r.id);
+    }catch(e){}
+  }
   async function dbDeleteShot(id){
     try{ const db=await shotsDb(); db.transaction('shots','readwrite').objectStore('shots').delete(id); }
     catch(e){}
@@ -1577,14 +1619,15 @@
       const all=await new Promise((res,rej)=>{
         const r=store.getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
       });
-      const today=todayKey(), todays=[];
+      const today=todayKey(), todays=[], pends=[];
       for(const rec of all){
-        if(rec.date===today) todays.push(rec);
-        else store.delete(rec.id);   // 날짜 지난 기록은 자리만 차지하니 정리
+        if(rec.date!==today){ store.delete(rec.id); continue; }   // 날짜 지난 기록은 정리
+        if(rec.pend) pends.push(rec); else todays.push(rec);
       }
       todays.sort((a,b)=>a.t-b.t);   // 찍은 순서대로
-      return todays;
-    }catch(e){ return []; }
+      pends.sort((a,b)=>a.t-b.t);
+      return {shots:todays, pends:pends};
+    }catch(e){ return {shots:[], pends:[]}; }
   }
   /* 사진마다 objectURL을 딱 한 번만 만들어 재사용한다. 예전엔 사진을 찍을 때마다
      그동안 찍은 것 전체를 처음부터 다시 그리면서 이미 만들어둔 URL까지 매번
@@ -2016,7 +2059,16 @@
   // 한 장씩 addTodayShot 을 부르면 사진마다 전체를 다시 합성하는 게 중첩돼
   // 느려지므로, 전부 밀어넣고 나서 딱 한 번만 다시 합성한다.
   async function restoreTodayShots(){
-    const recs=await dbLoadTodayAndCleanup();
+    const got=await dbLoadTodayAndCleanup();
+    const recs=got.shots;
+    // 적다 만 사진이 있으면 '이어서 입력' 단추를 되살린다
+    if(got.pends.length){
+      try{
+        ED.restoreHeld(got.pends.map(r=>
+          new File([r.blob], r.filename || 'photo.jpg',
+                   {type:(r.blob && r.blob.type) || 'image/jpeg'})));
+      }catch(e){}
+    }
     if(!recs.length) return;
     for(const r of recs){
       const shot={blob:r.blob, filename:r.filename, name:r.name, tel:r.tel, displayBlob:null, displayUrl:null, id:r.id, t:r.t};
@@ -2372,6 +2424,35 @@
       }, 'image/jpeg', 0.92);
     }
 
+    /* ───── 적다 만 사진을 들고 있는다 ─────
+       ✕ 로 취소하면 예전에는 대기열을 그냥 비웠다. 카메라로 찍은 사진은
+       갤러리에 남지 않는 임시 파일이라, 그 순간 사진이 아주 없어져서
+       다시 찍는 수밖에 없었다. 이제는 아직 저장하지 않은 것만 들고 있다가
+       '이어서 입력' 으로 그 사진에 그대로 이어서 적는다. */
+    let heldFiles=[];
+    function heldPaint(){
+      const b=$('bResume'); if(!b) return;
+      b.hidden = !heldFiles.length;
+      const l=$('bResumeLabel');
+      if(l) l.textContent = heldFiles.length>1
+        ? ('이어서 입력 (' + heldFiles.length + '장)')
+        : '이어서 입력';
+    }
+    function heldAdd(files){
+      for(const f of files) if(f && heldFiles.indexOf(f)<0) heldFiles.push(f);
+      if(heldFiles.length>20) heldFiles=heldFiles.slice(-20);   // 끝없이 쌓이지 않게
+      heldPaint(); dbSavePending(heldFiles);
+    }
+    function heldClear(){ heldFiles=[]; heldPaint(); dbClearPending(); }
+    /* 전체 취소 — 아직 저장하지 않은 것(지금 보는 것 + 뒤에 남은 것)만 들고 간다.
+       이미 저장한 앞쪽 사진은 들고 갈 까닭이 없다. */
+    function cancelAll(){
+      const left=queue.slice(qi).filter(Boolean);
+      queue=[]; qi=0;
+      if(left.length) heldAdd(left);
+      close();
+    }
+
     function close(){
       micStop();
       $('editor').classList.remove('on');
@@ -2400,7 +2481,7 @@
     let edPreviewOn=false;
     $('edCancelBtn').onclick=()=>{
       if(edPreviewOn){
-        queue=[]; qi=0; close();
+        cancelAll();        // 사진은 버리지 않고 '이어서 입력' 으로 들고 간다
         return;
       }
       edPreviewOn=true;
@@ -2577,7 +2658,7 @@
       edBottom.style.transition='opacity .2s ease';
       if(dx>ED_CANCEL_PX){
         edJustCancelled=true;
-        queue=[]; qi=0; close();
+        cancelAll();        // ✕ 와 같게 — 사진을 들고 간다
       }else{
         if(baseCanvas) baseCanvas.style.opacity='0';
         edBottom.style.opacity='1';
@@ -2950,10 +3031,10 @@
        방식의 상태가 섞이지 않게 한다. */
     /* 잠깐 있다 없앤 플릭('fk')을 골라 둔 채로 저장된 사람이 있을 수 있다.
        그냥 두면 천지인으로 튀어 어리둥절하므로, 배치가 같았던 두벌식C 로 보낸다. */
-    /* 앱을 열 때는 늘 천지인으로 시작한다. 여럿이 돌려 쓰는 폰이라
+    /* 앱을 열 때는 늘 두벌식으로 시작한다. 여럿이 돌려 쓰는 폰이라
        앞사람이 바꿔 둔 자판이 그대로 나오면 헷갈린다. 다른 자판을 고르면
-       그 자리에서 바뀌고, 앱을 다시 열 때 천지인으로 돌아온다. */
-    let kbMode = 'cj';
+       그 자리에서 바뀌고, 앱을 다시 열 때 두벌식으로 돌아온다. */
+    let kbMode = 'qw';
     /* 원래 두벌식에만 있는 ⇧ — 한 글자만 적용되고 바로 풀린다 */
     let kbShift=false;
     function kbPaintShift(){
@@ -3326,9 +3407,22 @@
       }));
     }
 
-    return { start };
+    return {
+      start,
+      /* 앱을 다시 열었을 때 적다 만 사진을 되살린다(이미 저장소에 있으므로 다시 쓰지 않는다) */
+      restoreHeld(files){ heldFiles=files.slice(0,20); heldPaint(); },
+      /* '이어서 입력' — 들고 있던 것을 꺼내 편집기를 다시 연다.
+         꺼내면서 비우고, 또 취소하면 cancelAll 이 남은 것을 다시 들고 간다. */
+      resume(){
+        if(!heldFiles.length) return;
+        const f=heldFiles.slice();
+        heldClear();
+        start(f);
+      }
+    };
   })();
 
+  $('bResume').onclick=()=>ED.resume();
   $('bShoot').onclick=()=>$('fCam').click();
   $('bPick').onclick =()=>$('fPick').click();
 
