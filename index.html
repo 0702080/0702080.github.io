@@ -403,26 +403,34 @@
   /* #edBottom input 규칙(20px)보다 확실히 우선하도록 특정도를 높인다.
      "010-0000-0000" 열세 글자가 끝까지 다 보여야 해서 글자를 조금 줄이고,
      마이크가 왼쪽으로 간 뒤로 쓸모없어진 오른쪽 여백도 줄여 폭을 벌었다. */
-  #edBottom #edTel{font-size:15px;letter-spacing:-.2px;text-align:center;padding-right:8px;}
-  #edTelWrap.hasMic #edTel{padding-left:36px;}
+  /* 전화번호는 010-XXXX-XXXX 꼴로 늘 같은 자리에 보인다.
+     ★ 고정폭 글꼴이라야 X 가 숫자로 바뀌어도 글자가 좌우로 흔들리지 않는다.
+       (보통 글꼴에서는 'X' 와 '1' 의 폭이 달라 누를 때마다 들썩인다) */
+  #edBottom #edTel{font-size:14px;letter-spacing:0;text-align:center;
+    font-family:Consolas,"D2Coding","Courier New",monospace;}
+  /* 가운데 정렬이므로 지우기 단추만큼 양쪽을 똑같이 비워 둔다.
+     010-XXXX-XXXX 는 13글자다 — Consolas 가 없어 Courier New 로 대체되는
+     기기는 글자가 더 넓으니 여유를 넉넉히 둔다. */
+  #edTelWrap.hasClr #edTel{padding-left:26px;padding-right:26px;}
   /* 아주 좁은 폰(320px대)에서는 이 크기로도 뒷자리가 잘린다 — 번호가 한 자
      빠진 걸 못 보고 지나칠 수 있어서, 그런 화면에서만 더 줄인다. */
   @media (max-width:340px){
     #edBottom #edTel{font-size:12.5px;}
-    #edTelWrap.hasMic #edTel{padding-left:34px;}
+    #edTelWrap.hasClr #edTel{padding-left:24px;padding-right:24px;}
   }
   /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 각 칸 왼쪽에
      자리를 비워둔다 — 버튼이 없는(아이폰) 경우엔 이 여백도 필요 없다. */
-  #edNameWrap.hasMic #edName, #edTelWrap.hasMic #edTel{padding-left:38px;}
-  #edMic, #edTelMic{
-    position:absolute;left:3px;top:50%;transform:translateY(-50%);
+  #edNameWrap.hasClr #edName{padding-right:34px;}
+  /* ── 한꺼번에 지우기 ──
+     예전에는 이 자리에 마이크(🎤)가 있었다. 적은 것을 통째로 지우는 일이
+     훨씬 잦아서 ✕ 로 바꿨다. 지우는 단추이므로 글자 오른쪽 끝에 둔다. */
+  #edNameClr, #edTelClr{
+    position:absolute;right:3px;top:50%;transform:translateY(-50%);
     width:30px;height:30px;border:none;border-radius:50%;padding:0;
-    background:transparent;font-size:16px;line-height:1;color:#555;
+    background:rgba(0,0,0,.07);font-size:15px;font-weight:700;line-height:1;color:#5b5b5b;
     display:flex;align-items:center;justify-content:center;cursor:pointer;
   }
-  #edMic[hidden], #edTelMic[hidden]{display:none;}
-  #edMic.listening, #edTelMic.listening{background:#e0433c;color:#fff;animation:edMicPulse 1s ease-in-out infinite;}
-  @keyframes edMicPulse{ 0%,100%{opacity:1;} 50%{opacity:.5;} }
+  #edNameClr:active, #edTelClr:active{background:rgba(0,0,0,.20);color:#111;}
   /* 아래 저장/다시찍기 버튼도 위 입력칸과 같은 비율·간격으로 나눠서
      세로 경계선이 서로 정확히 맞춰 정렬되게 한다 */
   #edActions{display:flex;gap:8px;}
@@ -932,7 +940,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v245</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v246</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1042,7 +1050,7 @@
         <input id="edName" type="text" lang="ko" inputmode="none" placeholder="이름"
                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                enterkeyhint="next">
-        <button id="edMic" type="button" title="눌러서 이름을 말하면 자동으로 입력됩니다" hidden>🎤</button>
+        <button id="edNameClr" type="button" title="이름을 한꺼번에 지웁니다">&#x2715;</button>
       </div>
       <div id="edTelWrap">
         <!-- 이름 칸과 마찬가지로 앱이 그리는 숫자판을 쓴다.
@@ -1051,8 +1059,8 @@
              기본 키보드가 그대로 올라오는 경우가 있는데, readonly 면
              어떤 브라우저에서도 절대 안 뜬다. 값은 숫자판이 코드로
              넣으므로 readonly 여도 입력에 지장이 없다. -->
-        <input id="edTel"  type="tel" inputmode="none" readonly placeholder="전화번호(8자리)" autocomplete="off" enterkeyhint="done">
-        <button id="edTelMic" type="button" title="눌러서 전화번호를 말하면 자동으로 입력됩니다" hidden>🎤</button>
+        <input id="edTel"  type="tel" inputmode="none" readonly autocomplete="off" enterkeyhint="done">
+        <button id="edTelClr" type="button" title="전화번호를 한꺼번에 지웁니다">&#x2715;</button>
       </div>
     </div>
     <div id="edHint"></div>
@@ -2274,7 +2282,7 @@
       좁아지는 문제가 있어, 촬영은 전적으로 기본 카메라 앱에 맡긴다.) */
   const ED = (function(){
     const nI=$('edName'), tI=$('edTel'), hintEl=$('edHint');
-    const nameWrap=$('edNameWrap'), micBtn=$('edMic'), telWrap=$('edTelWrap'), telMicBtn=$('edTelMic');
+    const nameWrap=$('edNameWrap'), nameClrBtn=$('edNameClr'), telWrap=$('edTelWrap'), telClrBtn=$('edTelClr');
     const MAXPX=2400;                       // 긴 변 기준 최대 크기 (용량·속도 절충)
     let baseCanvas=null;                    // 방향까지 바로잡힌 원본
     let queue=[], qi=0;                     // 여러 장 선택했을 때의 처리 대기열
@@ -2323,7 +2331,7 @@
       edJustCancelled=false;   // 예전 취소 스와이프의 흔적이 다음(새) 편집 세션의 첫 탭을 삼켜버리지 않게
       edResetZoom();   // 이전 사진에서 확대해 둔 채로 다음 사진이 시작되지 않게
 
-      nI.value=''; tI.value='';
+      nI.value=''; telSetDigits('');
       hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
       $('editor').classList.add('on');
       // 미리보기 중 스와이프로 다음/이전 사진으로 넘어간 경우(showFile 직후
@@ -2335,7 +2343,7 @@
 
     function fileBase(){
       const nm=safeSeg(nI.value)||'이름없음';
-      const tel=fmtTel(tI.value).replace(/[\\/:*?"<>|\s]/g,'');
+      const tel=telValue().replace(/[\\/:*?"<>|\s]/g,'');
       const dateStr=stampOf(baseCanvas&&baseCanvas.__file);
       const n=nextCounter(dateStr);
       return dateStr+'_'+n+'_'+nm+(tel?'_'+tel:'');
@@ -2347,7 +2355,7 @@
       const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
       const ctx=cv.getContext('2d');
       ctx.drawImage(baseCanvas,0,0);
-      const nm=nI.value.trim(), tel=fmtTel(tI.value);
+      const nm=nI.value.trim(), tel=telValue();
       // 순번 배지는 여기서 안 붙인다 — 카톡으로 보낼 때 그 묶음 기준으로
       // 그때그때 새로 찍는다(아래 stampBatchIndex). 저장되는 사진 자체엔
       // 이름·전화번호만 들어간다.
@@ -2369,7 +2377,7 @@
     function saveShot(){
       if(saving) return;
       if(!baseCanvas) return;
-      const nm=nI.value.trim(), tel=fmtTel(tI.value);
+      const nm=nI.value.trim(), tel=telValue();
       if(!nm && !tel){ hintEl.textContent='이름 또는 전화번호를 입력해주세요'; return; }
       saving=true; $('edSave').disabled=true;
       const mySeq=++saveSeq;
@@ -2677,7 +2685,9 @@
     }, {passive:false});
     nI.addEventListener('input', ()=>{ if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent=''; });
     nI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); tI.focus(); } });
-    tI.addEventListener('input', e=>{ e.target.value=fmtTel(e.target.value); });
+    /* tI 는 readonly 이고 숫자판이 telSetDigits 로만 값을 넣는다.
+       예전엔 여기서 fmtTel 로 모양을 잡았는데, 이제 그 일은 telRender 가
+       하므로 그대로 두면 010-XXXX-XXXX 마스크를 도로 망가뜨린다. */
     tI.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveShot(); } });
 
     /* ───── 앱이 직접 그리는 한글 자판 (두벌식) ─────
@@ -3358,11 +3368,28 @@
       if(!cur || cur===nameSaid) return;
       nameSaid=cur; speak(cur);
     }
-    function telDigits(){ return (tI.value||'').replace(/\D/g,''); }
-    function telSetDigits(d){
-      tI.value=d;
-      tI.dispatchEvent(new Event('input',{bubbles:true}));
+    /* ───── 전화번호 — 010-XXXX-XXXX ─────
+       칸은 늘 010-XXXX-XXXX 꼴로 보이고, 숫자를 누를 때마다 X 가 왼쪽부터
+       하나씩 숫자로 바뀐다. 아직 안 적은 자리는 X 로 남아 몇 자리가
+       비었는지 바로 보인다.
+       ★ 화면에 보이는 글자(X 섞인 것)와 실제로 적힌 숫자는 다르다.
+         적힌 숫자는 telRaw 한 군데에만 두고, 저장·이름표에는 telValue() 를
+         쓴다. tI.value 를 그대로 쓰면 X 가 섞여 들어간다. */
+    let telRaw='';                      // 010 뒤의 8자리. 0~8글자.
+    function telRender(){
+      const a=(telRaw.slice(0,4)+'XXXX').slice(0,4);
+      const b=(telRaw.slice(4,8)+'XXXX').slice(0,4);
+      tI.value='010-'+a+'-'+b;
     }
+    function telDigits(){ return telRaw; }
+    function telSetDigits(d){
+      telRaw=(d||'').replace(/\D/g,'').slice(0,8);
+      telRender();
+    }
+    /* 저장·이름표에 쓸 진짜 번호. 한 자도 안 적었으면 빈 값이다
+       (안 그러면 아무것도 안 적어도 '010' 이 적힌 것으로 저장된다). */
+    function telValue(){ return telRaw ? fmtTel('010'+telRaw) : ''; }
+    telRender();                        // 처음부터 010-XXXX-XXXX 로 보이게
     nI.addEventListener('focus', ()=>{ kbKeepOpen(); kbResetFrom(nI.value); nameSayReset(nI.value); kbShow('name'); });
     nI.addEventListener('blur', kbHideSoon);
     tI.addEventListener('focus', ()=>{ kbKeepOpen(); kbShow('tel'); });
@@ -3391,20 +3418,27 @@
       rec.onend=()=>{ btn.classList.remove('listening'); if(micRec===rec) micRec=null; };
       try{ rec.start(); }catch(e){ btn.classList.remove('listening'); micRec=null; }
     }
-    if(SR && micBtn){
-      micBtn.hidden=false;
-      nameWrap.classList.add('hasMic');
-      micBtn.addEventListener('click', ()=>startMic(micBtn, text=>{
-        nI.value=text;
+    /* ───── 한꺼번에 지우기 ─────
+       예전에는 이 자리에 마이크가 있었다. 적은 것을 통째로 지우는 일이
+       훨씬 잦아서 ✕ 로 바꿨다. 자판의 CLR 과 똑같은 일을 하되, 적는 칸
+       바로 옆에 있어 찾기 쉽다.
+       (음성 입력 기계장치 startMic/micStop 은 그대로 둔다 — 나중에 다시
+        쓸 수 있고, micStop 은 다른 데서도 부른다) */
+    if(nameClrBtn){
+      nameWrap.classList.add('hasClr');
+      nameClrBtn.addEventListener('pointerdown', e=>e.preventDefault());   // 자판이 닫히지 않게
+      nameClrBtn.addEventListener('click', ()=>{
+        kbResetFrom(''); kbRender(); nameSayReset('');
         if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent='';
-      }));
+      });
     }
-    if(SR && telMicBtn){
-      telMicBtn.hidden=false;
-      telWrap.classList.add('hasMic');
-      telMicBtn.addEventListener('click', ()=>startMic(telMicBtn, text=>{
-        tI.value=fmtTel(hangulDigitsToArabic(text));
-      }));
+    if(telClrBtn){
+      telWrap.classList.add('hasClr');
+      telClrBtn.addEventListener('pointerdown', e=>e.preventDefault());
+      telClrBtn.addEventListener('click', ()=>{
+        telSetDigits('');
+        if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent='';
+      });
     }
 
     return {
