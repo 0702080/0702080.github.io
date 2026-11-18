@@ -400,24 +400,20 @@
   #edTelWrap,  #edSave {flex:0 0 calc(57.5% - 4.6px);}
   #edNameWrap{position:relative;display:flex;}
   #edTelWrap{position:relative;display:flex;}
-  /* #edBottom input 규칙(20px)보다 확실히 우선하도록 특정도를 높인다.
-     "010-0000-0000" 열세 글자가 끝까지 다 보여야 해서 글자를 조금 줄이고,
-     마이크가 왼쪽으로 간 뒤로 쓸모없어진 오른쪽 여백도 줄여 폭을 벌었다. */
   /* 전화번호는 010-XXXX-XXXX 꼴로 늘 같은 자리에 보인다.
      ★ 고정폭 글꼴이라야 X 가 숫자로 바뀌어도 글자가 좌우로 흔들리지 않는다.
-       (보통 글꼴에서는 'X' 와 '1' 의 폭이 달라 누를 때마다 들썩인다) */
-  #edBottom #edTel{font-size:14px;letter-spacing:0;text-align:center;
+       (보통 글꼴에서는 'X' 와 '1' 의 폭이 달라 누를 때마다 들썩인다)
+     ★ 글자 크기는 여기 값이 아니라 telFit() 이 칸 폭을 재서 넣는다.
+       폰마다 칸 폭이 다르고, 안드로이드에는 Consolas 가 없어 대신 쓰이는
+       고정폭 글꼴의 폭도 기기마다 달라서, 고정 크기로는 어떤 폰에선 작고
+       어떤 폰에선 잘린다. 여기 19px 는 재기 전 잠깐 쓰는 값일 뿐이다.
+     ※ 이름 칸과 높이가 어긋날 걱정은 없다 — 두 칸은 .row(flex) 안에서
+       서로 높이를 맞춘다. */
+  #edBottom #edTel{font-size:19px;letter-spacing:0;text-align:center;
     font-family:Consolas,"D2Coding","Courier New",monospace;}
-  /* 가운데 정렬이므로 지우기 단추만큼 양쪽을 똑같이 비워 둔다.
-     010-XXXX-XXXX 는 13글자다 — Consolas 가 없어 Courier New 로 대체되는
-     기기는 글자가 더 넓으니 여유를 넉넉히 둔다. */
-  #edTelWrap.hasClr #edTel{padding-left:26px;padding-right:26px;}
-  /* 아주 좁은 폰(320px대)에서는 이 크기로도 뒷자리가 잘린다 — 번호가 한 자
-     빠진 걸 못 보고 지나칠 수 있어서, 그런 화면에서만 더 줄인다. */
-  @media (max-width:340px){
-    #edBottom #edTel{font-size:12.5px;}
-    #edTelWrap.hasClr #edTel{padding-left:24px;padding-right:24px;}
-  }
+  /* 왼쪽엔 단추가 없으니 조금만, 오른쪽은 ✕(30px+3px) 만큼 비운다 —
+     글자가 쓸 수 있는 폭을 최대로 벌기 위해서다. */
+  #edTelWrap.hasClr #edTel{padding-left:8px;padding-right:36px;}
   /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 각 칸 왼쪽에
      자리를 비워둔다 — 버튼이 없는(아이폰) 경우엔 이 여백도 필요 없다. */
   #edNameWrap.hasClr #edName{padding-right:34px;}
@@ -499,6 +495,7 @@
      달라도 각 줄이 폭을 꽉 채우게 둔다. */
   .qwoRow{display:flex;gap:4px;}
   .qwoRow2{padding:0 5%;}   /* 9칸 줄을 반 칸씩 들여쓰기 */
+  .qwoRow3{padding:0 15%;}  /* 7칸 줄을 한 칸 반씩 들여쓰기 — 키 폭이 윗줄과 같아진다 */
   #kbdQW button{flex:1 1 0;height:58px;font-size:21px;}
   /* 자음·모음 글자 크기를 같게 — 아래쪽 공통 규칙(#kbd .kbVowel, 27px)이
      특정도가 같으면서 더 뒤에 있어 모음만 커져 보였다. #kbd 를 앞에 붙여
@@ -940,7 +937,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v246</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v247</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1135,10 +1132,11 @@
       ><button type="button" class="kbVowel" data-k="ㅏ"></button
       ><button type="button" class="kbVowel" data-k="ㅣ"></button>
     </div>
-    <!-- ⌫ 는 아랫줄 "이전" 이 대신하므로 뺐다. ⇧ 는 폰 키보드와 같은 자리. -->
-    <div class="qwoRow">
-      <button type="button" class="kbFn qwoWide" data-fn="shift">⇧</button
-      ><button type="button" class="kbCons" data-k="ㅋ"></button
+    <!-- ⌫ 는 아랫줄 "이전" 이 대신하므로 뺐다. ⇧ 는 아랫줄로 내렸다.
+         일곱 칸만 남으므로 양쪽을 한 칸 반씩 들여 써서, 윗줄들과 키 폭을
+         똑같이 맞춘다(그냥 두면 일곱 칸이 줄을 꽉 채워 키가 넓게 퍼진다). -->
+    <div class="qwoRow qwoRow3">
+      <button type="button" class="kbCons" data-k="ㅋ"></button
       ><button type="button" class="kbCons" data-k="ㅌ"></button
       ><button type="button" class="kbCons" data-k="ㅊ"></button
       ><button type="button" class="kbCons" data-k="ㅍ"></button
@@ -1146,10 +1144,11 @@
       ><button type="button" class="kbVowel" data-k="ㅜ"></button
       ><button type="button" class="kbVowel" data-k="ㅡ"></button>
     </div>
-    <!-- 셋째 줄 오른쪽 ⌫ 는 폰 키보드와 같은 자리라 그대로 두고, 여기에
-         글자로 적힌 "이전" 을 하나 더 뒀다 — 두벌식C 아랫줄과 같은 구성. -->
+    <!-- 아랫줄 : ⇧ · 다음 · 이전.
+         CLR 은 뺐다 — 이름 칸 오른쪽의 ✕ 가 같은 일(한꺼번에 지우기)을 한다.
+         그 자리에 셋째 줄에 있던 ⇧ 를 내렸다. -->
     <div class="qwoRow">
-      <button type="button" class="kbFn kbClear" data-fn="clear">CLR</button
+      <button type="button" class="kbFn" data-fn="shift">⇧</button
       ><button type="button" class="kbFn kbNext qwoNext" data-fn="next">다음</button
       ><button type="button" class="kbFn qwoBack" data-fn="back">&#x2190; 이전</button>
     </div>
@@ -2334,6 +2333,7 @@
       nI.value=''; telSetDigits('');
       hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
       $('editor').classList.add('on');
+      telFit();   // 이제 보이니까 칸 폭을 잴 수 있다 (rAF 를 기다리지 않는다 — 안 그려지는 동안엔 안 돈다)
       // 미리보기 중 스와이프로 다음/이전 사진으로 넘어간 경우(showFile 직후
       // .then(edEnterPreview)가 곧바로 다시 미리보기를 켠다)엔 이 시점에
       // edPreviewOn이 true가 돼 있어야 정상 — 그럴 땐 입력칸이 안 보이므로
@@ -3289,7 +3289,7 @@
       if(fn==='numback'){ speak('이전'); telSetDigits(telDigits().slice(0,-1)); return; }
       if(fn==='numclear'){ speak('전체 지움'); telSetDigits(''); return; }
       const nd=b.getAttribute('data-n');
-      if(nd){ speak(nd); telSetDigits(telDigits()+nd); return; }
+      if(nd){ speak(nd); telPush(nd); return; }
       const cj=b.getAttribute('data-cj');
       if(cj){ kbCons(cj); return; }
       const v=b.getAttribute('data-v');
@@ -3383,16 +3383,66 @@
     }
     function telDigits(){ return telRaw; }
     function telSetDigits(d){
-      telRaw=(d||'').replace(/\D/g,'').slice(0,8);
+      telPre='';
+      d=(d||'').replace(/\D/g,'');
+      // 010 을 붙인 통째 번호가 들어오면(11자리) 앞 010 을 뗀다
+      if(d.length>8 && d.startsWith('010')) d=d.slice(3);
+      telRaw=d.slice(0,8);
       telRender();
+    }
+    /* ───── 010 은 무시 ─────
+       칸에 이미 010 이 적혀 있는데도 손에 익은 대로 0·1·0 부터 누르는
+       일이 많다. 그 010 은 받지 않는다.
+       ★ 아직 한 자도 안 적었을 때 누른 0, 01 은 화면에 바로 쓰지 않고
+         telPre 에 잠깐 들고 있다. 010 이 되면 통째로 버리고, 다른 숫자가
+         오면 그냥 버린다.
+         010 뒤의 가운데 자리는 0 으로 시작하지 않는다(010-0xxx 번호는 없다) —
+         그래서 맨 앞에서 누른 0 은 언제나 '010 을 치던 중' 이다.
+         (가운데에 들어간 010, 예: 010-2010-xxxx 는 그대로 받는다) */
+    let telPre='';
+    function telPush(nd){
+      if(!telRaw){
+        const p=telPre+nd;
+        if('010'.startsWith(p)){         // 0 → 01 → 010
+          telPre = (p==='010') ? '' : p;
+          return;                         // 화면은 010-XXXX-XXXX 그대로
+        }
+        telPre='';                        // 010 이 아니었다 — 들고 있던 0·01 은 버린다
+      }
+      telSetDigits(telRaw+nd);
     }
     /* 저장·이름표에 쓸 진짜 번호. 한 자도 안 적었으면 빈 값이다
        (안 그러면 아무것도 안 적어도 '010' 이 적힌 것으로 저장된다). */
     function telValue(){ return telRaw ? fmtTel('010'+telRaw) : ''; }
     telRender();                        // 처음부터 010-XXXX-XXXX 로 보이게
+
+    /* ───── 전화번호를 칸에 꽉 차게 ─────
+       칸의 실제 폭과, 이 기기에서 실제로 쓰이는 글꼴로 '010-0000-0000' 을
+       그렸을 때의 폭을 재서 글자 크기를 정한다. 고정폭 글꼴이라 숫자와 X 의
+       폭이 같으므로 한 번 재면 어떤 번호든 그대로 맞는다.
+       편집기가 안 보일 때는 폭이 0 이라 잴 수 없다 — 그땐 넘어간다. */
+    let telFitCtx=null;
+    function telFit(){
+      const avail=tI.clientWidth
+        - parseFloat(getComputedStyle(tI).paddingLeft)
+        - parseFloat(getComputedStyle(tI).paddingRight);
+      if(!(avail>0)) return;
+      const cs=getComputedStyle(tI);
+      if(!telFitCtx) telFitCtx=document.createElement('canvas').getContext('2d');
+      telFitCtx.font=cs.fontWeight+' 100px '+cs.fontFamily;
+      const w100=telFitCtx.measureText('010-0000-0000').width;
+      if(!(w100>0)) return;
+      // 3% 는 남겨 둔다 — 꽉 맞추면 반올림 때문에 마지막 글자가 잘리기도 한다
+      let fs=Math.floor(100*avail/w100*0.97);
+      fs=Math.max(12, Math.min(fs, 26));   // 너무 작거나(좁은 폰) 너무 크지(태블릿) 않게
+      tI.style.fontSize=fs+'px';
+    }
+    window.addEventListener('resize', ()=>{
+      if($('editor').classList.contains('on')) telFit();
+    });
     nI.addEventListener('focus', ()=>{ kbKeepOpen(); kbResetFrom(nI.value); nameSayReset(nI.value); kbShow('name'); });
     nI.addEventListener('blur', kbHideSoon);
-    tI.addEventListener('focus', ()=>{ kbKeepOpen(); kbShow('tel'); });
+    tI.addEventListener('focus', ()=>{ kbKeepOpen(); kbShow('tel'); telFit(); });
     tI.addEventListener('blur', kbHideSoon);
 
     /* 아이폰 사파리엔 이 API 자체가 없다 — 그런 폰에서는 버튼이 아예 안 나타나서
