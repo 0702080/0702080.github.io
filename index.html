@@ -968,7 +968,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v251</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v252</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -3234,14 +3234,18 @@
              210px) 펼쳐져서, 판을 자판에 붙이면 이름칸을 덮는다. 그때는
              예전처럼 위쪽에 둔다. 화면이 너무 짧아 위가 모자랄 때도 그렇다. */
         const kbH=kbd.offsetHeight, ebH=eb.offsetHeight;
-        const ED_KB_GAP=66;   // 입력판과 자판 사이 — ✕(44px) 와 위아래 11px
+        /* 입력판과 자판 사이 — ✕(44px) 가 들어갈 만큼만. (예전 66 에서 15px 줄여
+           판을 더 내렸다.) 판에 안쪽 여백(14px)이 있어 저장 단추와 ✕ 는 눈으로
+           보기에 17px 쯤 떨어진다. ✕ 가 판에 겹치면 저장 단추 모서리를 누르다
+           사진 취소(✕)가 눌리므로 겹치지는 않게 한다. */
+        const ED_KB_GAP=51;
         const lowTop=innerHeight-kbH-ED_KB_GAP-ebH;
         if(kbMode!=='qc' && lowTop>=50){
           eb.style.top='auto';
           eb.style.bottom=(kbH+ED_KB_GAP)+'px';
-          // ✕ 는 입력판과 자판 사이 — 자판 위로 11px
+          // ✕ 는 입력판과 자판 사이 남는 자리 가운데 — 자판 위로 4px, 판 아래로 3px
           cb.style.top='auto';
-          cb.style.bottom=(kbH+11)+'px';
+          cb.style.bottom=(kbH+4)+'px';
         }else{
           eb.style.top='calc(env(safe-area-inset-top) + '+(innerHeight<640?10:50)+'px)';
           eb.style.bottom='auto';
