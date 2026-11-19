@@ -396,8 +396,16 @@
      먼저 떼어놓고 남은 자리만 비율로 나눠서 입력칸과 다르게 갈린다.
      폭을 직접 주면 여백·테두리를 포함한 값이라 양쪽이 똑같아진다.
      (42.5% / 57.5% 는 원래 비율, 빼는 값은 사이 여백 8px 를 나눈 몫) */
-  #edNameWrap, #edAgain{flex:0 0 calc(42.5% - 3.4px);}
-  #edTelWrap,  #edSave {flex:0 0 calc(57.5% - 4.6px);}
+  /* 전화번호를 24px 로 쓰려면 13글자(010-0000-0000)가 들어갈 폭이 있어야 해서
+     전화칸을 넓혔다(예전 42.5 : 57.5). 이름은 두세 글자라 이 폭이면 넉넉하다.
+     아래 다시 찍기·저장도 같은 비율이라 세로줄이 그대로 맞는다. */
+  #edNameWrap, #edAgain{flex:0 0 calc(36% - 2.88px);}
+  #edTelWrap,  #edSave {flex:0 0 calc(64% - 5.12px);}
+  /* 아주 좁은 폰에서는 이름칸이 너무 좁아지므로 예전 비율로 둔다 */
+  @media (max-width:340px){
+    #edNameWrap, #edAgain{flex:0 0 calc(42.5% - 3.4px);}
+    #edTelWrap,  #edSave {flex:0 0 calc(57.5% - 4.6px);}
+  }
   #edNameWrap{position:relative;display:flex;}
   #edTelWrap{position:relative;display:flex;}
   /* 전화번호는 010-XXXX-XXXX 꼴로 늘 같은 자리에 보인다.
@@ -501,6 +509,10 @@
      달라도 각 줄이 폭을 꽉 채우게 둔다. */
   .qwoRow{display:flex;gap:4px;}
   .qwoRow2{padding:0 5.56%;}   /* 8칸 줄을 반 칸씩 들여쓰기 — 9칸 줄과 키 폭이 같아진다 */
+  /* 아랫줄(⇧·다음·이전) 위로 틈을 벌려 글자 줄을 위로 올린다. 가운데 빈 곳이
+     줄고, 글자를 치다 '다음'·'⇧' 를 잘못 누르는 일도 준다. */
+  #kbdQW .qwoFnRow{margin-top:24px;}
+  @media (max-height:620px){ #kbdQW .qwoFnRow{margin-top:8px;} }
   #kbdQW button{flex:1 1 0;height:58px;font-size:21px;}
   /* 자음·모음 글자 크기를 같게 — 아래쪽 공통 규칙(#kbd .kbVowel, 27px)이
      특정도가 같으면서 더 뒤에 있어 모음만 커져 보였다. #kbd 를 앞에 붙여
@@ -846,6 +858,15 @@
     cursor:pointer;opacity:.85;
   }
   #thumbDelBtn:active{opacity:1;background:rgba(0,0,0,.75);}
+  /* 이름·전화번호를 잘못 적은 사진을 고친다 — 지우기(오른쪽 위)와 헷갈리지
+     않게 반대쪽(왼쪽 위)에, 글자를 붙여 둔다. */
+  #thumbFixBtn{
+    position:absolute;top:max(16px,env(safe-area-inset-top));left:16px;z-index:2;
+    height:44px;padding:0 16px;border-radius:22px;border:none;
+    background:rgba(0,0,0,.55);color:#fff;font-family:inherit;font-size:15px;font-weight:700;
+    display:flex;align-items:center;gap:4px;cursor:pointer;opacity:.9;
+  }
+  #thumbFixBtn:active{opacity:1;background:rgba(0,0,0,.75);}
 
   /* 삭제 직후 몇 초간 뜨는 실행취소 알림 — 전체화면 사진 보기(z-index:80)
      보다도 위에 있어야, 스와이프 삭제로 다음 사진이 뜬 직후에도 가려지지
@@ -943,7 +964,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v249</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v250</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1018,6 +1039,7 @@
 <!-- 오늘 찍은 사진 썸네일을 폰 화면 전체로 크게 보기 -->
 <div id="thumbView">
   <button id="thumbDelBtn" title="이 사진을 오늘 목록에서 지웁니다(다운로드 폴더의 파일은 그대로 남아요)">🗑️</button>
+  <button id="thumbFixBtn" type="button" title="이 사진의 이름·전화번호를 고칩니다">✏️ 고치기</button>
   <div id="thumbViewInner"><div id="thumbTrack">
     <div class="thumbSlot"><img id="thumbImgPrev" alt=""></div>
     <div class="thumbSlot"><img id="thumbImgCur" alt=""></div>
@@ -1153,7 +1175,7 @@
     <!-- 아랫줄 : ⇧ · 다음 · 이전.
          CLR 은 뺐다 — 이름 칸 오른쪽의 ✕ 가 같은 일(한꺼번에 지우기)을 한다.
          그 자리에 셋째 줄에 있던 ⇧ 를 내렸다. -->
-    <div class="qwoRow">
+    <div class="qwoRow qwoFnRow">
       <button type="button" class="kbFn" data-fn="shift">⇧</button
       ><button type="button" class="kbFn kbNext qwoNext" data-fn="next">다음</button
       ><button type="button" class="kbFn qwoBack" data-fn="back">&#x2190; 이전</button>
@@ -1981,6 +2003,17 @@
 
   // 삭제 버튼은 사진 위에 떠 있는 별도 버튼이라, 눌렀을 때 그 아래
   // 드래그·탭 처리(닫기 등)까지 같이 반응하지 않게 이벤트를 여기서 끊는다.
+  /* ✏️ 고치기 — 이 사진의 이름표 없는 원본을 편집기에 다시 띄운다.
+     (오늘 찍은 사진은 원래부터 이름표 없는 원본을 따로 갖고 있다) */
+  $('thumbFixBtn').addEventListener('pointerdown', e=>e.stopPropagation());
+  $('thumbFixBtn').addEventListener('click', e=>{
+    e.stopPropagation();
+    const sh=todaysShots[thumbViewIndex];
+    if(!sh || !sh.blob) return;
+    thumbView.classList.remove('on');
+    const f=new File([sh.blob], sh.filename||'photo.jpg', {type:sh.blob.type||'image/jpeg'});
+    ED.fix(f, { id:sh.id, name:sh.name||'', tel:sh.tel||'', filename:sh.filename||'', blob:sh.blob });
+  });
   $('thumbDelBtn').addEventListener('pointerdown', e=>e.stopPropagation());
   $('thumbDelBtn').addEventListener('click', e=>{
     e.stopPropagation();
@@ -2067,6 +2100,27 @@
 
     await recomputeAllDisplays();
     refreshAllThumbSrcs();
+  }
+  /* ✏️ 고치기로 저장했을 때 — 새 사진으로 하나 더 붙이지 않고 그 사진의
+     이름·번호·파일명만 바꾼 뒤 다시 합성해서 보여 준다. 사진(원본)은 그대로다.
+     고치는 사이 그 사진이 지워졌다면 새로 붙인다(적은 것을 버리지 않는다). */
+  async function updateTodayShot(id, fallbackBlob, filename, name, tel){
+    const i=todaysShots.findIndex(x=>x.id===id);
+    if(i<0){ await addTodayShot(fallbackBlob, filename, name, tel); return; }
+    const sh=todaysShots[i];
+    sh.name=name; sh.tel=tel; sh.filename=filename;
+    dbPutShot({id:sh.id, date:todayKey(), filename, name, tel, blob:sh.blob, t:sh.t});
+    const img=document.querySelectorAll('#todayThumbs img')[i];
+    if(img) img.alt=name||tel||'';
+    /* ★ 화면용 합성본을 비워야 새 이름표로 다시 만든다. recomputeAllDisplays 는
+         이미 합성본이 있는 사진은 건너뛰어서, 이름·번호만 바꾸면 사진에는 옛
+         이름표가 그대로 남았다(저장소와 썸네일 글씨만 바뀌고). 옛 주소는 새
+         사진을 끼운 뒤에 버린다 — 먼저 버리면 썸네일이 잠깐 깨져 보인다. */
+    const oldUrl=sh.displayUrl;
+    sh.displayUrl=null; sh.displayBlob=null;
+    await recomputeAllDisplays();
+    refreshAllThumbSrcs();
+    if(oldUrl){ try{ URL.revokeObjectURL(oldUrl); }catch(e){} }
   }
   // 앱을 다시 열었을 때 오늘 찍은 사진을 그대로 되살린다(태블릿 모드에는 이 목록이 없어서 건너뜀).
   // 한 장씩 addTodayShot 을 부르면 사진마다 전체를 다시 합성하는 게 중첩돼
@@ -2347,6 +2401,30 @@
       setTimeout(()=>{ if($('editor').classList.contains('on') && !edPreviewOn) nI.focus(); },150);
     }
 
+    /* ───── 저장한 사진 고치기 ─────
+       fixing 이 있으면 지금 띄운 사진은 '오늘 찍은 사진' 중 하나를 고치는
+       중이다. 저장하면 그 사진이 바뀌고, 파일 이름도 원래 순번을 그대로
+       쓴다(새 순번이 붙으면 어느 게 어느 사진을 고친 건지 헷갈린다). */
+    let fixing=null;   // { id, name, tel, filename, blob }
+    function fixFileName(fx){
+      const m=(fx.filename||'').match(/^(\d{8})_(\d+)_/);
+      if(!m) return fileBase()+'.jpg';
+      const nm=safeSeg(nI.value)||'이름없음';
+      const tel=telValue().replace(/[\\/:*?"<>|\s]/g,'');
+      return m[1]+'_'+m[2]+'_'+nm+(tel?'_'+tel:'')+'.jpg';
+    }
+    async function fix(file, info){
+      queue=[file]; qi=0;
+      try{ await showFile(file); }
+      catch(e){ alert('사진을 불러오지 못했습니다.'); close(); return; }
+      fixing=info;   // showFile 이 칸을 비운 뒤에 채운다
+      nI.value=info.name||'';
+      kbResetFrom(nI.value); nameSayReset(nI.value);   // 자판의 조합 상태도 맞춘다
+      const d=(info.tel||'').replace(/\D/g,'');
+      telSetDigits(d.startsWith('010') ? d.slice(3) : '');
+      hintEl.textContent='✏️ 고치는 중 — 저장하면 이 사진이 고쳐집니다';
+    }
+
     function fileBase(){
       const nm=safeSeg(nI.value)||'이름없음';
       const tel=telValue().replace(/[\\/:*?"<>|\s]/g,'');
@@ -2388,7 +2466,8 @@
       saving=true; $('edSave').disabled=true;
       const mySeq=++saveSeq;
 
-      const name=fileBase()+'.jpg';
+      const fx=fixing;   // 저장이 끝나기 전에 바뀌지 않게 지금 붙잡는다
+      const name = fx ? fixFileName(fx) : fileBase()+'.jpg';
       const cleanCanvas=baseCanvas;   // showFile()이 다음 사진으로 baseCanvas 를 바꾸기 전에 미리 붙잡아둔다
       const composed=compose();
 
@@ -2412,8 +2491,14 @@
         // 앱 안(썸네일·전체화면·태블릿)에는 이름표 없는 "원본"을 따로 저장해서,
         // 나중에 사진을 지워 번호가 바뀌어도 그 자리에서 다시 합성해 보여줄 수
         // 있게 한다 — 지금 막 다운로드한 파일은 이미 고정된 번호라 못 바꾼다.
-        const cleanBlob=await new Promise(res=>cleanCanvas.toBlob(res, 'image/jpeg', 0.92));
-        await addTodayShot(cleanBlob||blob, name, nm, tel);
+        if(fx){
+          // 고치기 — 그 사진을 바꾼다(원본은 그대로 두므로 다시 굽지 않는다)
+          fixing=null;
+          await updateTodayShot(fx.id, fx.blob||blob, name, nm, tel);
+        }else{
+          const cleanBlob=await new Promise(res=>cleanCanvas.toBlob(res, 'image/jpeg', 0.92));
+          await addTodayShot(cleanBlob||blob, name, nm, tel);
+        }
 
         if(mySeq===saveSeq){
           $('homeLog').innerHTML='';   // 저장 성공 로그는 화면에 안 띄운다(파일은 그대로 저장됨)
@@ -2461,6 +2546,8 @@
     /* 전체 취소 — 아직 저장하지 않은 것(지금 보는 것 + 뒤에 남은 것)만 들고 간다.
        이미 저장한 앞쪽 사진은 들고 갈 까닭이 없다. */
     function cancelAll(){
+      // 고치던 사진은 이미 '오늘 찍은 사진' 에 있다 — 들고 갈 까닭이 없다
+      if(fixing){ fixing=null; queue=[]; qi=0; close(); return; }
       const left=queue.slice(qi).filter(Boolean);
       queue=[]; qi=0;
       if(left.length) heldAdd(left);
@@ -2490,6 +2577,7 @@
     $('edSave').onclick=saveShot;
     $('edAgain').onclick=()=>{
       if(saving) return;   // 저장 처리 중엔 무시 — 끝나면 다시 눌러도 늦지 않다
+      fixing=null;
       queue=[]; qi=0; close(); $('fCam').click();
     };
     /* 눌러서 이름·전화번호·다시찍기·저장 입력판을 숨기고, 그 자리에 골라둔
@@ -3106,7 +3194,9 @@
            성씨 판이 두세 줄로 커졌을 때 입력칸을 덮어 버려서, 무엇을 치고
            있는지 안 보인다. 위로 올려 두면 가운데가 통째로 비어 판이
            아무리 커져도 이름·전화번호가 늘 보인다. */
-        eb.style.top='calc(env(safe-area-inset-top) + 10px)';
+        /* 맨 위에 딱 붙이면 엄지에서 너무 멀다 — 조금 내린다.
+           (화면이 아주 짧은 폰에서는 자판과 겹치지 않게 예전처럼 붙인다) */
+        eb.style.top='calc(env(safe-area-inset-top) + '+(innerHeight<640?10:50)+'px)';
         eb.style.bottom='auto';
         eb.style.transform='translateX(-50%)';
         /* ✕ 는 원래 화면 오른쪽 위에 있는데, 입력판이 그 자리로 올라오면서
@@ -3477,7 +3567,8 @@
       if(!(w100>0)) return;
       // 3% 는 남겨 둔다 — 꽉 맞추면 반올림 때문에 마지막 글자가 잘리기도 한다
       let fs=Math.floor(100*avail/w100*0.97);
-      fs=Math.max(12, Math.min(fs, 28));   // 너무 작거나(좁은 폰) 너무 크지(태블릿) 않게
+      // 24px 로 쓴다. 칸이 그보다 좁은 폰에서만 잘리지 않을 만큼 줄인다.
+      fs=Math.max(12, Math.min(fs, 24));
       tI.style.fontSize=fs+'px';
     }
     window.addEventListener('resize', ()=>{
@@ -3536,6 +3627,7 @@
 
     return {
       start,
+      fix,
       /* 앱을 다시 열었을 때 적다 만 사진을 되살린다(이미 저장소에 있으므로 다시 쓰지 않는다) */
       restoreHeld(files){ heldFiles=files.slice(0,20); heldPaint(); },
       /* '이어서 입력' — 들고 있던 것을 꺼내 편집기를 다시 연다.
@@ -3787,7 +3879,37 @@
     catch(e){ $('homeLog').textContent='주소: '+url; }
   };
 
-  $('fCam').addEventListener('change', e=>{ ED.start(e.target.files); e.target.value=''; });
+  /* ───── 찍자마자 원본부터 폰에 저장 ─────
+     카메라로 찍은 사진은 브라우저가 받는 임시 파일이라 갤러리에 남지 않는다.
+     이름·전화번호를 적다 '다시 찍기' 를 잘못 누르거나 앱이 꺼지면 그 사진은
+     다시 찍는 수밖에 없었다. 그래서 받는 즉시 다운로드 폴더에 원본을 먼저
+     넣어 둔다 — 그러면 '갤러리' 단추로 언제든 다시 불러올 수 있다.
+     (갤러리에서 고른 사진은 이미 폰에 있으므로 하지 않는다) */
+  function saveOriginals(files){
+    const d=new Date(), p=n=>('0'+n).slice(-2);
+    const stamp=''+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'_'
+               +p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());
+    files.forEach((f,i)=>{
+      if(!f || !f.type || f.type.indexOf('image')!==0) return;
+      const m=(f.name||'').match(/\.(jpe?g|png|heic|heif|webp)$/i);
+      const ext=m ? m[1].toLowerCase() : 'jpg';
+      const name=stamp+(files.length>1 ? '_'+(i+1) : '')+'_원본.'+ext;
+      try{
+        const url=URL.createObjectURL(f);
+        const a=document.createElement('a');
+        a.href=url; a.download=name;
+        document.body.appendChild(a); a.click(); a.remove();
+        // 큰 원본은 다 써질 때까지 시간이 걸릴 수 있어 넉넉히 둔다
+        setTimeout(()=>URL.revokeObjectURL(url), 60000);
+      }catch(e){}
+    });
+  }
+  $('fCam').addEventListener('change', e=>{
+    const files=Array.prototype.slice.call(e.target.files||[]);
+    e.target.value='';
+    saveOriginals(files);
+    ED.start(files);
+  });
   $('fPick').addEventListener('change', e=>{ ED.start(e.target.files); e.target.value=''; });
 
 
