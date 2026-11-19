@@ -971,7 +971,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v255</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v256</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1144,7 +1144,8 @@
         폰 기본 자판 자리를 외우지 않아도 '가나다' 만 알면 찾는다.
         모음은 그대로(오른쪽). 한 줄 최대 9칸이라 키가 넓다(10·9·7 → 9·8·9).
         ⇧ 로 된소리(ㄲㄸㅃㅆㅉ)·ㅒ·ㅖ — 그 짝은 키를 옮겨도 키에 붙어 다닌다.
-        길게 누르면(data-lk) ㄱ→ㄲ ㄷ→ㄸ ㅂ→ㅃ ㅅ→ㅆ ㅈ→ㅊ ㅇ→ㅎ ㅐ→ㅒ ㅔ→ㅖ. -->
+        길게 누르면(data-lk) ㄱ→ㄲ ㄷ→ㄸ ㅂ→ㅃ ㅅ→ㅆ ㅈ→ㅊ ㅇ→ㅎ ㅐ→ㅒ ㅔ→ㅖ.
+        ㅅ 은 거듭 누르면(data-cyc) ㅅ → ㅈ → ㅊ (ㅊ 에서 멈춘다). -->
    <div id="kbdQW" hidden>
     <div class="qwoRow">
       <button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ" data-lk="ㄲ"></button
@@ -1160,7 +1161,7 @@
     <!-- 가운데 줄은 8칸이라 양쪽을 반 칸씩 들여 써서 위아래 줄과 키 폭을 맞춘다 -->
     <div class="qwoRow qwoRow2">
       <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ" data-lk="ㅃ"></button
-      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ" data-lk="ㅆ"></button
+      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ" data-lk="ㅆ" data-cyc="ws"></button
       ><button type="button" class="kbCons" data-k="ㅇ" data-lk="ㅎ"></button
       ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ" data-lk="ㅊ"></button
       ><button type="button" class="kbVowel" data-k="ㅗ"></button
@@ -2860,8 +2861,15 @@
          맨 뒤로 뺐다). 같은 자리 바꾸기 처리는 천지인과 함께 쓴다. */
       q1:['ㄱ','ㄲ','ㅋ'], q2:['ㄴ'],          q3:['ㄷ','ㄸ','ㅌ'], q4:['ㄹ'],
       q5:['ㅁ'],          q6:['ㅂ','ㅃ','ㅍ'],
-      q7:['ㅅ','ㅈ','ㅊ','ㅆ','ㅉ'],           q8:['ㅇ','ㅎ']
+      q7:['ㅅ','ㅈ','ㅊ','ㅆ','ㅉ'],           q8:['ㅇ','ㅎ'],
+      /* 두벌식(기본 자판)의 ㅅ 키 — 두 번 누르면 ㅈ, 세 번이면 ㅊ.
+         ㅆ 은 길게 누르기(또는 ⇧)로 따로 있으므로 여기엔 넣지 않는다. */
+      ws:['ㅅ','ㅈ','ㅊ']
     };
+    /* 끝에서 처음으로 돌아가지 않고 마지막 글자에 멈추는 키.
+       ㅅ→ㅈ 다음 "두 번 더" 누르는 사람도 있어서, 돌아가게 두면 네 번째에
+       ㅅ 으로 되돌아가 버린다. 멈춰 두면 세 번이든 네 번이든 ㅊ 이다. */
+    const CJ_NOWRAP={ ws:1 };
     /* 두벌식C 모음 — 거듭 누르면 다음 모음이 된다(ㅗ→ㅛ, ㅏ→ㅐ→ㅑ→ㅒ).
        ㅐ·ㅔ 는 따로 키도 있지만 ㅏ·ㅓ 키에서 두 번째로도 나오게 해 뒀다 —
        이름에는 ㅑ·ㅕ 보다 ㅐ·ㅔ 가 훨씬 자주 나오므로(재·세·태·혜) 두 번
@@ -2999,7 +3007,8 @@
            글자를 치려는 것이다. 아래로 내려보내 새 글자로 받는다.
            이 갈래가 없을 때는 두 번째 타건이 삼켜져 "기민"·"하나" 가 됐다. */
         if(list.length>1){
-          kbCycStep=(kbCycStep+1)%list.length;
+          kbCycStep = CJ_NOWRAP[keyId] ? Math.min(kbCycStep+1, list.length-1)
+                                       : (kbCycStep+1)%list.length;
           const j=list[kbCycStep];
           if(kbCycPos==='cho') kbCho=CHO.indexOf(j); else kbJong=JONG.indexOf(j);
           kbCycArm(); kbRender(); return;
@@ -3551,6 +3560,11 @@
       if(k){
         const sk=b.getAttribute('data-sk');
         kbVCycStop();
+        /* 거듭 누르기 키(ㅅ→ㅈ→ㅊ) — 두벌식C 와 같은 장치(kbCons)를 쓴다.
+           다른 글자를 치면 끝나고, 받침 자리에서도 맞게 바뀌며, 2.5초 안에
+           다시 눌러야 바뀐다(그보다 늦으면 새 글자). ⇧ 가 켜져 있으면 ㅆ. */
+        const cyc=b.getAttribute('data-cyc');
+        if(cyc && !kbShift){ kbCons(cyc); return; }
         kbJamo((kbShift && sk) ? sk : k);
         if(kbShift){ kbShift=false; kbPaintShift(); }   // 시프트는 한 글자만
       }
