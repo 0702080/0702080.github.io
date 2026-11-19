@@ -448,6 +448,10 @@
   /* 판이 옅어졌으므로 이 글자만 그림자로 대비를 확보한다 */
   #edHint{color:#fff;font-size:12.5px;text-align:center;opacity:.95;min-height:16px;
           text-shadow:0 1px 3px rgba(0,0,0,.9);}
+  /* 할 말이 없을 땐 자리도 비우지 않는다 — 비어 있어도 16px 를 차지해서
+     이름·전화번호 줄과 다시찍기·저장 줄 사이가 34px 나 벌어졌다(이제 9px).
+     '1 / 3 장' 이나 '✏️ 고치는 중' 처럼 할 말이 있을 때만 그 자리가 생긴다. */
+  #edHint:empty{display:none;}
 
   /* ── 앱이 직접 그리는 한글 자판 ──
      이름 적는 데 필요한 자모·공백·지움만 둔다. 숫자줄, 특수문자, 한영전환
@@ -964,7 +968,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v250</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v251</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1323,10 +1327,12 @@
     }catch(e){}
   }
   document.addEventListener('click', e=>{
-    if(e.target.closest && e.target.closest('button')){
-      try{ if(navigator.vibrate) navigator.vibrate(28); }catch(err){}
-      beep();
-    }
+    const btn=e.target.closest && e.target.closest('button');
+    if(!btn) return;
+    // 자판 키는 닿는 순간 자판이 직접(더 짧게) 울린다 — 여기서 또 울리면 두 번 운다
+    if(btn.closest('#kbd')) return;
+    try{ if(navigator.vibrate) navigator.vibrate(28); }catch(err){}
+    beep();
   }, true);
 
   /* 눌린 순간 바로 보이게 (짧게 톡 눌러도 확실히 보이도록 잠깐 유지)
@@ -1772,6 +1778,14 @@
       $('undoToast').classList.remove('show');
     }, 6000);
   }
+  /* 편집기를 열 때 — 사진을 지우고 나서 떠 있던 '실행취소' 알림을 확정하고
+     치운다. 알림(z-index 95)이 편집기(50) 위에 남아 자판 키를 가렸고, 누르면
+     편집기 위로 사진 보기가 열렸다. */
+  function settleUndo(){
+    clearTimeout(undoTimer);
+    finalizePendingDelete();
+    const t=$('undoToast'); if(t) t.classList.remove('show');
+  }
   async function undoDelete(){
     if(!undoShot) return;
     clearTimeout(undoTimer);
@@ -2008,6 +2022,8 @@
   $('thumbFixBtn').addEventListener('pointerdown', e=>e.stopPropagation());
   $('thumbFixBtn').addEventListener('click', e=>{
     e.stopPropagation();
+    // 옆 사진으로 넘어가는 중(0.3초)엔 아직 예전 사진을 가리키고 있다 — 무시한다
+    if(thumbTrackPendingDir) return;
     const sh=todaysShots[thumbViewIndex];
     if(!sh || !sh.blob) return;
     thumbView.classList.remove('on');
@@ -2017,6 +2033,7 @@
   $('thumbDelBtn').addEventListener('pointerdown', e=>e.stopPropagation());
   $('thumbDelBtn').addEventListener('click', e=>{
     e.stopPropagation();
+    if(thumbTrackPendingDir) return;   // 넘어가는 중엔 엉뚱한 사진이 지워진다
     deleteCurrentThumb();
   });
 
@@ -2393,6 +2410,7 @@
       nI.value=''; telSetDigits('');
       hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
       $('editor').classList.add('on');
+      if(typeof settleUndo==='function') settleUndo();   // 지운 뒤 떠 있던 실행취소 알림을 치운다
       telFit();   // 이제 보이니까 칸 폭을 잴 수 있다 (rAF 를 기다리지 않는다 — 안 그려지는 동안엔 안 돈다)
       // 미리보기 중 스와이프로 다음/이전 사진으로 넘어간 경우(showFile 직후
       // .then(edEnterPreview)가 곧바로 다시 미리보기를 켠다)엔 이 시점에
@@ -2555,6 +2573,12 @@
     }
 
     function close(){
+      /* ★ 어떤 길로 닫히든 '고치는 중' 은 여기서 푼다. 예전엔 ✕·다시 찍기·저장
+           에서만 풀어서, 배경을 탭해 닫으면 그대로 남았다 — 그러면 다음에 찍은
+           새 가족 사진이 오늘 목록에 안 들어가고, 예전 사진의 이름이 새 이름으로
+           덮어써졌다(파일 순번도 예전 것을 다시 썼다). 저장 쪽은 시작할 때
+           이미 따로 붙잡아 두므로(const fx) 여기서 풀어도 괜찮다. */
+      fixing=null;
       micStop();
       $('editor').classList.remove('on');
       // 적는 동안 새 버전이 올라왔다면 이제 알린다
@@ -2569,6 +2593,7 @@
     async function start(files){
       const list=Array.prototype.slice.call(files||[]).filter(f=>f && f.type.indexOf('image')===0);
       if(!list.length) return;
+      fixing=null;   // 새로 찍은·고른 사진은 절대 '고치기' 가 아니다 (위 close 와 같은 까닭)
       queue=list; qi=0;
       try{ await showFile(list[0]); }
       catch(e){ alert('사진을 불러오지 못했습니다.'); close(); }
@@ -2577,7 +2602,13 @@
     $('edSave').onclick=saveShot;
     $('edAgain').onclick=()=>{
       if(saving) return;   // 저장 처리 중엔 무시 — 끝나면 다시 눌러도 늦지 않다
-      fixing=null;
+      /* 다시 찍는 건 지금 이 한 장이다. 여러 장을 적던 중이었다면(이어서 입력,
+         갤러리에서 여러 장) 뒤에 남은 사진은 '이어서 입력' 으로 들고 간다.
+         예전엔 대기열을 통째로 비워서 남은 사진이 소리 없이 사라졌다. */
+      if(!fixing){
+        const rest=queue.slice(qi+1).filter(Boolean);
+        if(rest.length) heldAdd(rest);
+      }
       queue=[]; qi=0; close(); $('fCam').click();
     };
     /* 눌러서 이름·전화번호·다시찍기·저장 입력판을 숨기고, 그 자리에 골라둔
@@ -3194,18 +3225,35 @@
            성씨 판이 두세 줄로 커졌을 때 입력칸을 덮어 버려서, 무엇을 치고
            있는지 안 보인다. 위로 올려 두면 가운데가 통째로 비어 판이
            아무리 커져도 이름·전화번호가 늘 보인다. */
-        /* 맨 위에 딱 붙이면 엄지에서 너무 멀다 — 조금 내린다.
-           (화면이 아주 짧은 폰에서는 자판과 겹치지 않게 예전처럼 붙인다) */
-        eb.style.top='calc(env(safe-area-inset-top) + '+(innerHeight<640?10:50)+'px)';
-        eb.style.bottom='auto';
         eb.style.transform='translateX(-50%)';
-        /* ✕ 는 원래 화면 오른쪽 위에 있는데, 입력판이 그 자리로 올라오면서
-           가로로 겹친다(입력판이 화면 폭의 94%). 입력판 바로 밑으로 내려
-           둔다 — 가운데가 비어 있으니 가릴 것도 없다. */
-        cb.style.top=(eb.getBoundingClientRect().bottom+10)+'px';
+        /* ★ 입력판은 자판 바로 위에 붙인다(그 사이엔 ✕ 자리만 둔다).
+             위에 두면 엄지에서 멀고, 자판과 사이가 휑하게 비었다.
+             아래쪽(bottom) 기준으로 붙여서, '1 / 3 장' 같은 안내 글이 생겨
+             판이 커져도 위로 자라고 ✕·자판을 밀고 내려오지 않는다.
+           ★ 두벌식C 는 예외 — 꾹 누르면 성씨 판이 자판 위로 크게(최대 약
+             210px) 펼쳐져서, 판을 자판에 붙이면 이름칸을 덮는다. 그때는
+             예전처럼 위쪽에 둔다. 화면이 너무 짧아 위가 모자랄 때도 그렇다. */
+        const kbH=kbd.offsetHeight, ebH=eb.offsetHeight;
+        const ED_KB_GAP=66;   // 입력판과 자판 사이 — ✕(44px) 와 위아래 11px
+        const lowTop=innerHeight-kbH-ED_KB_GAP-ebH;
+        if(kbMode!=='qc' && lowTop>=50){
+          eb.style.top='auto';
+          eb.style.bottom=(kbH+ED_KB_GAP)+'px';
+          // ✕ 는 입력판과 자판 사이 — 자판 위로 11px
+          cb.style.top='auto';
+          cb.style.bottom=(kbH+11)+'px';
+        }else{
+          eb.style.top='calc(env(safe-area-inset-top) + '+(innerHeight<640?10:50)+'px)';
+          eb.style.bottom='auto';
+          /* ✕ 는 원래 화면 오른쪽 위에 있는데, 입력판이 그 자리로 올라오면서
+             가로로 겹친다(입력판이 화면 폭의 94%). 입력판 바로 밑으로 내려
+             둔다 — 가운데가 비어 있으니 가릴 것도 없다. */
+          cb.style.bottom='';
+          cb.style.top=(eb.getBoundingClientRect().bottom+10)+'px';
+        }
       }else{
         eb.style.top=''; eb.style.bottom=''; eb.style.transform='';
-        cb.style.top='';
+        cb.style.top=''; cb.style.bottom='';
       }
     }
     /* 이름→전화번호로 넘어갈 때 잠깐 둘 다 포커스가 없는 순간이 생긴다.
@@ -3320,13 +3368,35 @@
       kbPopHover=el;
       if(kbPopHover) kbPopHover.classList.add('hot');
     }
+    /* ───── 자판 키는 닿는 순간 넣는다 ─────
+       ★ 예전엔 click 으로 넣었다. 그런데 폰 브라우저는 손가락이 몇 픽셀만
+         미끄러지거나 누른 시간이 애매하면 그걸 '톡 누름' 으로 안 쳐서 click
+         자체를 안 보낸다 — 빠르게 살짝 치면 글자가 그냥 사라졌다.
+         이제는 손가락이 닿는 순간(pointerdown) 바로 넣는다.
+       ★ 두벌식C 처럼 꾹 누르면 판이 뜨는 키만은 손을 뗄 때 넣는다(꾹 누름과
+         구분해야 한다). 그때도 '닿았던 키' 를 넣으니 미끄러져도 안 빠진다.
+       ★ 뒤따라오는 click 은 버린다(kbHandledAt). '다음' 을 누르는 순간 자판이
+         숫자판으로 바뀌는데, 그 click 이 손가락 밑에 새로 온 숫자를 또 넣을 수
+         있다. */
+    const KB_BUZZ=10;      // 자판 키 진동(ms). 다른 단추(28ms)보다 짧게 톡.
+    let kbHandledAt=0, kbPopDown=null;
+    function kbTick(){
+      try{ if(navigator.vibrate) navigator.vibrate(KB_BUZZ); }catch(err){}
+      try{ beep(); }catch(err){}
+    }
+    function kbDirect(b){ kbHandledAt=Date.now(); kbTick(); kbPress(b); }
+
     kbd.addEventListener('pointerdown', e=>{
       e.preventDefault();
       clearTimeout(kbPopTimer); kbPopFired=false; kbPopSetHover(null);
       const b=e.target.closest('button');
       if(!b) return;
-      // 판에 있는 글자를 누르는 중이면 그대로 둔다 — 고르는 참이다
-      if(b.hasAttribute('data-pick')) return;
+      // 펼쳐진 판의 글자를 톡 눌렀다 — 바로 넣는다
+      // (판을 연 손가락을 떼지 않고 끌어서 고르는 건 pointerup 이 맡는다)
+      if(b.hasAttribute('data-pick')){
+        kbHandledAt=Date.now(); kbTick(); kbPopPut(b.getAttribute('data-pick'));
+        return;
+      }
       /* 자판 키를 눌렀는데 판이 열려 있다면 앞서 띄워 둔 판이다(손을 떼도
          남겨 두므로). 닫고 이 키의 차례로 넘어간다 — 예전엔 여기서 그냥
          돌아가 버려서, ㄱ 을 꾹 눌러 판을 본 뒤에는 ㄴ·ㄷ 를 아무리 꾹
@@ -3334,12 +3404,13 @@
       if(!kbPop.hidden) kbPopHide();
       const id=b.getAttribute('data-qc')||b.getAttribute('data-qv');
       const list=id ? (CJ_CONS[id]||QW_VOW[id]) : null;
-      if(!list) return;
       // 성씨는 이름 칸이 아직 비었을 때만 — 곧 성을 치려는 참이라는 뜻이다
-      const sur=(kbTarget==='name' && !nI.value && id) ? KB_SURNAME[id] : null;
-      // 성씨까지 합쳐 두 칸이 안 되면 펼칠 게 없다(ㄴ·ㄹ·ㅁ 처럼 글자가 하나뿐인 키)
-      if(list.length + (sur?sur.length:0) < 2) return;
+      const sur=(list && kbTarget==='name' && !nI.value && id) ? KB_SURNAME[id] : null;
+      // 꾹 눌러 펼칠 판이 없는 키(두벌식·천지인·숫자판, 두벌식C 의 ㄴ·ㄹ·ㅁ 등)는
+      // 닿는 순간 바로 넣는다
+      if(!list || list.length + (sur?sur.length:0) < 2){ kbDirect(b); return; }
       kbPopPtrId=e.pointerId;
+      kbPopDown=b;          // 꾹 누르기 전에 떼면 이 키를 넣는다
       // 손가락을 판 위로 끌고 가도 계속 따라오게 붙잡아 둔다
       try{ b.setPointerCapture(e.pointerId); }catch(err){}
       kbPopTimer=setTimeout(()=>{ kbPopFired=true; kbPopShow(b, sur, list); }, KB_LONG);
@@ -3354,6 +3425,9 @@
       clearTimeout(kbPopTimer);
       if(e.pointerId!==kbPopPtrId) return;
       kbPopPtrId=null;
+      const downB=kbPopDown; kbPopDown=null;
+      // 판이 뜨기 전에 뗐다 — 보통으로 누른 것이다. 닿았던 키를 넣는다
+      if(!kbPopFired){ if(downB) kbDirect(downB); return; }
       // 뗀 자리를 한 번 더 확인한다 — 끌던 도중 pointermove 가 끊겨도
       // 뗀 지점이 글자 위라면 그 글자를 골라준다
       if(!kbPop.hidden) kbPopSetHover(kbPopOptionAt(e.clientX, e.clientY) || kbPopHover);
@@ -3363,21 +3437,31 @@
         kbPopSetHover(null);
         kbPopPut(ch);
         kbPopFired=true;   // 뒤따라오는 클릭이 글자를 또 넣지 않게
+        kbHandledAt=Date.now(); kbTick();
       }
       // 아무 데도 안 짚고 뗐으면 판은 그대로 둔다 — 그 다음에 눌러서 골라도 된다
     });
     kbd.addEventListener('pointercancel', e=>{
       clearTimeout(kbPopTimer);
-      if(e.pointerId===kbPopPtrId){ kbPopPtrId=null; kbPopSetHover(null); }
+      if(e.pointerId===kbPopPtrId){ kbPopPtrId=null; kbPopDown=null; kbPopSetHover(null); }
     });
+    /* click 은 이제 거의 쓰이지 않는다 — 손가락·마우스는 위의 pointer 처리가
+       이미 넣었다. 그 뒤따라오는 click 은 버리고, pointer 없이 온 click
+       (접근성 도구 등)만 받는다. */
     kbd.addEventListener('click', e=>{
       const b=e.target.closest('button');
       if(!b || !kbd.contains(b)) return;
+      if(Date.now()-kbHandledAt < 800) return;   // 방금 손가락으로 넣었다
       // 펼쳐진 판에서 글자를 골랐다 — 그 글자를 그대로 넣는다
       const pick=b.getAttribute('data-pick');
       if(pick){ kbPopPut(pick); return; }
       // 꾹 눌러 판을 연 그 손가락의 클릭은 글자를 넣지 않는다
       if(kbPopFired){ kbPopFired=false; return; }
+      kbTick();
+      kbPress(b);
+    });
+    /* 키 하나를 넣는다 — 손가락(pointerdown/up)과 click 이 같이 쓴다 */
+    function kbPress(b){
       if(!kbPop.hidden) kbPopHide();   // 판이 열린 채 다른 키를 누르면 닫고 그대로 진행
       const fn=b.getAttribute('data-fn');
       if(fn==='shift'){ kbShift=!kbShift; kbPaintShift(); return; }
@@ -3410,7 +3494,7 @@
         kbJamo((kbShift && sk) ? sk : k);
         if(kbShift){ kbShift=false; kbPaintShift(); }   // 시프트는 한 글자만
       }
-    });
+    }
     /* 숫자판은 화면에 보이는 "010-1234-5678" 이 아니라 숫자만 따로 다룬다 —
        그래야 지울 때 하이픈에 걸리지 않고 한 자씩 깔끔히 지워진다.
        모양 맞추기(fmtTel)는 기존 input 처리기가 그대로 해준다. */
