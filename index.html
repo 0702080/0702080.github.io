@@ -526,6 +526,9 @@
   #kbdQW .qwoWide{flex:1.45 1 0;font-size:18px;}
   #kbdQW .qwoNext{flex:1.4 1 0;}
   #kbdQW .qwoBack{flex:1 1 0;}
+  /* 길게 눌러 다른 글자로 바뀐 순간 — 키가 밝아지고 글자도 바뀐 걸로 보인다 */
+  #kbd #kbdQW button.kbLongOn{filter:brightness(1.18);
+    box-shadow:0 0 0 2px #fff inset, 0 3px 8px rgba(10,18,30,.5);}
   #kbdQW button[data-fn="shift"].on{
     border-color:#8a6410;color:#42300a;
     background:linear-gradient(180deg,#ffe6a8 0%,#efa837 52%,#f6c463 84%,#ffeec2 100%);
@@ -968,7 +971,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v254</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v255</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1140,29 +1143,30 @@
    <!-- 두벌식. 자음은 가나다 순서로 놓았다(ㄱㄴㄷㄹㅁ / ㅂㅅㅇㅈ / ㅊㅋㅌㅍㅎ).
         폰 기본 자판 자리를 외우지 않아도 '가나다' 만 알면 찾는다.
         모음은 그대로(오른쪽). 한 줄 최대 9칸이라 키가 넓다(10·9·7 → 9·8·9).
-        ⇧ 로 된소리(ㄲㄸㅃㅆㅉ)·ㅒ·ㅖ — 그 짝은 키를 옮겨도 키에 붙어 다닌다. -->
+        ⇧ 로 된소리(ㄲㄸㅃㅆㅉ)·ㅒ·ㅖ — 그 짝은 키를 옮겨도 키에 붙어 다닌다.
+        길게 누르면(data-lk) ㄱ→ㄲ ㄷ→ㄸ ㅂ→ㅃ ㅅ→ㅆ ㅈ→ㅊ ㅇ→ㅎ ㅐ→ㅒ ㅔ→ㅖ. -->
    <div id="kbdQW" hidden>
     <div class="qwoRow">
-      <button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ"></button
+      <button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ" data-lk="ㄲ"></button
       ><button type="button" class="kbCons" data-k="ㄴ"></button
-      ><button type="button" class="kbCons" data-k="ㄷ" data-sk="ㄸ"></button
+      ><button type="button" class="kbCons" data-k="ㄷ" data-sk="ㄸ" data-lk="ㄸ"></button
       ><button type="button" class="kbCons" data-k="ㄹ"></button
       ><button type="button" class="kbCons" data-k="ㅁ"></button
       ><button type="button" class="kbVowel" data-k="ㅛ"></button
       ><button type="button" class="kbVowel" data-k="ㅕ"></button
       ><button type="button" class="kbVowel" data-k="ㅑ"></button
-      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ"></button>
+      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ" data-lk="ㅒ"></button>
     </div>
     <!-- 가운데 줄은 8칸이라 양쪽을 반 칸씩 들여 써서 위아래 줄과 키 폭을 맞춘다 -->
     <div class="qwoRow qwoRow2">
-      <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ"></button
-      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ"></button
-      ><button type="button" class="kbCons" data-k="ㅇ"></button
-      ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ"></button
+      <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ" data-lk="ㅃ"></button
+      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ" data-lk="ㅆ"></button
+      ><button type="button" class="kbCons" data-k="ㅇ" data-lk="ㅎ"></button
+      ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ" data-lk="ㅊ"></button
       ><button type="button" class="kbVowel" data-k="ㅗ"></button
       ><button type="button" class="kbVowel" data-k="ㅓ"></button
       ><button type="button" class="kbVowel" data-k="ㅏ"></button
-      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ"></button>
+      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ" data-lk="ㅖ"></button>
     </div>
     <!-- ⌫ 는 아랫줄 "이전" 이 대신하므로 뺐다. ⇧ 는 아랫줄로 내렸다. -->
     <div class="qwoRow">
@@ -3389,11 +3393,41 @@
     }
     function kbDirect(b){ kbHandledAt=Date.now(); kbTick(); kbPress(b); }
 
+    /* ───── 두벌식 길게 누르기 ─────
+       ㄱ→ㄲ ㄷ→ㄸ ㅂ→ㅃ ㅅ→ㅆ ㅈ→ㅊ ㅇ→ㅎ ㅐ→ㅒ ㅔ→ㅖ (키의 data-lk).
+       이 키들은 닿는 순간 넣으면 안 된다(닿자마자 ㄱ 이 들어가 버린다).
+       · 짧게 톡 → 손을 뗄 때 원래 글자
+       · 길게(KB_LONG) → 그 순간 바뀐 글자를 넣고, 키 글자도 바꿔 보이고, 톡 운다
+       ★ 두 엄지로 빨리 치면 앞 키를 떼기 전에 다음 키를 누르는 일이 흔하다.
+         그대로 두면 '떼는 순간' 넣는 이 키가 뒤 글자보다 늦게 들어가 순서가
+         뒤집힌다(기 → ㅣㄱ). 그래서 다른 키가 눌리는 순간, 기다리던 키를 먼저
+         넣는다(kbLongFlush). */
+    let kbLongBtn=null, kbLongPtr=null, kbLongTimer=null, kbLongDone=false;
+    function kbLongPut(lk){
+      kbVCycStop();
+      kbJamo(lk);
+      if(kbShift){ kbShift=false; kbPaintShift(); }   // 길게 누르기도 한 글자로 친다
+    }
+    function kbLongEnd(){
+      clearTimeout(kbLongTimer); kbLongTimer=null;
+      if(kbLongBtn) kbLongBtn.classList.remove('kbLongOn');
+      kbLongBtn=null; kbLongPtr=null; kbLongDone=false;
+      kbPaintShift();   // 바꿔 보였던 키 글자를 되돌린다
+    }
+    function kbLongFlush(){
+      if(!kbLongBtn) return;
+      const b=kbLongBtn, done=kbLongDone;
+      kbLongEnd();
+      if(!done) kbDirect(b);
+    }
+
     kbd.addEventListener('pointerdown', e=>{
       e.preventDefault();
       clearTimeout(kbPopTimer); kbPopFired=false; kbPopSetHover(null);
       const b=e.target.closest('button');
       if(!b) return;
+      // 앞 키를 아직 안 뗐는데 이 키가 눌렸다 — 앞 키를 먼저 넣어 순서를 지킨다
+      if(kbLongBtn && e.pointerId!==kbLongPtr) kbLongFlush();
       // 펼쳐진 판의 글자를 톡 눌렀다 — 바로 넣는다
       // (판을 연 손가락을 떼지 않고 끌어서 고르는 건 pointerup 이 맡는다)
       if(b.hasAttribute('data-pick')){
@@ -3409,6 +3443,20 @@
       const list=id ? (CJ_CONS[id]||QW_VOW[id]) : null;
       // 성씨는 이름 칸이 아직 비었을 때만 — 곧 성을 치려는 참이라는 뜻이다
       const sur=(list && kbTarget==='name' && !nI.value && id) ? KB_SURNAME[id] : null;
+      // 두벌식의 길게 누르기 키 — 뗄 때(짧게) 또는 KB_LONG 이 지날 때(길게) 넣는다
+      const lk=b.getAttribute('data-lk');
+      if(lk && !list){
+        kbLongBtn=b; kbLongPtr=e.pointerId; kbLongDone=false;
+        try{ b.setPointerCapture(e.pointerId); }catch(err){}
+        kbLongTimer=setTimeout(()=>{
+          if(kbLongBtn!==b) return;
+          kbLongDone=true;
+          kbHandledAt=Date.now(); kbTick();
+          kbLongPut(lk);
+          b.textContent=lk; b.classList.add('kbLongOn');
+        }, KB_LONG);
+        return;
+      }
       // 꾹 눌러 펼칠 판이 없는 키(두벌식·천지인·숫자판, 두벌식C 의 ㄴ·ㄹ·ㅁ 등)는
       // 닿는 순간 바로 넣는다
       if(!list || list.length + (sur?sur.length:0) < 2){ kbDirect(b); return; }
@@ -3425,6 +3473,14 @@
       kbPopSetHover(kbPopOptionAt(e.clientX, e.clientY));
     });
     kbd.addEventListener('pointerup', e=>{
+      // 두벌식 길게 누르기 키를 뗐다
+      if(kbLongBtn && e.pointerId===kbLongPtr){
+        const b=kbLongBtn, done=kbLongDone;
+        kbLongEnd();
+        if(!done) kbDirect(b);              // 짧게 톡 — 원래 글자
+        else kbHandledAt=Date.now();        // 길게 — 이미 넣었다. 뒤따라오는 click 은 버린다
+        return;
+      }
       clearTimeout(kbPopTimer);
       if(e.pointerId!==kbPopPtrId) return;
       kbPopPtrId=null;
@@ -3445,6 +3501,7 @@
       // 아무 데도 안 짚고 뗐으면 판은 그대로 둔다 — 그 다음에 눌러서 골라도 된다
     });
     kbd.addEventListener('pointercancel', e=>{
+      if(kbLongBtn && e.pointerId===kbLongPtr) kbLongEnd();   // 브라우저가 가로챘다 — 넣지 않는다
       clearTimeout(kbPopTimer);
       if(e.pointerId===kbPopPtrId){ kbPopPtrId=null; kbPopDown=null; kbPopSetHover(null); }
     });
