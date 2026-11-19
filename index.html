@@ -971,7 +971,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v256</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v257</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -3670,8 +3670,8 @@
       if(!(w100>0)) return;
       // 3% 는 남겨 둔다 — 꽉 맞추면 반올림 때문에 마지막 글자가 잘리기도 한다
       let fs=Math.floor(100*avail/w100*0.97);
-      // 24px 로 쓴다. 칸이 그보다 좁은 폰에서만 잘리지 않을 만큼 줄인다.
-      fs=Math.max(12, Math.min(fs, 24));
+      // 25px 로 쓴다(2026-11-20 사용자 요청, 예전 24px). 칸이 그보다 좁은 폰에서만 잘리지 않을 만큼 줄인다.
+      fs=Math.max(12, Math.min(fs, 25));
       tI.style.fontSize=fs+'px';
     }
     window.addEventListener('resize', ()=>{
