@@ -998,7 +998,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v265</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v266</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -3422,7 +3422,7 @@
        ★ 뒤따라오는 click 은 버린다(kbHandledAt). '다음' 을 누르는 순간 자판이
          숫자판으로 바뀌는데, 그 click 이 손가락 밑에 새로 온 숫자를 또 넣을 수
          있다. */
-    const KB_BUZZ=10;      // 자판 키 진동(ms). 다른 단추(28ms)보다 짧게 톡.
+    const KB_BUZZ=4;       // 자판 키 진동(ms) — 아주 약하게 (2026-11-20 사용자 요청, 예전 10ms). 웹은 세기를 못 바꿔서 길이를 줄임
     let kbHandledAt=0, kbPopDown=null;
     function kbTick(){
       try{ if(navigator.vibrate) navigator.vibrate(KB_BUZZ); }catch(err){}
