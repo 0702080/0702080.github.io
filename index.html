@@ -1006,7 +1006,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v275</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v276</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1187,7 +1187,7 @@
          ⇧·길게 누르기로 된소리(ㄲㄸㅃㅆㅉ)·ㅒ·ㅖ, ㅅ·ㅔ·ㅐ 빠르게 두 번 = ㅆ·ㅖ·ㅒ. -->
     <div class="qwoRow">
       <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ" data-lk="ㅃ"></button
-      ><button type="button" class="kbCons" data-k="ㅅ" data-slot="ㅈ" data-sk="ㅉ" data-lk="ㅉ" data-cyc="wj"></button
+      ><button type="button" class="kbCons" data-k="ㅅ" data-slot="ㅈ" data-sk="ㅆ" data-lk="ㅆ" data-cyc="wj"></button
       ><button type="button" class="kbCons" data-k="ㄷ" data-sk="ㄸ" data-lk="ㄸ"></button
       ><button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ" data-lk="ㄲ" data-cyc="wg"></button
       ><button type="button" class="kbVowel" data-k="ㅕ"></button
@@ -1216,9 +1216,8 @@
       ><button type="button" class="kbVowel" data-k="ㅡ"></button>
     </div>
     <div class="qwoRow qwoFnRow qwo8">
-      <button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ" data-lk="ㅆ" data-cyc="ws"></button
-      ><button type="button" class="kbCons" data-k="ㅎ"></button
-      ><button type="button" class="kbFn" data-fn="shift">⇧</button
+      <!-- 아래 줄 ㅅ·ㅎ 키는 뺌 (2026-11-20 사용자 요청): ㅎ=ㅇ 두 번, ㅆ=첫 줄 ㅅ 키 ⇧/길게 -->
+      <button type="button" class="kbFn" data-fn="shift">⇧</button
       ><button type="button" class="kbFn kbNext qwoNext" data-fn="next">다음</button
       ><button type="button" class="kbFn qwoBack" data-fn="back">&#x2190; 이전</button>
     </div>
@@ -3481,7 +3480,8 @@
       a.parentNode.insertBefore(m,a); b.parentNode.insertBefore(a,b); m.parentNode.insertBefore(b,m); m.remove();
     }
     (function qwRestore(){
-      const want=data.qwSlots; if(!Array.isArray(want)) return;
+      if(!Array.isArray(data.qwSlots)) return;
+      const want=data.qwSlots.length===26 ? data.qwSlots.filter(k=>k!=='ㅅ'&&k!=='ㅎ') : data.qwSlots;   // 예전 아래 줄 ㅅ·ㅎ 자리는 버림
       const cur=qwKeys(); if(want.length!==cur.length) return;
       want.forEach((k,i)=>{ const keys=qwKeys(); const b=keys.find(x=>qwId(x)===k); if(b && keys[i]!==b) qwSwap(keys[i],b); });
     })();
