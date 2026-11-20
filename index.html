@@ -367,7 +367,7 @@
      이 배경(입력판 바깥 영역)을 탭하면 저장하지 않고 닫힌다. */
   #edStage{
     position:relative;flex:1;overflow:hidden;cursor:pointer;
-    background:linear-gradient(160deg,#3a2c47 0%,#241a2e 60%,#160f1c 100%);
+    background:#3d3150;   /* 입력판·자판과 같은 한 가지 색, 예전보다 살짝 밝게 (2026-11-20 사용자 요청) */
     touch-action:none;   /* 오른쪽 끌기를 JS로 직접 처리 — 없으면 브라우저 자체
                              제스처(엣지 스와이프 등)가 먼저 가로채 버린다 */
   }
@@ -383,9 +383,8 @@
     padding:14px;border-radius:20px;
     /* 입력칸·버튼은 각자 불투명하므로, 판 자체는 옅게 해서
        뒤의 얼굴이 최대한 비쳐 보이게 한다 */
-    background:rgba(0,0,0,.38);
-    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
-    box-shadow:0 10px 34px rgba(0,0,0,.45);
+    background:transparent;   /* 배경과 한 색 (2026-11-20 사용자 요청) */
+    box-shadow:none;
   }
   /* 이름·전화번호 사이 여백은 아래 다시찍기·저장 사이(#edActions)와 같은 8px */
   #edBottom .row{display:flex;gap:8px;}
@@ -475,8 +474,8 @@
     position:absolute;left:0;right:0;bottom:0;z-index:3;
     display:flex;flex-direction:column;gap:10px;   /* 줄 사이 여백 */
     padding:10px 5px calc(10px + env(safe-area-inset-bottom));
-    background:rgba(30,24,38,.97);
-    box-shadow:0 -4px 14px rgba(0,0,0,.45);
+    background:#3d3150;   /* 배경과 한 색 (2026-11-20 사용자 요청) */
+    box-shadow:none;
     /* 실제 폰에서 손가락을 붙인 채 끌면, 이게 없으면 브라우저가 그 움직임을
        스크롤로 가로채면서 pointercancel 을 던진다 — 그 순간 붙잡아 둔 손가락을
        놓쳐서 "꾹 눌러 판을 펼친 뒤 끌어서 고르기"가 통째로 안 먹혔다.
@@ -550,6 +549,9 @@
     background:linear-gradient(180deg,#ff6b6b 0%,#e02424 52%,#c81e1e 84%,#ef4444 100%);
     box-shadow:0 3px 7px rgba(10,18,30,.42),inset 0 -2px 6px rgba(255,255,255,.40),inset 0 2px 3px rgba(0,0,0,.24);}
   /* 길게 눌러 다른 글자로 바뀐 순간 — 키가 밝아지고 글자도 바뀐 걸로 보인다 */
+  /* 아주 길게 눌러 끌어 옮기기 (2026-11-20 사용자 요청) */
+  #kbd #kbdQW button.kbMoving{position:relative;z-index:9;filter:brightness(1.15);box-shadow:0 10px 22px rgba(0,0,0,.55);transition:none;}
+  #kbd #kbdQW button.kbDropOn{outline:3px solid #ffd76a;outline-offset:-3px;}
   #kbd #kbdQW button.kbLongOn{filter:brightness(1.18);
     box-shadow:0 0 0 2px #fff inset, 0 3px 8px rgba(10,18,30,.5);}
   #kbdQW button[data-fn="shift"].on{
@@ -1004,7 +1006,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v268</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v270</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -3461,6 +3463,69 @@
       if(!done) kbDirect(b);
     }
 
+    /* ───── 두벌식 키 자리 옮기기 (2026-11-20 사용자 요청) ─────
+       글자 키를 아주 길게(KB_MOVE) 누르면 키가 들려서 손가락을 따라오고,
+       다른 글자 키 위에서 떼면 두 키가 자리를 바꾼다. 차례는 data.qwSlots 에 기억.
+       눌렀을 때 들어간 글자(바로 넣는 키·길게 누르기 글자)는 지운다. */
+    const KB_MOVE=900;
+    let kmBtn=null, kmPtr=null, kmT=null, kmX=0, kmY=0, kmOn=false, kmOver=null;
+    const qwKeys=()=>[...document.querySelectorAll('#kbdQW .qwoRow button[data-k]')];
+    function qwSaveSlots(){ data.qwSlots=qwKeys().map(b=>b.getAttribute('data-k')); save(); }
+    function qwSwap(a,b){
+      if(!a||!b||a===b) return;
+      const m=document.createComment('');
+      a.parentNode.insertBefore(m,a); b.parentNode.insertBefore(a,b); m.parentNode.insertBefore(b,m); m.remove();
+    }
+    (function qwRestore(){
+      const want=data.qwSlots; if(!Array.isArray(want)) return;
+      const cur=qwKeys(); if(want.length!==cur.length) return;
+      want.forEach((k,i)=>{ const keys=qwKeys(); const b=keys.find(x=>x.getAttribute('data-k')===k); if(b && keys[i]!==b) qwSwap(keys[i],b); });
+    })();
+    function kmReset(){
+      clearTimeout(kmT); kmT=null;
+      if(kmBtn){ kmBtn.classList.remove('kbMoving'); kmBtn.style.transform=''; }
+      if(kmOver) kmOver.classList.remove('kbDropOn');
+      kmBtn=null; kmPtr=null; kmOn=false; kmOver=null;
+    }
+    kbd.addEventListener('pointerdown', e=>{
+      const b=e.target.closest('#kbdQW .qwoRow button[data-k]');
+      if(!b) return;
+      kmReset(); kmBtn=b; kmPtr=e.pointerId; kmX=e.clientX; kmY=e.clientY;
+      kmT=setTimeout(()=>{
+        if(kmBtn!==b) return;
+        // 이 누름으로 들어간 글자는 지운다
+        const wasLong = kbLongBtn===b;
+        if(wasLong){ const done=kbLongDone; kbLongEnd(); if(done) kbBack(); }
+        else kbBack();
+        kmOn=true; b.classList.add('kbMoving');
+        try{ b.setPointerCapture(e.pointerId); }catch(err){}
+        try{ if(navigator.vibrate) navigator.vibrate([20,40,20]); }catch(err){}
+      }, KB_MOVE);
+    }, true);
+    kbd.addEventListener('pointermove', e=>{
+      if(!kmBtn || e.pointerId!==kmPtr) return;
+      const dx=e.clientX-kmX, dy=e.clientY-kmY;
+      if(!kmOn){ if(Math.abs(dx)>12||Math.abs(dy)>12){ clearTimeout(kmT); kmT=null; } return; }
+      e.stopImmediatePropagation();
+      kmBtn.style.transform='translate('+dx+'px,'+dy+'px) scale(1.08)';
+      kmBtn.style.visibility='hidden';
+      const el=document.elementFromPoint(e.clientX,e.clientY);
+      kmBtn.style.visibility='';
+      const t=el && el.closest && el.closest('#kbdQW .qwoRow button[data-k]');
+      const over=(t && t!==kmBtn)?t:null;
+      if(over!==kmOver){ if(kmOver) kmOver.classList.remove('kbDropOn'); kmOver=over; if(over){ over.classList.add('kbDropOn'); try{ if(navigator.vibrate) navigator.vibrate(KB_BUZZ); }catch(err){} } }
+    }, true);
+    function kmUp(e){
+      if(!kmBtn || e.pointerId!==kmPtr) return;
+      if(!kmOn){ clearTimeout(kmT); kmT=null; kmBtn=null; kmPtr=null; return; }
+      e.stopImmediatePropagation();
+      const a=kmBtn, b=kmOver;
+      kmReset(); kbHandledAt=Date.now();
+      if(b){ qwSwap(a,b); qwSaveSlots(); }
+    }
+    kbd.addEventListener('pointerup', kmUp, true);
+    kbd.addEventListener('pointercancel', kmUp, true);
+
     kbd.addEventListener('pointerdown', e=>{
       e.preventDefault();
       clearTimeout(kbPopTimer); kbPopFired=false; kbPopSetHover(null);
@@ -3750,6 +3815,21 @@
       nameClrBtn.addEventListener('click', ()=>{
         kbResetFrom(''); kbRender();
         if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent='';
+      });
+    }
+    /* 이름 칸을 빠르게 두 번 톡톡 누르면 이름을 한꺼번에 지움 (2026-11-20 사용자 요청) */
+    { const nIn=$('edName'); let lt=0, lx=0, ly=0, sx=0, sy=0, st=0;
+      nIn.addEventListener('pointerdown', e=>{ sx=e.clientX; sy=e.clientY; st=Date.now(); });
+      nIn.addEventListener('pointerup', e=>{
+        const now=Date.now();
+        if(now-st>350 || Math.abs(e.clientX-sx)>12 || Math.abs(e.clientY-sy)>12){ lt=0; return; }
+        if(lt && now-lt<400 && Math.abs(e.clientX-lx)<40 && Math.abs(e.clientY-ly)<40){
+          lt=0; kbResetFrom(''); kbRender();
+          if(hintEl.textContent.indexOf('입력')>=0) hintEl.textContent='';
+          try{ if(navigator.vibrate) navigator.vibrate(12); }catch(err){}
+          return;
+        }
+        lt=now; lx=e.clientX; ly=e.clientY;
       });
     }
     if(telClrBtn){
