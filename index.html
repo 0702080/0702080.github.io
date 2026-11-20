@@ -628,7 +628,7 @@
   /* 자판 고르기와 이름 칸 사이는 넉넉히 띄운다 — 판의 기본 간격 9px 에
      27px 를 더해 36px(원래의 4배). 자판 종류를 고르는 줄과 실제로 적는
      줄이 확실히 구분된다. */
-  #kbdPick{display:flex;gap:10px;justify-content:center;margin-bottom:40px;}   /* 자판 고르기 줄과 이름 칸 사이 여백 더 (2026-11-20 사용자 요청, 예전 27px) */
+  #kbdPick{display:flex;gap:10px;justify-content:flex-end;margin-bottom:40px;}   /* 자판 고르기 줄과 이름 칸 사이 여백 더 (2026-11-20 사용자 요청, 예전 27px) */
   #kbdPick button{
     position:relative;isolation:isolate;
     flex:0 0 auto;padding:11px 26px;border-radius:999px;cursor:pointer;
@@ -639,10 +639,10 @@
     box-shadow:0 2px 6px rgba(0,0,0,.30), inset 0 1px 1px rgba(255,255,255,.25);
   }
   /* ✕ 가 자판 고르기 줄에 들어오면 세 단추는 남은 폭을 나눠 씀 */
-  #kbdPick.hasX{justify-content:flex-start;align-items:center;}
+  #kbdPick.hasX{justify-content:flex-end;align-items:center;}
   #kbdPick.hasX button[data-kb]{flex:1 1 0;padding:11px 6px;letter-spacing:0;white-space:nowrap;min-width:0;}
   #kbdPick #edCancelBtn{position:relative;top:auto!important;right:auto;bottom:auto!important;flex:0 0 44px;width:44px;height:44px;padding:0;
-    border-radius:50%;letter-spacing:0;font-size:20px;margin-left:2px;}
+    border-radius:50%;letter-spacing:0;font-size:20px;margin-left:auto;}
   #kbdPick #edCancelBtn::before{display:none;}
   #kbdPick #edCancelBtn{color:#fff;border:1.5px solid #2a2436;
     background:radial-gradient(120% 90% at 50% 18%,rgba(255,255,255,.35) 0%,rgba(255,255,255,0) 55%),linear-gradient(180deg,#5a5070 0%,#2e2840 60%,#3b3450 100%);
@@ -1008,7 +1008,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v279</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v280</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1105,8 +1105,7 @@
     <!-- 자판 고르기 — 천지인이 손에 안 맞는 봉사자를 위해 폰 기본 키보드와
          같은 두벌식도 쓸 수 있게 한다. 고른 값은 기억해 둔다. -->
     <div id="kbdPick">
-      <!-- 천지인·두벌식C 단추는 뺌 (2026-11-20 사용자 요청) — 늘 두벌식 -->
-      <button type="button" data-kb="qw">두벌식</button>
+      <!-- 자판 고르기 단추(천지인·두벌식·두벌식C)는 모두 뺌 (2026-11-20 사용자 요청) — 늘 두벌식, ✕만 오른쪽 끝 -->
     </div>
     <div class="row">
       <div id="edNameWrap">
