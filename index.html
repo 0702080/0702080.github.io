@@ -1006,7 +1006,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v272</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v273</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1198,7 +1198,7 @@
     <div class="qwoRow">
       <button type="button" class="kbCons" data-k="ㅁ"></button
       ><button type="button" class="kbCons" data-k="ㄴ"></button
-      ><button type="button" class="kbCons" data-k="ㅇ"></button
+      ><button type="button" class="kbCons" data-k="ㅇ" data-cyc="wo"></button
       ><button type="button" class="kbCons" data-k="ㄹ"></button
       ><button type="button" class="kbVowel" data-k="ㅗ"></button
       ><button type="button" class="kbVowel" data-k="ㅓ"></button
@@ -2897,6 +2897,7 @@
       q7:['ㅅ','ㅈ','ㅊ','ㅆ','ㅉ'],           q8:['ㅇ','ㅎ'],
       /* 두벌식(기본 자판)의 ㅅ 키 — 두 번 누르면 ㅈ, 세 번이면 ㅊ.
          ㅆ 은 길게 누르기(또는 ⇧)로 따로 있으므로 여기엔 넣지 않는다. */
+      wo:['ㅇ','ㅎ'],  // 두벌식 ㅇ — 첫소리에서 빠르게 두 번이면 ㅎ (2026-11-20 사용자 요청). 받침 ㅇ 뒤 ㅇ 은 새 글자(강영·송영)
       wj:['ㅈ','ㅊ'],  // 두벌식 ㅈ — 빠르게 두 번이면 ㅊ (2026-11-20 사용자 요청)
       wg:['ㄱ','ㄲ'],  // 두벌식 ㄱ — 빠르게 두 번이면 ㄲ (2026-11-20 사용자 요청)
       ws:['ㅅ','ㅆ']   // 두벌식 ㅅ — 빠르게 두 번이면 ㅆ (2026-11-20 사용자 요청, 예전 ㅅ→ㅈ→ㅊ)
@@ -2904,7 +2905,7 @@
     /* 끝에서 처음으로 돌아가지 않고 마지막 글자에 멈추는 키.
        ㅅ→ㅈ 다음 "두 번 더" 누르는 사람도 있어서, 돌아가게 두면 네 번째에
        ㅅ 으로 되돌아가 버린다. 멈춰 두면 세 번이든 네 번이든 ㅊ 이다. */
-    const CJ_NOWRAP={ ws:1, wg:1, wj:1 };
+    const CJ_NOWRAP={ ws:1, wg:1, wj:1, wo:1 };
     /* 두벌식C 모음 — 거듭 누르면 다음 모음이 된다(ㅗ→ㅛ, ㅏ→ㅐ→ㅑ→ㅒ).
        ㅐ·ㅔ 는 따로 키도 있지만 ㅏ·ㅓ 키에서 두 번째로도 나오게 해 뒀다 —
        이름에는 ㅑ·ㅕ 보다 ㅐ·ㅔ 가 훨씬 자주 나오므로(재·세·태·혜) 두 번
@@ -3007,7 +3008,7 @@
       const base = kbCycKey ? (CJ_CONS[kbCycKey]||[])[0] : '';
       const tight = kbCycPos==='jong' && JONG_TIGHT.indexOf(base)>=0;
       kbCycTimer=setTimeout(()=>{ kbCycTimer=null; kbCycKey=null; kbCycPos=null; },
-                            (kbCycKey==='ws'||kbCycKey==='wg'||kbCycKey==='wj') ? 500 : (tight ? CJ_HOLD_JONG : CJ_HOLD));   // ㅅ→ㅆ 는 '빠르게' 두 번(0.5초 안)만
+                            (kbCycKey==='ws'||kbCycKey==='wg'||kbCycKey==='wj'||kbCycKey==='wo') ? 500 : (tight ? CJ_HOLD_JONG : CJ_HOLD));   // ㅅ→ㅆ 는 '빠르게' 두 번(0.5초 안)만
     }
     // 아직 모음이 안 된 조각(ㆍ, ㆍㆍ)은 그대로 보여줘서 눌린 게 보이게 한다
     function kbPending(){ return (kbJung<0 && kbVowSeq && !CJ_VOW[kbVowSeq]) ? kbVowSeq : ''; }
@@ -3033,7 +3034,7 @@
       const cyc=CJ_CONS[keyId];
       if(!cyc) return;
       // 같은 키를 이어 눌렀으면 그 자리에서 다음 글자로 바꾼다
-      if(kbCycKey===keyId && kbCycPos){
+      if(kbCycKey===keyId && kbCycPos && !(keyId==='wo' && kbCycPos==='jong')){
         const list = kbCycPos==='jong'
           ? cyc.filter((j,ix)=> ix===0 || (JONG.indexOf(j)>0 && (keyId==='ws' || keyId==='wg' || JONG_NOCYC.indexOf(j)<0)))   // 두벌식 ㅅ 두 번 = 받침 ㅆ(있·했)
           : cyc;
