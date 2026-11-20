@@ -376,11 +376,11 @@
      키보드가 올라오면 가려져버렸다. 사진이 비치도록 반투명으로 띄운다. */
   #edBottom{
     position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    width:min(94%,440px);z-index:2;
+    width:calc(100% - 10px);z-index:2;   /* 양끝을 자판(#kbd 안쪽 5px)에 맞춤 (2026-11-20 사용자 요청) */
     /* 자판까지 펼쳐지면 작은 화면에선 넘칠 수 있으니 안전장치 */
     max-height:calc(100% - 20px);overflow-y:auto;
     display:flex;flex-direction:column;gap:9px;
-    padding:14px;border-radius:20px;
+    padding:14px 0;border-radius:20px;
     /* 입력칸·버튼은 각자 불투명하므로, 판 자체는 옅게 해서
        뒤의 얼굴이 최대한 비쳐 보이게 한다 */
     background:transparent;   /* 배경과 한 색 (2026-11-20 사용자 요청) */
@@ -1006,7 +1006,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v276</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v277</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
