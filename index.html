@@ -356,6 +356,13 @@
     cursor:pointer;opacity:.85;
   }
   #edCancelBtn:active{opacity:1;background:rgba(0,0,0,.75);}
+  /* ✕ 입체 단추 (2026-11-20 사용자 요청) — 위 빛·아래 그늘·바닥 두께 */
+  #edCancelBtn{opacity:1;color:#fff;border:1.5px solid #2a2436;
+    background:radial-gradient(120% 90% at 50% 18%,rgba(255,255,255,.35) 0%,rgba(255,255,255,0) 55%),linear-gradient(180deg,#5a5070 0%,#2e2840 60%,#3b3450 100%);
+    box-shadow:0 4px 0 #17131f,0 7px 12px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.35),inset 0 -3px 5px rgba(0,0,0,.35);
+    text-shadow:0 1px 2px rgba(0,0,0,.6);transition:transform .08s,box-shadow .08s;}
+  #edCancelBtn:active{transform:translateY(3px);box-shadow:0 1px 0 #17131f,0 3px 6px rgba(0,0,0,.45),inset 0 1px 1px rgba(255,255,255,.3),inset 0 -2px 4px rgba(0,0,0,.35);
+    background:radial-gradient(120% 90% at 50% 18%,rgba(255,255,255,.3) 0%,rgba(255,255,255,0) 55%),linear-gradient(180deg,#4a4260 0%,#262036 60%,#322b45 100%);}
   /* 사진은 보여주지 않는다 — 화면을 앱 색감의 은은한 배경으로 채운다.
      이 배경(입력판 바깥 영역)을 탭하면 저장하지 않고 닫힌다. */
   #edStage{
@@ -529,6 +536,11 @@
   #kbdQW .qwoWide{flex:1.45 1 0;font-size:18px;}
   #kbdQW .qwoNext{flex:1.4 1 0;}
   #kbdQW .qwoBack{flex:1 1 0;}
+  /* 아랫줄 ⇧·다음·이전 사이를 띄움, 이전은 빨간색 (2026-11-20 사용자 요청) */
+  #kbdQW .qwoFnRow{gap:10px;}
+  #kbd #kbdQW .qwoBack{border-color:#7a1f2a;color:#fff;
+    background:linear-gradient(180deg,#f2a3aa 0%,#d23a4a 52%,#e46a76 84%,#f7c4c9 100%);
+    box-shadow:0 3px 7px rgba(10,18,30,.42),inset 0 -2px 6px rgba(255,255,255,.40),inset 0 2px 3px rgba(0,0,0,.24);}
   /* 길게 눌러 다른 글자로 바뀐 순간 — 키가 밝아지고 글자도 바뀐 걸로 보인다 */
   #kbd #kbdQW button.kbLongOn{filter:brightness(1.18);
     box-shadow:0 0 0 2px #fff inset, 0 3px 8px rgba(10,18,30,.5);}
@@ -604,7 +616,7 @@
   /* 자판 고르기와 이름 칸 사이는 넉넉히 띄운다 — 판의 기본 간격 9px 에
      27px 를 더해 36px(원래의 4배). 자판 종류를 고르는 줄과 실제로 적는
      줄이 확실히 구분된다. */
-  #kbdPick{display:flex;gap:10px;justify-content:center;margin-bottom:27px;}
+  #kbdPick{display:flex;gap:10px;justify-content:center;margin-bottom:40px;}   /* 자판 고르기 줄과 이름 칸 사이 여백 더 (2026-11-20 사용자 요청, 예전 27px) */
   #kbdPick button{
     position:relative;isolation:isolate;
     flex:0 0 auto;padding:11px 26px;border-radius:999px;cursor:pointer;
@@ -974,7 +986,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v262</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v263</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
