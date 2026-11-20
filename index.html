@@ -1006,7 +1006,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v273</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v274</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2897,7 +2897,7 @@
       q7:['ㅅ','ㅈ','ㅊ','ㅆ','ㅉ'],           q8:['ㅇ','ㅎ'],
       /* 두벌식(기본 자판)의 ㅅ 키 — 두 번 누르면 ㅈ, 세 번이면 ㅊ.
          ㅆ 은 길게 누르기(또는 ⇧)로 따로 있으므로 여기엔 넣지 않는다. */
-      wo:['ㅇ','ㅎ'],  // 두벌식 ㅇ — 첫소리에서 빠르게 두 번이면 ㅎ (2026-11-20 사용자 요청). 받침 ㅇ 뒤 ㅇ 은 새 글자(강영·송영)
+      wo:['ㅇ','ㅎ'],  // 두벌식 ㅇ — 빠르게 두 번이면 언제나 ㅎ(이현). 강영처럼 ㅇ 두 개는 0.5초 쉬고 (2026-11-20 사용자 요청)
       wj:['ㅈ','ㅊ'],  // 두벌식 ㅈ — 빠르게 두 번이면 ㅊ (2026-11-20 사용자 요청)
       wg:['ㄱ','ㄲ'],  // 두벌식 ㄱ — 빠르게 두 번이면 ㄲ (2026-11-20 사용자 요청)
       ws:['ㅅ','ㅆ']   // 두벌식 ㅅ — 빠르게 두 번이면 ㅆ (2026-11-20 사용자 요청, 예전 ㅅ→ㅈ→ㅊ)
@@ -3034,7 +3034,7 @@
       const cyc=CJ_CONS[keyId];
       if(!cyc) return;
       // 같은 키를 이어 눌렀으면 그 자리에서 다음 글자로 바꾼다
-      if(kbCycKey===keyId && kbCycPos && !(keyId==='wo' && kbCycPos==='jong')){
+      if(kbCycKey===keyId && kbCycPos){
         const list = kbCycPos==='jong'
           ? cyc.filter((j,ix)=> ix===0 || (JONG.indexOf(j)>0 && (keyId==='ws' || keyId==='wg' || JONG_NOCYC.indexOf(j)<0)))   // 두벌식 ㅅ 두 번 = 받침 ㅆ(있·했)
           : cyc;
