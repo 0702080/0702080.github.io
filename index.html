@@ -3414,7 +3414,15 @@
     }
     /* 판에서 고른 것을 넣는다. 성씨는 통글자(가~힣)라 조립기에 넣지 않고
        그대로 붙인다 — 자모로 쪼개 넣으면 앞 글자의 받침으로 붙는 등 어긋난다. */
+    /* 판에서 글자를 고르면 판이 바로 사라져서, 손을 뗄 때 오는 click 이
+       판 밑에 있던 '다시 찍기' 같은 단추에 떨어졌다 (2026-11-20). 고른 뒤
+       잠깐 동안 오는 click 은 어디에 떨어지든 버린다. */
+    let kbEatClick=0;
+    document.addEventListener('click', e=>{
+      if(Date.now()<kbEatClick){ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); kbEatClick=0; }
+    }, true);
     function kbPopPut(ch){
+      kbEatClick=Date.now()+700;
       kbPopHide(); kbCycStop(); kbVCycStop();
       if(ch>='가' && ch<='힣'){ kbSync(); kbFlush(); kbBase+=ch; kbRender(); }
       else kbJamo(ch);
