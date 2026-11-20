@@ -424,13 +424,13 @@
     font-family:Consolas,"D2Coding","Roboto Mono",monospace;}
   /* 왼쪽엔 단추가 없으니 거의 비우지 않고, 오른쪽은 ✕(30px+3px) 만큼만
      비운다 — 글자가 쓸 수 있는 폭을 최대로 벌기 위해서다. */
-  #edTelWrap.hasClr #edTel{padding-left:4px;padding-right:34px;}
+  #edTelWrap.hasClr #edTel{padding-left:4px;padding-right:4px;}   /* ✕ 는 반투명으로 글자 위에 얹음 — 번호가 다 보이게 (2026-11-20 사용자 요청) */
   /* 010 처럼 칸에 쓰지 않고 삼킨 키도 '눌렸다' 는 건 보이게 잠깐 물든다 */
   #edBottom #edTel.telBlink{animation:telBlink .3s ease-out;}
   @keyframes telBlink{ 0%{background:#bfeee6;} 100%{background:rgba(255,255,255,.95);} }
   /* 마이크 버튼(안드로이드에서만 나타남)이 글자와 안 겹치게 각 칸 왼쪽에
      자리를 비워둔다 — 버튼이 없는(아이폰) 경우엔 이 여백도 필요 없다. */
-  #edNameWrap.hasClr #edName{padding-right:34px;}
+  #edNameWrap.hasClr #edName{padding-right:8px;}
   /* ── 한꺼번에 지우기 ──
      예전에는 이 자리에 마이크(🎤)가 있었다. 적은 것을 통째로 지우는 일이
      훨씬 잦아서 ✕ 로 바꿨다. 지우는 단추이므로 글자 오른쪽 끝에 둔다. */
@@ -441,6 +441,9 @@
     display:flex;align-items:center;justify-content:center;cursor:pointer;
   }
   #edNameClr:active, #edTelClr:active{background:rgba(0,0,0,.20);color:#111;}
+  /* ✕ 는 반투명 — 밑에 깔린 이름·전화번호 글자가 비쳐 보이게 (2026-11-20 사용자 요청) */
+  #edNameClr, #edTelClr{background:transparent;opacity:.38;z-index:1;}
+  #edNameClr:active, #edTelClr:active{opacity:.8;}
   /* 아래 저장/다시찍기 버튼도 위 입력칸과 같은 비율·간격으로 나눠서
      세로 경계선이 서로 정확히 맞춰 정렬되게 한다 */
   #edActions{display:flex;gap:8px;}
@@ -971,7 +974,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v260</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v261</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
