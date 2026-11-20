@@ -972,7 +972,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v258</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v259</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -3561,6 +3561,8 @@
       const k=b.getAttribute('data-k');
       if(k){
         const sk=b.getAttribute('data-sk');
+        /* ㅔ·ㅐ 를 빠르게 두 번 누르면 ㅖ·ㅒ (2026-11-20 사용자 요청) — 두벌식C 모음과 같은 장치 */
+        if(!kbShift && (k==='ㅔ'||k==='ㅐ')){ kbCycStop(); kbQwVowel(k==='ㅔ'?'v8':'v7'); if(kbVCycTimer){ clearTimeout(kbVCycTimer); kbVCycTimer=setTimeout(()=>{ kbVCycTimer=null; kbVCycKey=null; }, 500); } return; }   // '빠르게' 두 번 — 0.5초 안
         kbVCycStop();
         /* 거듭 누르기 키(ㅅ→ㅈ→ㅊ) — 두벌식C 와 같은 장치(kbCons)를 쓴다.
            다른 글자를 치면 끝나고, 받침 자리에서도 맞게 바뀌며, 2.5초 안에
