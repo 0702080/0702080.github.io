@@ -538,8 +538,10 @@
   #kbdQW .qwoBack{flex:1 1 0;}
   /* 아랫줄 ⇧·다음·이전 사이를 띄움, 이전은 빨간색 (2026-11-20 사용자 요청) */
   #kbdQW .qwoFnRow{gap:10px;}
+  #kbdQW .qwoFnRow [data-fn="shift"]{flex:.7 1 0;}   /* ⇧ 좁게, ← 이전 넓게 (2026-11-20 사용자 요청) */
+  #kbdQW .qwoFnRow .qwoBack{flex:1.5 1 0;}
   #kbd #kbdQW .qwoBack{border-color:#7a1f2a;color:#fff;
-    background:linear-gradient(180deg,#f2a3aa 0%,#d23a4a 52%,#e46a76 84%,#f7c4c9 100%);
+    background:linear-gradient(180deg,#ff6b6b 0%,#e02424 52%,#c81e1e 84%,#ef4444 100%);
     box-shadow:0 3px 7px rgba(10,18,30,.42),inset 0 -2px 6px rgba(255,255,255,.40),inset 0 2px 3px rgba(0,0,0,.24);}
   /* 길게 눌러 다른 글자로 바뀐 순간 — 키가 밝아지고 글자도 바뀐 걸로 보인다 */
   #kbd #kbdQW button.kbLongOn{filter:brightness(1.18);
@@ -986,7 +988,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v263</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v264</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
