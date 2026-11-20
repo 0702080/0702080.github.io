@@ -1193,7 +1193,7 @@
          ⇧·길게 누르기로 된소리(ㄲㄸㅃㅆㅉ)·ㅒ·ㅖ, ㅅ·ㅔ·ㅐ 빠르게 두 번 = ㅆ·ㅖ·ㅒ. -->
     <div class="qwoRow">
       <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ" data-lk="ㅃ"></button
-      ><button type="button" class="kbCons" data-k="ㅅ" data-slot="ㅈ" data-sk="ㅆ" data-lk="ㅆ" data-cyc="wj"></button
+      ><button type="button" class="kbCons" data-k="ㅅ" data-slot="ㅈ" data-sk="ㅆ" data-lk="ㅆ" data-cyc="wj" data-sur="서,신,송,손"></button
       ><button type="button" class="kbCons" data-k="ㄷ" data-sk="ㄸ" data-lk="ㄸ"></button
       ><button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ" data-lk="ㄲ" data-cyc="wg" data-sur="김,강,권,고"></button
       ><button type="button" class="kbVowel" data-k="ㅕ"></button
@@ -3577,7 +3577,7 @@
       const sur=(list && kbTarget==='name' && !nI.value && id) ? KB_SURNAME[id] : null;
       // 두벌식의 길게 누르기 키 — 뗄 때(짧게) 또는 KB_LONG 이 지날 때(길게) 넣는다
       const lk=b.getAttribute('data-lk');
-      /* 두벌식 ㄱ 을 이름 칸이 비었을 때 길게 누르면 많이 쓰는 성 1~4위(김·강·권·고) 판,
+      /* 두벌식 ㄱ·ㅅ 을 이름 칸이 비었을 때 길게 누르면 많이 쓰는 성 1~4위 판(ㄱ 김·강·권·고, ㅅ 서·신·송·손),
          ㄲ 도 판에 함께 둔다 (2026-11-20 사용자 요청). 이름 칸이 아니면 예전처럼 ㄲ */
       const wsur=(!list && b.hasAttribute('data-sur') && kbTarget==='name' && !nI.value) ? b.getAttribute('data-sur').split(',') : null;
       if(wsur){
