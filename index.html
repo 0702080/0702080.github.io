@@ -513,6 +513,11 @@
     transition:opacity .12s ease;
   }
   #kbd button:active{filter:brightness(.9);}
+  /* 방금 누른 키는 다음 키를 누를 때까지 살짝 분홍빛이 남는다 — 자판 자리를 익히기 쉽게 (2026-11-20 사용자 요청) */
+  #kbd button.kbRecent::after{
+    content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;
+    background:rgba(255,92,150,.32);box-shadow:inset 0 0 0 2px rgba(255,70,140,.55);
+  }
   #kbd button:active::before{opacity:.3;}
   /* 줄 사이 여백은 자판 묶음(#kbdCJ/#kbdQW)이 직접 준다 — #kbd 의 gap 은
      두 자판 묶음 사이에만 적용돼서, 줄과 줄 사이는 붙어버렸었다. */
@@ -3492,6 +3497,13 @@
       if(kmOver) kmOver.classList.remove('kbDropOn');
       kmBtn=null; kmPtr=null; kmOn=false; kmOver=null;
     }
+    /* 방금 누른 글자 키에 표시 (2026-11-20 사용자 요청) — 기능 키(다음·이전·⇧ 등)를 누르면 지움 */
+    let kbRecentBtn=null;
+    function kbMarkRecent(b){
+      if(kbRecentBtn && kbRecentBtn!==b) kbRecentBtn.classList.remove('kbRecent');
+      if(b.classList.contains('kbFn') || b.hasAttribute('data-pick') || !kbd.contains(b)){ kbRecentBtn=null; return; }
+      b.classList.add('kbRecent'); kbRecentBtn=b;
+    }
     kbd.addEventListener('pointerdown', e=>{
       const b=e.target.closest('#kbdQW .qwoRow button[data-k]');
       if(!b) return;
@@ -3536,6 +3548,7 @@
       clearTimeout(kbPopTimer); kbPopFired=false; kbPopSetHover(null);
       const b=e.target.closest('button');
       if(!b) return;
+      kbMarkRecent(b);
       // 앞 키를 아직 안 뗐는데 이 키가 눌렸다 — 앞 키를 먼저 넣어 순서를 지킨다
       if(kbLongBtn && e.pointerId!==kbLongPtr) kbLongFlush();
       // 펼쳐진 판의 글자를 톡 눌렀다 — 바로 넣는다
