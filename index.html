@@ -540,6 +540,12 @@
   #kbdQW .qwoFnRow{gap:10px;}
   #kbdQW .qwoFnRow [data-fn="shift"]{flex:.7 1 0;}   /* ⇧ 좁게, ← 이전 넓게 (2026-11-20 사용자 요청) */
   #kbdQW .qwoFnRow .qwoBack{flex:1.5 1 0;}
+  /* 8칸 줄: 넷째 줄은 ㅅ·ㅎ·⇧ 한 칸씩, 다음 두 칸, 이전 세 칸 — 위 줄과 칸 폭이 맞음 */
+  #kbdQW .qwo8{gap:4px;margin-top:0;}
+  #kbdQW .qwo8>button{flex:1 1 0;}
+  #kbdQW .qwo8 [data-fn="shift"]{flex:1 1 0;}
+  #kbdQW .qwo8 .qwoNext{flex:2 1 0;margin-left:4px;}
+  #kbdQW .qwo8 .qwoBack{flex:3 1 0;margin-left:4px;}
   #kbd #kbdQW .qwoBack{border-color:#7a1f2a;color:#fff;
     background:linear-gradient(180deg,#ff6b6b 0%,#e02424 52%,#c81e1e 84%,#ef4444 100%);
     box-shadow:0 3px 7px rgba(10,18,30,.42),inset 0 -2px 6px rgba(255,255,255,.40),inset 0 2px 3px rgba(0,0,0,.24);}
@@ -998,7 +1004,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v267</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v268</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1174,32 +1180,30 @@
         길게 누르면(data-lk) ㄱ→ㄲ ㄷ→ㄸ ㅂ→ㅃ ㅅ→ㅆ ㅈ→ㅊ ㅇ→ㅎ ㅐ→ㅒ ㅔ→ㅖ.
         ㅅ 은 빠르게 두 번 누르면(data-cyc, 0.5초 안) ㅆ. -->
    <div id="kbdQW" hidden>
-    <!-- 폰 기본 두벌식과 같은 자리 (2026-11-20 사용자 요청: 가나다 순 → 표준 배열)
-         ㅂㅈㄷㄱㅅ ㅕㅑㅐㅔ / ㅁㄴㅇㄹㅎ ㅗㅓㅏㅣ / ㅋㅌㅊㅍ ㅛㅠㅜㅡ (ㅛ는 셋째 줄로, 2026-11-20 사용자 요청).
-         ⇧·길게 누르기로 된소리(ㄲㄸㅃㅆㅉ)·ㅒ·ㅖ. -->
+    <!-- 한 줄 8칸 (2026-11-20 사용자 요청): 자음 4 · 모음 4.
+         ㅂㅈㄷㄱ ㅕㅑㅐㅔ / ㅁㄴㅇㄹ ㅗㅓㅏㅣ / ㅋㅌㅊㅍ ㅛㅠㅜㅡ / ㅅ ㅎ ⇧ 다음 ←이전.
+         ⇧·길게 누르기로 된소리(ㄲㄸㅃㅆㅉ)·ㅒ·ㅖ, ㅅ·ㅔ·ㅐ 빠르게 두 번 = ㅆ·ㅖ·ㅒ. -->
     <div class="qwoRow">
       <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ" data-lk="ㅃ"></button
       ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ" data-lk="ㅉ"></button
       ><button type="button" class="kbCons" data-k="ㄷ" data-sk="ㄸ" data-lk="ㄸ"></button
       ><button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ" data-lk="ㄲ"></button
-      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ" data-lk="ㅆ" data-cyc="ws"></button
       ><button type="button" class="kbVowel" data-k="ㅕ"></button
       ><button type="button" class="kbVowel" data-k="ㅑ"></button
       ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ" data-lk="ㅒ"></button
       ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ" data-lk="ㅖ"></button>
     </div>
-    <div class="qwoRow qwoRow2">
+    <div class="qwoRow">
       <button type="button" class="kbCons" data-k="ㅁ"></button
       ><button type="button" class="kbCons" data-k="ㄴ"></button
       ><button type="button" class="kbCons" data-k="ㅇ"></button
       ><button type="button" class="kbCons" data-k="ㄹ"></button
-      ><button type="button" class="kbCons" data-k="ㅎ"></button
       ><button type="button" class="kbVowel" data-k="ㅗ"></button
       ><button type="button" class="kbVowel" data-k="ㅓ"></button
       ><button type="button" class="kbVowel" data-k="ㅏ"></button
       ><button type="button" class="kbVowel" data-k="ㅣ"></button>
     </div>
-    <div class="qwoRow qwoRow3">
+    <div class="qwoRow">
       <button type="button" class="kbCons" data-k="ㅋ"></button
       ><button type="button" class="kbCons" data-k="ㅌ"></button
       ><button type="button" class="kbCons" data-k="ㅊ"></button
@@ -1209,11 +1213,10 @@
       ><button type="button" class="kbVowel" data-k="ㅜ"></button
       ><button type="button" class="kbVowel" data-k="ㅡ"></button>
     </div>
-    <!-- 아랫줄 : ⇧ · 다음 · 이전.
-         CLR 은 뺐다 — 이름 칸 오른쪽의 ✕ 가 같은 일(한꺼번에 지우기)을 한다.
-         그 자리에 셋째 줄에 있던 ⇧ 를 내렸다. -->
-    <div class="qwoRow qwoFnRow">
-      <button type="button" class="kbFn" data-fn="shift">⇧</button
+    <div class="qwoRow qwoFnRow qwo8">
+      <button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ" data-lk="ㅆ" data-cyc="ws"></button
+      ><button type="button" class="kbCons" data-k="ㅎ"></button
+      ><button type="button" class="kbFn" data-fn="shift">⇧</button
       ><button type="button" class="kbFn kbNext qwoNext" data-fn="next">다음</button
       ><button type="button" class="kbFn qwoBack" data-fn="back">&#x2190; 이전</button>
     </div>
