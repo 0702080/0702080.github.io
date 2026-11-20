@@ -512,7 +512,8 @@
   /* 원래 두벌식 — 한 줄 10칸이라 그리드 대신 flex 로 깔고, 줄마다 칸 수가
      달라도 각 줄이 폭을 꽉 채우게 둔다. */
   .qwoRow{display:flex;gap:4px;}
-  .qwoRow2{padding:0 5.56%;}   /* 8칸 줄을 반 칸씩 들여쓰기 — 9칸 줄과 키 폭이 같아진다 */
+  .qwoRow2{padding:0 5%;}   /* 9칸 줄을 반 칸씩 들여쓰기 — 10칸 줄과 키 폭이 같아진다 */
+  .qwoRow3{padding:0 15%;}  /* 7칸 줄은 한 칸 반씩 — 표준 두벌식 자리 */
   /* 아랫줄(⇧·다음·이전) 위로 틈을 벌려 글자 줄을 위로 올린다. 가운데 빈 곳이
      줄고, 글자를 치다 '다음'·'⇧' 를 잘못 누르는 일도 준다. */
   #kbdQW .qwoFnRow{margin-top:24px;}
@@ -971,7 +972,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v257</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v258</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1147,39 +1148,40 @@
         길게 누르면(data-lk) ㄱ→ㄲ ㄷ→ㄸ ㅂ→ㅃ ㅅ→ㅆ ㅈ→ㅊ ㅇ→ㅎ ㅐ→ㅒ ㅔ→ㅖ.
         ㅅ 은 거듭 누르면(data-cyc) ㅅ → ㅈ → ㅊ (ㅊ 에서 멈춘다). -->
    <div id="kbdQW" hidden>
+    <!-- 폰 기본 두벌식과 같은 자리 (2026-11-20 사용자 요청: 가나다 순 → 표준 배열)
+         ㅂㅈㄷㄱㅅ ㅛㅕㅑㅐㅔ / ㅁㄴㅇㄹㅎ ㅗㅓㅏㅣ / ㅋㅌㅊㅍ ㅠㅜㅡ.
+         ⇧·길게 누르기로 된소리(ㄲㄸㅃㅆㅉ)·ㅒ·ㅖ. -->
     <div class="qwoRow">
-      <button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ" data-lk="ㄲ"></button
-      ><button type="button" class="kbCons" data-k="ㄴ"></button
+      <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ" data-lk="ㅃ"></button
+      ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ" data-lk="ㅉ"></button
       ><button type="button" class="kbCons" data-k="ㄷ" data-sk="ㄸ" data-lk="ㄸ"></button
-      ><button type="button" class="kbCons" data-k="ㄹ"></button
-      ><button type="button" class="kbCons" data-k="ㅁ"></button
+      ><button type="button" class="kbCons" data-k="ㄱ" data-sk="ㄲ" data-lk="ㄲ"></button
+      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ" data-lk="ㅆ"></button
       ><button type="button" class="kbVowel" data-k="ㅛ"></button
       ><button type="button" class="kbVowel" data-k="ㅕ"></button
       ><button type="button" class="kbVowel" data-k="ㅑ"></button
-      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ" data-lk="ㅒ"></button>
+      ><button type="button" class="kbVowel" data-k="ㅐ" data-sk="ㅒ" data-lk="ㅒ"></button
+      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ" data-lk="ㅖ"></button>
     </div>
-    <!-- 가운데 줄은 8칸이라 양쪽을 반 칸씩 들여 써서 위아래 줄과 키 폭을 맞춘다 -->
     <div class="qwoRow qwoRow2">
-      <button type="button" class="kbCons" data-k="ㅂ" data-sk="ㅃ" data-lk="ㅃ"></button
-      ><button type="button" class="kbCons" data-k="ㅅ" data-sk="ㅆ" data-lk="ㅆ" data-cyc="ws"></button
-      ><button type="button" class="kbCons" data-k="ㅇ" data-lk="ㅎ"></button
-      ><button type="button" class="kbCons" data-k="ㅈ" data-sk="ㅉ" data-lk="ㅊ"></button
+      <button type="button" class="kbCons" data-k="ㅁ"></button
+      ><button type="button" class="kbCons" data-k="ㄴ"></button
+      ><button type="button" class="kbCons" data-k="ㅇ"></button
+      ><button type="button" class="kbCons" data-k="ㄹ"></button
+      ><button type="button" class="kbCons" data-k="ㅎ"></button
       ><button type="button" class="kbVowel" data-k="ㅗ"></button
       ><button type="button" class="kbVowel" data-k="ㅓ"></button
       ><button type="button" class="kbVowel" data-k="ㅏ"></button
-      ><button type="button" class="kbVowel" data-k="ㅔ" data-sk="ㅖ" data-lk="ㅖ"></button>
+      ><button type="button" class="kbVowel" data-k="ㅣ"></button>
     </div>
-    <!-- ⌫ 는 아랫줄 "이전" 이 대신하므로 뺐다. ⇧ 는 아랫줄로 내렸다. -->
-    <div class="qwoRow">
-      <button type="button" class="kbCons" data-k="ㅊ"></button
-      ><button type="button" class="kbCons" data-k="ㅋ"></button
+    <div class="qwoRow qwoRow3">
+      <button type="button" class="kbCons" data-k="ㅋ"></button
       ><button type="button" class="kbCons" data-k="ㅌ"></button
+      ><button type="button" class="kbCons" data-k="ㅊ"></button
       ><button type="button" class="kbCons" data-k="ㅍ"></button
-      ><button type="button" class="kbCons" data-k="ㅎ"></button
       ><button type="button" class="kbVowel" data-k="ㅠ"></button
       ><button type="button" class="kbVowel" data-k="ㅜ"></button
-      ><button type="button" class="kbVowel" data-k="ㅡ"></button
-      ><button type="button" class="kbVowel" data-k="ㅣ"></button>
+      ><button type="button" class="kbVowel" data-k="ㅡ"></button>
     </div>
     <!-- 아랫줄 : ⇧ · 다음 · 이전.
          CLR 은 뺐다 — 이름 칸 오른쪽의 ✕ 가 같은 일(한꺼번에 지우기)을 한다.
