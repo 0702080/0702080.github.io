@@ -628,6 +628,16 @@
     font-family:inherit;font-size:16px;font-weight:800;letter-spacing:1px;
     box-shadow:0 2px 6px rgba(0,0,0,.30), inset 0 1px 1px rgba(255,255,255,.25);
   }
+  /* ✕ 가 자판 고르기 줄에 들어오면 세 단추는 남은 폭을 나눠 씀 */
+  #kbdPick.hasX{justify-content:flex-start;align-items:center;}
+  #kbdPick.hasX button[data-kb]{flex:1 1 0;padding:11px 6px;letter-spacing:0;white-space:nowrap;min-width:0;}
+  #kbdPick #edCancelBtn{position:relative;top:auto!important;right:auto;bottom:auto!important;flex:0 0 44px;width:44px;height:44px;padding:0;
+    border-radius:50%;letter-spacing:0;font-size:20px;margin-left:2px;}
+  #kbdPick #edCancelBtn::before{display:none;}
+  #kbdPick #edCancelBtn{color:#fff;border:1.5px solid #2a2436;
+    background:radial-gradient(120% 90% at 50% 18%,rgba(255,255,255,.35) 0%,rgba(255,255,255,0) 55%),linear-gradient(180deg,#5a5070 0%,#2e2840 60%,#3b3450 100%);
+    box-shadow:0 4px 0 #17131f,0 7px 12px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.35),inset 0 -3px 5px rgba(0,0,0,.35);transition:transform .08s,box-shadow .08s;}
+  #kbdPick #edCancelBtn:active{transform:translateY(3px);box-shadow:0 1px 0 #17131f,0 3px 6px rgba(0,0,0,.45),inset 0 1px 1px rgba(255,255,255,.3),inset 0 -2px 4px rgba(0,0,0,.35);}
   #kbdPick button::before{
     content:'';position:absolute;z-index:-1;pointer-events:none;
     left:5px;right:5px;top:3px;height:44%;border-radius:999px;
@@ -988,7 +998,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v264</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v265</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -3249,7 +3259,10 @@
       kbd.hidden = !kbTarget;
       if(!kbTarget){ kbCycStop(); kbVCycStop(); kbPopHide(); if(kbShift){ kbShift=false; kbPaintShift(); } }
       kbApplyMode();
-      const eb=$('edBottom'), cb=$('edCancelBtn');
+      const eb=$('edBottom'), cb=$('edCancelBtn'), kp=$('kbdPick');
+      /* ✕ 는 자판이 떠 있는 동안 입력판 맨 위 자판 고르기 줄 오른쪽 끝에 (2026-11-20 사용자 요청) */
+      if(kbTarget && kp){ if(cb.parentNode!==kp) kp.appendChild(cb); kp.classList.add('hasX'); }
+      else if(cb.parentNode===kp){ $('editor').insertBefore(cb, $('editor').firstChild); kp.classList.remove('hasX'); }
       if(kbTarget){
         /* 자판이 떠 있는 동안은 화면 맨 위로 올린다. 자판 바로 위에 두면
            성씨 판이 두세 줄로 커졌을 때 입력칸을 덮어 버려서, 무엇을 치고
@@ -3268,22 +3281,19 @@
            판을 더 내렸다.) 판에 안쪽 여백(14px)이 있어 저장 단추와 ✕ 는 눈으로
            보기에 17px 쯤 떨어진다. ✕ 가 판에 겹치면 저장 단추 모서리를 누르다
            사진 취소(✕)가 눌리므로 겹치지는 않게 한다. */
-        const ED_KB_GAP=51;
+        const ED_KB_GAP=14;   // ✕ 가 자판 고르기 줄로 올라가 사이가 비어서 (예전 51)
         const lowTop=innerHeight-kbH-ED_KB_GAP-ebH;
         if(kbMode!=='qc' && lowTop>=50){
           eb.style.top='auto';
           eb.style.bottom=(kbH+ED_KB_GAP)+'px';
-          // ✕ 는 입력판과 자판 사이 남는 자리 가운데 — 자판 위로 4px, 판 아래로 3px
-          cb.style.top='auto';
-          cb.style.bottom=(kbH+4)+'px';
+          cb.style.top=''; cb.style.bottom='';
         }else{
           eb.style.top='calc(env(safe-area-inset-top) + '+(innerHeight<640?10:50)+'px)';
           eb.style.bottom='auto';
           /* ✕ 는 원래 화면 오른쪽 위에 있는데, 입력판이 그 자리로 올라오면서
              가로로 겹친다(입력판이 화면 폭의 94%). 입력판 바로 밑으로 내려
              둔다 — 가운데가 비어 있으니 가릴 것도 없다. */
-          cb.style.bottom='';
-          cb.style.top=(eb.getBoundingClientRect().bottom+10)+'px';
+          cb.style.top=''; cb.style.bottom='';
         }
       }else{
         eb.style.top=''; eb.style.bottom=''; eb.style.transform='';
