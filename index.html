@@ -665,6 +665,9 @@
   }
   /* ✕ 가 자판 고르기 줄에 들어오면 세 단추는 남은 폭을 나눠 씀 */
   #kbdPick.hasX{justify-content:flex-end;align-items:center;}
+  /* ✕ 왼쪽 빈자리의 안내 글 — 왼쪽 정렬, 조금 크게 */
+  #kbdPick #edHint{flex:1 1 auto;min-width:0;align-self:center;text-align:left;
+    font-size:14px;font-weight:800;line-height:1.25;padding-left:2px;}
   #kbdPick.hasX button[data-kb]{flex:1 1 0;padding:11px 6px;letter-spacing:0;white-space:nowrap;min-width:0;}
   #kbdPick #edCancelBtn{position:relative;top:auto!important;right:auto;bottom:auto!important;flex:0 0 44px;width:44px;height:44px;padding:0;
     border-radius:50%;letter-spacing:0;font-size:20px;margin-left:auto;}
@@ -1033,7 +1036,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v284</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v285</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1132,6 +1135,9 @@
          같은 두벌식도 쓸 수 있게 한다. 고른 값은 기억해 둔다. -->
     <div id="kbdPick">
       <!-- 자판 고르기 단추(천지인·두벌식·두벌식C)는 모두 뺌 (2026-11-20 사용자 요청) — 늘 두벌식, ✕만 오른쪽 끝 -->
+      <!-- 안내 글('1 / 4 장' 등)은 ✕ 왼쪽 빈자리에 둔다. 따로 한 줄을 차지하면
+           판이 길어져서 작은 폰에선 자판이 공동체 줄을 덮었다 (2026-11-25). -->
+      <div id="edHint"></div>
     </div>
     <div class="row">
       <div id="edNameWrap">
@@ -1156,7 +1162,6 @@
         <button id="edTelClr" type="button" title="전화번호를 한꺼번에 지웁니다">&#x2715;</button>
       </div>
     </div>
-    <div id="edHint"></div>
     <div id="edActions">
       <button class="sub" id="edAgain">다시 찍기</button>
       <button class="go"  id="edSave">저장</button>
@@ -2217,9 +2222,11 @@
     // 적다 만 사진이 있으면 '이어서 입력' 단추를 되살린다
     if(got.pends.length){
       try{
+        // lastModified(=찍은 시각)를 지켜야 사진 맨 아래 촬영시각이 다시 연 시각으로 안 바뀐다
         ED.restoreHeld(got.pends.map(r=>
           new File([r.blob], r.filename || 'photo.jpg',
-                   {type:(r.blob && r.blob.type) || 'image/jpeg'})));
+                   {type:(r.blob && r.blob.type) || 'image/jpeg',
+                    lastModified:(r.blob && r.blob.lastModified) || r.t || Date.now()})));
       }catch(e){}
     }
     if(!recs.length) return;
@@ -2332,9 +2339,26 @@
       ctx.textAlign='center'; ctx.fillStyle='#fff';
     }
     if(tel){
-      ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
-      ctx.fillText(tel, w/2, h-barH*0.36);
-      telRightEdge=w/2+ctx.measureText(tel).width/2;
+      /* 전화번호 줄 오른쪽 끝은 순번 배지 자리다(badgeSlot). 세로로 긴 사진
+         (9:16, 20:9)은 폭이 좁아 가운데 정렬한 번호가 그 자리까지 뻗는다 —
+         그때는 필요한 만큼만 왼쪽으로 비키고, 그래도 넘치면 글자를 줄인다.
+         카톡으로 보낼 때 다시 찍는 배지도 같은 자리라서, 이렇게 비워 두면
+         번호를 가리지도, 배지가 두 개 보이지도 않는다. */
+      let tfs=fs, cx=w/2;
+      ctx.font='900 '+tfs+'px "Malgun Gothic",sans-serif';
+      let tw=ctx.measureText(tel).width;
+      const sl=badgeSlot(ctx, w, h, barH);
+      const right=sl.x-sl.gap, avail=right-sl.marginX;
+      if(tw>avail){
+        tfs=Math.max(8, Math.floor(tfs*avail/tw));
+        ctx.font='900 '+tfs+'px "Malgun Gothic",sans-serif';
+        tw=ctx.measureText(tel).width;
+      }
+      if(cx+tw/2>right) cx=right-tw/2;
+      ctx.font='900 '+tfs+'px "Malgun Gothic",sans-serif';
+      ctx.textAlign='center'; ctx.fillStyle='#fff';
+      ctx.fillText(tel, cx, h-barH*0.36);
+      telRightEdge=cx+tw/2;
     }
     if(shotAt){   // 맨 아래 작은 글씨로 찍은 날짜·시각
       const ts=fmtShotTime(shotAt);
@@ -2357,25 +2381,31 @@
        2) 알약 배경을 불투명하게 칠한다 — 평소 쓰는 반투명(.7) 보라색으로
           덮으면 밑에 있던 예전 숫자가 그대로 비쳐 보여서 "1/4" 가 "1/45"
           처럼 읽힌다. */
+  /* 순번 배지 자리 — 저장할 때 찍는 배지와 카톡으로 보낼 때 덮어 찍는 배지
+     (stampBatchIndex) 가 사진 크기만으로 늘 똑같은 자리·높이를 쓰도록 여기
+     한 곳에서 정한다. 전화번호 줄 오른쪽 끝, "99/99" 가 들어가는 폭.
+     (예전엔 번호가 길면 배지를 바 위로 올렸는데, 덮어 찍는 쪽은 그걸 몰라
+     엉뚱한 자리에 찍혀 배지가 두 개 보이고 번호 끝자리를 가렸다.) */
+  function badgeSlot(ctx, w, h, barH){
+    const fs=Math.round(barH*0.20);
+    ctx.font='800 '+fs+'px "Malgun Gothic",sans-serif';
+    const padX=Math.round(fs*0.55), padY=Math.round(fs*0.4);
+    const slotW=ctx.measureText('99/99').width+padX*2;
+    const marginX=Math.round(w*0.025), gap=Math.round(w*0.02);
+    return {fs, padX, padY, slotW, marginX, gap, x:w-marginX-slotW};
+  }
   function drawIndexBadge(ctx, w, h, barH, idx, total, nmRightEdge, overwrite){
     const text=idx+'/'+total;
-    const fs=Math.round(barH*0.20);   // 더 작게
-    ctx.font='800 '+fs+'px "Malgun Gothic",sans-serif';
+    const sl=badgeSlot(ctx, w, h, barH);   // ctx.font 도 배지 글꼴로 맞춰 둔다
+    const fs=sl.fs, padX=sl.padX, padY=sl.padY;
     const textW=ctx.measureText(text).width;
-    const padX=Math.round(fs*0.55), padY=Math.round(fs*0.4);
     let boxW=textW+padX*2;
-    if(overwrite){
-      const coverW=ctx.measureText('99/99').width+padX*2;
-      if(coverW>boxW) boxW=coverW;
-    }
+    if(overwrite && sl.slotW>boxW) boxW=sl.slotW;
     const boxH=fs+padY*2;
-    const marginX=Math.round(w*0.025);
-    const gap=Math.round(w*0.02);
-    let x=w-marginX-boxW, y=h-barH*0.36-boxH/2;   // 기본 자리: 전화번호와 같은 줄, 우측 (2026-11-25 사용자 요청)
-    // 전화번호가 길어서 배지 시작 지점까지 뻗어오면(겹치면), 바 위쪽 밖으로 올려서 피한다
-    if(nmRightEdge!=null && nmRightEdge+gap>x){
-      y=h-barH-boxH-Math.round(h*0.012);
-    }
+    const marginX=sl.marginX;
+    // 자리: 전화번호와 같은 줄, 오른쪽 끝 (2026-11-25 사용자 요청). 전화번호가
+    // 이 자리를 비켜 그려지므로(drawNameBar) 여기서는 옮기지 않는다.
+    const x=w-marginX-boxW, y=h-barH*0.36-boxH/2;
     const r=boxH/2;
     ctx.fillStyle=overwrite?'rgb(97,37,168)':'rgba(109,40,217,.7)';   // 보라색(덮어쓸 땐 불투명)
     ctx.strokeStyle=overwrite?'rgb(255,255,255)':'rgba(255,255,255,.85)';
@@ -2579,6 +2609,9 @@
       nI.value=''; telSetDigits('');
       commPick((typeof data.comm==='string')?data.comm:'', false);   // 기억해 둔 공동체로 (고치기면 fix() 가 곧 덮어쓴다)
       hintEl.textContent = queue.length>1 ? (qi+1)+' / '+queue.length+' 장' : '';
+      // 안내 글('1 / 4 장')이 생기거나 없어지면 판 높이가 바뀐다 — 자판이 떠 있으면
+      // 자리를 다시 잡아서 공동체 줄이 자판 밑으로 들어가지 않게 한다
+      try{ if(kbTarget) kbShow(kbTarget); }catch(e){}
       $('editor').classList.add('on');
       if(typeof settleUndo==='function') settleUndo();   // 지운 뒤 떠 있던 실행취소 알림을 치운다
       telFit();   // 이제 보이니까 칸 폭을 잴 수 있다 (rAF 를 기다리지 않는다 — 안 그려지는 동안엔 안 돈다)
@@ -2634,8 +2667,12 @@
       const c=comm||'';
       const list=todaysShots.filter(s=>(s.comm||'')===c);
       if(fixing){
-        const i=list.findIndex(s=>s.id===fixing.id);
-        if(i>=0) return {idx:i+1, total:list.length};
+        /* 고친 뒤의 모습으로 센다 — 이 사진은 원래 자리 그대로이고 공동체만
+           바뀐다(updateTodayShot). 바꾼 공동체 목록에 이 사진을 끼워 세야
+           앱 화면(commIndexOf)과 같은 번호가 나온다. */
+        const l2=todaysShots.filter(s=>s.id===fixing.id || (s.comm||'')===c);
+        const i=l2.findIndex(s=>s.id===fixing.id);
+        if(i>=0) return {idx:i+1, total:l2.length};
       }
       return {idx:list.length+1, total:list.length+1};   // 지금 저장하는 이 한 장까지 센다
     }
@@ -3437,14 +3474,34 @@
            ★ 두벌식C 는 예외 — 꾹 누르면 성씨 판이 자판 위로 크게(최대 약
              210px) 펼쳐져서, 판을 자판에 붙이면 이름칸을 덮는다. 그때는
              예전처럼 위쪽에 둔다. 화면이 너무 짧아 위가 모자랄 때도 그렇다. */
-        const kbH=kbd.offsetHeight, ebH=eb.offsetHeight;
+        const kbH=kbd.offsetHeight;
+        // 지난번에 줄여 둔 값을 풀고 원래 크기로 잰다
+        if(kp) kp.style.marginBottom='';
+        eb.style.maxHeight='';
+        let ebH=eb.offsetHeight;
         /* 입력판과 자판 사이 — ✕(44px) 가 들어갈 만큼만. (예전 66 에서 15px 줄여
            판을 더 내렸다.) 판에 안쪽 여백(14px)이 있어 저장 단추와 ✕ 는 눈으로
            보기에 17px 쯤 떨어진다. ✕ 가 판에 겹치면 저장 단추 모서리를 누르다
            사진 취소(✕)가 눌리므로 겹치지는 않게 한다. */
         const ED_KB_GAP=14;   // ✕ 가 자판 고르기 줄로 올라가 사이가 비어서 (예전 51)
-        const lowTop=innerHeight-kbH-ED_KB_GAP-ebH;
-        if(kbMode!=='qc' && lowTop>=50){
+        let lowTop=innerHeight-kbH-ED_KB_GAP-ebH;
+        /* 공동체 줄(2줄)이 생겨 판이 길어졌다. 작은 폰(예: 360×640)에서는
+           자판 위에 다 안 들어가서, 예전처럼 위쪽에 두면 자판이 공동체
+           2줄째를 덮었다. 먼저 ✕ 줄 밑 여백(40px)을 모자란 만큼만 줄이고
+           (최소 8px), 그래도 모자라면 판 안을 스크롤하게 해서 늘 자판 위에 둔다. */
+        if(kbMode!=='qc' && lowTop<50 && kp){
+          const m0=parseFloat(getComputedStyle(kp).marginBottom)||0;
+          const m=Math.max(8, m0-(50-lowTop));
+          if(m<m0){
+            kp.style.marginBottom=m+'px';
+            ebH=eb.offsetHeight; lowTop=innerHeight-kbH-ED_KB_GAP-ebH;
+          }
+        }
+        if(kbMode!=='qc' && lowTop<8){
+          eb.style.maxHeight=Math.max(120, innerHeight-kbH-ED_KB_GAP-8)+'px';
+          ebH=eb.offsetHeight; lowTop=innerHeight-kbH-ED_KB_GAP-ebH;
+        }
+        if(kbMode!=='qc'){
           eb.style.top='auto';
           eb.style.bottom=(kbH+ED_KB_GAP)+'px';
           cb.style.top=''; cb.style.bottom='';
@@ -3458,6 +3515,8 @@
         }
       }else{
         eb.style.top=''; eb.style.bottom=''; eb.style.transform='';
+        eb.style.maxHeight='';
+        if(kp) kp.style.marginBottom='';
         cb.style.top=''; cb.style.bottom='';
       }
     }
