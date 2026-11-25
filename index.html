@@ -1033,7 +1033,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v283</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v284</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -2321,8 +2321,8 @@
       ctx.textAlign='left';
       if(cmTxt){
         ctx.fillStyle='#c4c8ce';   // 살짝 회색
-        // 글자가 작아도 바닥선이 이름과 맞게 살짝 내린다
-        ctx.fillText(cmTxt, x, y1+(fs-cfs)*0.35);
+        // 글자는 작아도 이름과 같은 높이(가운데)에 수평으로 맞춘다 (2026-11-25 사용자 요청)
+        ctx.fillText(cmTxt, x, y1);
         x+=cW+gap;
       }
       if(nmTxt){
