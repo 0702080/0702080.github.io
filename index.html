@@ -452,18 +452,25 @@
   #edNameClr:active, #edTelClr:active{opacity:.8;}
   /* 아래 저장/다시찍기 버튼도 위 입력칸과 같은 비율·간격으로 나눠서
      세로 경계선이 서로 정확히 맞춰 정렬되게 한다 */
-  /* 공동체 단추 줄 — 열 개가 두 줄로 들어가게 작게 */
-  #edComm{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
+  /* 공동체 단추 — 5칸 × 2줄 바둑판(알파~에코 / 시에라~공동체 없음).
+     줄마다 칸 폭이 같아야 어느 폰에서도 흐트러지지 않는다. 긴 이름
+     (어센트(청년부)·공동체 없음)은 칸 안에서 두 줄로 쓴다. */
+  #edComm{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:1px;}
   #edComm button{
-    flex:0 0 auto;padding:8px 10px;border-radius:999px;
-    border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);
-    color:#fff;font-family:inherit;font-size:13px;font-weight:800;line-height:1;
+    height:36px;padding:0 2px;border-radius:10px;width:auto;
+    border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);
+    color:#fff;font-family:inherit;font-size:13.5px;font-weight:800;line-height:1.05;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    white-space:nowrap;overflow:hidden;
     cursor:pointer;-webkit-tap-highlight-color:transparent;
   }
+  #edComm button small{display:block;font-size:10px;font-weight:700;opacity:.85;margin-top:1px;}
+  #edComm button.two{font-size:11.5px;line-height:1.25;}
   #edComm button.on{
-    background:#6d28d9;border-color:#a78bfa;
-    box-shadow:0 0 0 2px rgba(167,139,250,.35);
+    background:#6d28d9;border-color:#c4b5fd;
+    box-shadow:0 0 0 2px rgba(167,139,250,.45);
   }
+  #edComm button.on small{opacity:1;}
   #edComm button:active{filter:brightness(1.2);}
   #edActions{display:flex;gap:8px;}
   #edActions>button{padding:15px;border-radius:12px;font-size:16px;width:auto;}
@@ -1026,7 +1033,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v282</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v283</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1149,15 +1156,16 @@
         <button id="edTelClr" type="button" title="전화번호를 한꺼번에 지웁니다">&#x2715;</button>
       </div>
     </div>
-    <!-- 공동체 고르기 — 담당자가 한 번 고르면 다음 사진에도 그대로 기억해 둔다
-         (2026-11-25 사용자 요청). 고른 공동체는 사진 이름 앞에 붙고,
-         순번(1/2)도 그 공동체 안에서만 센다. -->
-    <div id="edComm" role="group" aria-label="공동체 고르기"></div>
     <div id="edHint"></div>
     <div id="edActions">
       <button class="sub" id="edAgain">다시 찍기</button>
       <button class="go"  id="edSave">저장</button>
     </div>
+    <!-- 공동체 고르기 — 담당자가 한 번 고르면 다음 사진에도 그대로 기억해 둔다
+         (2026-11-25 사용자 요청). 고른 공동체는 사진 이름 앞에 붙고,
+         순번(1/2)도 그 공동체 안에서만 센다.
+         자리는 사용자 그림대로 '다시 찍기·저장' 아래, 자판 바로 위. -->
+    <div id="edComm" role="group" aria-label="공동체 고르기"></div>
   </div>
   <!-- 앱이 직접 그리는 한글 자판(두벌식) — 이름 칸을 누르면 나타난다.
        자모 키는 data-k, 기능 키는 data-fn 으로 구분한다.
@@ -2231,8 +2239,8 @@
      한 번 고르면 기억해 둬서 다음 사진부터는 그대로 쓴다. */
   const COMMS=[
     {v:'알파'},{v:'브라보'},{v:'찰리'},{v:'델타'},{v:'에코'},
-    {v:'시에라'},{v:'빅터'},{v:'링커'},{v:'어센트',label:'어센트(청년부)'},
-    {v:'',label:'공동체 없음'}
+    {v:'시에라'},{v:'빅터'},{v:'링커'},{v:'어센트',label:'어센트(청년부)',sub:'(청년부)'},
+    {v:'',label:'공동체 없음',two:['공동체','없음']}
   ];
   let curComm = (typeof data.comm==='string') ? data.comm : '';
   function commPaint(){
@@ -2240,7 +2248,19 @@
     if(!box.children.length){
       COMMS.forEach(c=>{
         const b=document.createElement('button');
-        b.type='button'; b.dataset.c=c.v; b.textContent=c.label||c.v;
+        b.type='button'; b.dataset.c=c.v;
+        b.setAttribute('aria-label', c.label||c.v);
+        // 칸이 좁아서 긴 이름은 두 줄로: 어센트 / (청년부), 공동체 / 없음
+        if(c.sub){
+          b.textContent=c.v;
+          const sm=document.createElement('small'); sm.textContent=c.sub; b.appendChild(sm);
+        }else if(c.two){
+          b.classList.add('two');
+          b.textContent=c.two[0]; b.appendChild(document.createElement('br'));
+          b.appendChild(document.createTextNode(c.two[1]));
+        }else{
+          b.textContent=c.v;
+        }
         b.onclick=()=>{ commPick(c.v); try{ beep(); }catch(e){} };
         box.appendChild(b);
       });
@@ -2282,12 +2302,34 @@
     ctx.fillRect(0,h-barH,w,barH);
     ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
     const fs=Math.round(barH*0.30);   // 공동체명이 앞에 붙어 줄이 길어져서 조금 더 작게
-    /* 첫 줄은 "알파 김형지" 처럼 공동체명 + 이름 (2026-11-25 사용자 요청) */
-    const line1=((comm?comm+' ':'')+(nm||'')).trim();
+    /* 첫 줄은 "알파  김형지" 처럼 공동체명 + 이름 (2026-11-25 사용자 요청).
+       공동체명은 살짝 작게(이름의 80%)·옅은 회색으로, 이름과는 두 칸 띄워서
+       한눈에 구별되게 한다. 둘을 합친 폭으로 가운데 정렬한다. */
     let telRightEdge=null;   // 전화번호가 가운데 정렬로 어디까지 뻗는지 — 순번 배지가 같은 줄이라 거길 피해간다
-    if(line1){
-      ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
-      ctx.fillText(line1, w/2, h-barH*0.70);
+    const nmTxt=(nm||'').trim(), cmTxt=(comm||'').trim();
+    if(cmTxt || nmTxt){
+      const y1=h-barH*0.70;
+      const nFont='900 '+fs+'px "Malgun Gothic",sans-serif';
+      const cfs=Math.round(fs*0.8);
+      const cFont='800 '+cfs+'px "Malgun Gothic",sans-serif';
+      ctx.font=nFont;
+      const nW=nmTxt ? ctx.measureText(nmTxt).width : 0;
+      const gap=(cmTxt && nmTxt) ? ctx.measureText('  ').width : 0;   // 두 칸
+      ctx.font=cFont;
+      const cW=cmTxt ? ctx.measureText(cmTxt).width : 0;
+      let x=w/2-(cW+gap+nW)/2;
+      ctx.textAlign='left';
+      if(cmTxt){
+        ctx.fillStyle='#c4c8ce';   // 살짝 회색
+        // 글자가 작아도 바닥선이 이름과 맞게 살짝 내린다
+        ctx.fillText(cmTxt, x, y1+(fs-cfs)*0.35);
+        x+=cW+gap;
+      }
+      if(nmTxt){
+        ctx.font=nFont; ctx.fillStyle='#fff';
+        ctx.fillText(nmTxt, x, y1);
+      }
+      ctx.textAlign='center'; ctx.fillStyle='#fff';
     }
     if(tel){
       ctx.font='900 '+fs+'px "Malgun Gothic",sans-serif';
@@ -2745,6 +2787,9 @@
     }
 
       commPaint();   // 공동체 단추 줄을 처음 한 번 그려 둔다
+    // 공동체를 눌러도 이름·전화번호 칸의 포커스(=자판)를 빼앗지 않는다
+    $('edComm').addEventListener('pointerdown', e=>e.preventDefault());
+    $('edComm').addEventListener('mousedown', e=>e.preventDefault());
     $('edSave').onclick=saveShot;
     $('edAgain').onclick=()=>{
       if(saving) return;   // 저장 처리 중엔 무시 — 끝나면 다시 눌러도 늦지 않다
