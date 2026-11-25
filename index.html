@@ -455,7 +455,7 @@
   /* 공동체 단추 — 5칸 × 2줄 바둑판(알파~에코 / 시에라~공동체 없음).
      줄마다 칸 폭이 같아야 어느 폰에서도 흐트러지지 않는다. 긴 이름
      (어센트(청년부)·공동체 없음)은 칸 안에서 두 줄로 쓴다. */
-  #edComm{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:1px;}
+  #edComm{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-bottom:4px;}
   #edComm button{
     height:36px;padding:0 2px;border-radius:10px;width:auto;
     border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);
@@ -1036,7 +1036,7 @@
 <!-- 첫 화면 -->
 <div id="home">
   <div id="homeTop">
-    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v285</span></h1>
+    <h1>🏷️ 새가족 사진촬영 <span style="font-size:12px;color:#614878;font-weight:700">v286</span></h1>
     <button id="bCopyUrl" title="봉사자에게 전달할 앱 주소를 복사합니다"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   </div>
   <div id="tvRow">
@@ -1139,6 +1139,12 @@
            판이 길어져서 작은 폰에선 자판이 공동체 줄을 덮었다 (2026-11-25). -->
       <div id="edHint"></div>
     </div>
+    <!-- 공동체 고르기 — 담당자가 한 번 고르면 다음 사진에도 그대로 기억해 둔다
+         (2026-11-25 사용자 요청). 고른 공동체는 사진 이름 앞에 붙고,
+         순번(1/2)도 그 공동체 안에서만 센다.
+         자리: 맨 위(✕ 줄 밑) → 그 아래 이름·전화번호 → 다시 찍기·저장
+         (2026-11-25 사용자 요청 — 공동체부터 고르고 적는 순서대로). -->
+    <div id="edComm" role="group" aria-label="공동체 고르기"></div>
     <div class="row">
       <div id="edNameWrap">
         <!-- inputmode="none" 으로 폰의 기본 키보드를 아예 안 뜨게 하고, 대신
@@ -1166,11 +1172,6 @@
       <button class="sub" id="edAgain">다시 찍기</button>
       <button class="go"  id="edSave">저장</button>
     </div>
-    <!-- 공동체 고르기 — 담당자가 한 번 고르면 다음 사진에도 그대로 기억해 둔다
-         (2026-11-25 사용자 요청). 고른 공동체는 사진 이름 앞에 붙고,
-         순번(1/2)도 그 공동체 안에서만 센다.
-         자리는 사용자 그림대로 '다시 찍기·저장' 아래, 자판 바로 위. -->
-    <div id="edComm" role="group" aria-label="공동체 고르기"></div>
   </div>
   <!-- 앱이 직접 그리는 한글 자판(두벌식) — 이름 칸을 누르면 나타난다.
        자모 키는 data-k, 기능 키는 data-fn 으로 구분한다.
